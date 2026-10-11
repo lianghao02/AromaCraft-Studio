@@ -1,0 +1,9 @@
+node_modules/
+.clasp.json
+.clasprc.json
+*.log
+work/
+dist/
+*.zip
+.env
+coverage/

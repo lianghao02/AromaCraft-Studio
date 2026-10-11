@@ -1,0 +1,8 @@
+{
+  "name": "aromacraft-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "手作精油配方與成本管理系統",
+  "scripts": { "test": "node --test tests/core.test.cjs tests/server.test.cjs tests/client.test.cjs", "check": "node tools/check.cjs", "preview": "node tools/preview.cjs" },
+  "engines": { "node": ">=20" }
+}

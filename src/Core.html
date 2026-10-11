@@ -1,0 +1,112 @@
+<script>
+/* 前後端共用的純計算核心；所有重量為 g，價格為新臺幣。 */
+var AromaCore = (() => {
+  'use strict';
+  const TYPES = ['融製精油皂', '無水精油膏'];
+  function number(v, label, min = 0, max = 1e12) {
+    if (v === '' || v === null || v === undefined || typeof v === 'boolean') throw Error(label + '必須填入數字');
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < min || n > max) throw Error(label + '超出允許範圍');
+    return n;
+  }
+  function text(v, label, max = 500, required = true) {
+    if (typeof v !== 'string' || v.length > max || (required && !v.trim())) throw Error(label + '格式不正確');
+    return v.trim();
+  }
+  function price(p) {
+    const amount = number(p.amount, '採購數量', Number.MIN_VALUE);
+    const paid = number(p.paid, '採購總價');
+    const unit = text(p.unit, '採購單位', 20);
+    let grams;
+    if (unit === 'g') grams = amount;
+    else if (unit === 'kg') grams = amount * 1000;
+    else if (unit === 'mL') grams = amount * number(p.density, '該原料密度（g/mL）', Number.MIN_VALUE);
+    else grams = amount * number(p.gramsPerUnit, '每單位實際重量（g）', Number.MIN_VALUE);
+    if (!Number.isFinite(grams) || grams <= 0 || !Number.isFinite(paid / grams)) throw Error('採購換算結果無效，請檢查數量與單位重量');
+    return { ...p, amount, paid, unit, grams, perGram: paid / grams };
+  }
+  function settings(s) {
+    return {
+      packaging: number(s.packaging, '每件包材成本'), minutes: number(s.minutes, '批次工時分鐘'),
+      hourly: number(s.hourly, '時薪'), other: number(s.other, '批次其他成本'),
+      loss: number(s.loss, '耗損率', 0, 99.99), margin: number(s.margin, '目標毛利率', 0, 99.99),
+      sale: s.sale === '' || s.sale === null || s.sale === undefined ? null : number(s.sale, '自訂售價')
+    };
+  }
+  function calculate(recipe, materials, prices, rules) {
+    if (!TYPES.includes(recipe.type)) throw Error('不支援的作品類型');
+    text(recipe.name, '配方名稱', 100);
+    const units = number(recipe.units, '合格成品數量', 1, 100000);
+    if (!Number.isInteger(units)) throw Error('合格成品數量必須為整數');
+    if (!Array.isArray(recipe.items) || recipe.items.length < 1 || recipe.items.length > 200) throw Error('請加入 1 至 200 種原料');
+    const seen = new Set();
+    const items = recipe.items.map(i => {
+      if (seen.has(i.materialId)) throw Error('同一原料請合併為一張卡片');
+      seen.add(i.materialId);
+      const m = materials.find(m => m.id === i.materialId);
+      if (!m) throw Error('原料已不存在，請重新選擇');
+      const p = prices.find(p => p.id === i.priceId && p.materialId === m.id);
+      const grams = number(i.grams, '原料重量', 0, 1e7);
+      if (!p) throw Error(m.name + '缺少有效採購批次價格');
+      const actual = price(p);
+      return { materialId: m.id, name: m.name, category: m.category, priceId: p.id,
+        priceLabel: p.label, perGram: actual.perGram, grams, cost: grams * actual.perGram };
+    });
+    const total = items.reduce((s, i) => s + i.grams, 0);
+    if (total <= 0) throw Error('配方總重量必須大於 0');
+    items.forEach(i => i.percent = i.grams / total * 100);
+    const s = settings(recipe.cost);
+    const material = items.reduce((sum, i) => sum + i.cost, 0);
+    // 耗損率代表投入材料中未成為成品的比例；為取得所需淨重，材料成本除以良率。
+    const lossCost = material / (1 - s.loss / 100) - material;
+    const packaging = s.packaging * units;
+    const labor = s.minutes / 60 * s.hourly;
+    const batch = material + lossCost + packaging + labor + s.other;
+    const perUnit = batch / units;
+    const suggested = perUnit / (1 - s.margin / 100);
+    const grossMargin = s.sale === null || s.sale === 0 ? null : (s.sale - perUnit) / s.sale * 100;
+    if (![total, material, lossCost, packaging, labor, batch, perUnit, suggested].every(Number.isFinite)) throw Error('計算結果過大，請檢查重量與價格');
+    const messages = ['待驗證：數學與成本計算不代表完整安全審查；範本不是製作指引。'];
+    let exceeded = false;
+    const oilPercent = items.filter(i => i.category === '精油').reduce((sum, i) => sum + i.percent, 0);
+    const relevant = (rules || []).filter(r => r.type === recipe.type);
+    for (const r of relevant) {
+      const target = r.materialId === '*' ? oilPercent : (items.find(i => i.materialId === r.materialId) || {}).percent;
+      if (target === undefined || target === 0) continue;
+      if (r.status !== '已核對' || !r.source || r.maxPercent === '' || r.maxPercent === null || !Number.isFinite(Number(r.maxPercent)) || Number(r.maxPercent) < 0 || Number(r.maxPercent) > 100) {
+        messages.push('待驗證：' + (r.note || '安全規則缺少來源或有效限制')); continue;
+      }
+      if (target > Number(r.maxPercent)) { exceeded = true; messages.push('超出已登錄限制：' + (r.materialId === '*' ? '精油總濃度' : items.find(i => i.materialId === r.materialId).name) + '；來源：' + r.source); }
+      else messages.push('未超出此筆已登錄限制；來源：' + r.source + '；仍待完整安全審查');
+    }
+    for (const i of items.filter(i => i.category === '精油' && i.grams > 0)) {
+      if (!relevant.some(r => r.materialId === i.materialId && r.status === '已核對' && r.source && r.maxPercent !== '' && Number.isFinite(Number(r.maxPercent)))) messages.push('待驗證：' + i.name + '尚無適用且已核對的安全資料');
+    }
+    return { total, units, gramsPerUnit: total / units, items, cost: s, material, lossCost, packaging, labor,
+      other: s.other, batch, perUnit, suggested, grossMargin, oilPercent, safety: exceeded ? '超出限制' : '待驗證', messages };
+  }
+  function adjust(items, materialId, grams, baseId) {
+    const next = items.map(i => ({ ...i }));
+    const item = next.find(i => i.materialId === materialId);
+    if (!item) throw Error('找不到原料');
+    const n = number(grams, '重量', 0, 1e7);
+    if (baseId && baseId !== materialId) {
+      const base = next.find(i => i.materialId === baseId);
+      if (!base) throw Error('請指定已加入配方的補足原料');
+      const remaining = base.grams - (n - item.grams);
+      if (remaining < -1e-8) throw Error('補足原料重量不足');
+      base.grams = Math.max(0, remaining);
+    }
+    item.grams = n;
+    return next;
+  }
+  function scale(items, total) {
+    const target = number(total, '批次重量', Number.MIN_VALUE, 1e7);
+    const old = items.reduce((s, i) => s + number(i.grams, '原料重量'), 0);
+    if (!old) throw Error('請先設定原料重量');
+    return items.map(i => ({ ...i, grams: i.grams * target / old }));
+  }
+  return { TYPES, number, text, price, settings, calculate, adjust, scale };
+})();
+if (typeof module !== 'undefined') module.exports = AromaCore;
+</script>
