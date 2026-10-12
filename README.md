@@ -1,18 +1,17 @@
 # AromaCraft Studio｜手作精油配方與成本管理系統
 
-首次公開預覽版 v1.0.0，以 Google Apps Script Web App 與 Google Sheets 保存家庭共用資料。目前原始碼採配方調製／成本利潤雙模式；手機原料卡兩欄、配方卡單欄，桌機以雙欄工作檯呈現。新版尚未更新至正式 Google 部署。
+> 🌐 **線上免安裝直接使用**：[https://lianghao02.github.io/AromaCraft-Studio/](https://lianghao02.github.io/AromaCraft-Studio/)  
+> 💻 **本機離線免伺服器**：直接在瀏覽器雙擊開啟根目錄之 `index.html` 即可開箱即用，資料自動儲存於瀏覽器 LocalStorage。
 
-## 目前工作階段
-
-先完成前端調適，再更新 Google 部署。開啟專案根目錄的「啟動預覽.cmd」即可啟動本機示範；需 Node.js 20 以上。詳細步驟與驗收順序見 [前端調適](docs/前端調適.md)。
+支援 Google Apps Script Web App 雲端同步與純前端本機離線雙模式。原始碼採配方調製／成本利潤雙模式；手機原料卡兩欄、配方卡單欄，桌機以雙欄工作檯呈現。
 
 ## 開始使用
 
-1. 正式使用：依 [安裝部署說明](docs/安裝部署.md) 建立試算表、貼上 `src/` 原始碼、設定家庭 Google 帳號白名單並部署。
-2. 部署前試用：安裝 Node.js 20 以上，於專案資料夾執行 `npm run preview`，開啟 `http://127.0.0.1:8765/`。無須安裝套件。按 Ctrl+C 結束。
-3. 驗證：執行 `npm test` 與 `npm run check`。測試使用記憶體中的 Google 服務替身，不接觸真實帳號或試算表。
-
-**本機預覽不會寫入 Google Sheets**。示範資料僅存於啟動程序的記憶體，重新啟動即重設；草稿以分頁暫存區隔離。正式 Web App 則依帳號保存瀏覽器本機草稿。
+1. **直接開啟網頁**：
+   - 線上版：造訪 [GitHub Pages 線上站點](https://lianghao02.github.io/AromaCraft-Studio/) 即可直接調配方、算成本與管理原料。
+   - 本機版：直接用任何瀏覽器（Chrome, Edge, Safari, Firefox）開啟本專案根目錄的 `index.html`。
+2. **正式 Google 試算表同步**：依 [安裝部署說明](docs/安裝部署.md) 建立試算表、貼上 `src/` 原始碼、設定家庭 Google 帳號白名單並部署為 Web App。
+3. **驗證與建置**：執行 `npm test`（19 項測試通過）與 `npm run build`（自動編譯最新單一靜態網頁 `index.html`）。
 
 ## 已完成功能
 
