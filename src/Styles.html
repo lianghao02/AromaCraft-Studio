@@ -1,15 +1,378 @@
 <style>
-:root{color-scheme:light;--ink:#20372e;--green:#355b48;--cream:#f7f6f0;--line:#dce3d9;--muted:#647369;--accent:#efe3bf;--red:#a32e25;font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-serif;color:var(--ink);background:var(--cream)}
-*{box-sizing:border-box}body{margin:0}header{padding:30px 20px 22px;max-width:980px;margin:auto}header p{font-size:14px;color:var(--muted)}.brand{display:flex;align-items:center;gap:14px;font-size:30px;font-weight:700;letter-spacing:-1px}.brand>span{font-size:24px;font-weight:500;letter-spacing:0}.brand small{display:block;font-size:10px;letter-spacing:5px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.section-head>span{font-size:11px;color:var(--muted)}main{max-width:980px;margin:auto;padding:0 16px 175px}section{background:white;border:1px solid var(--line);border-radius:20px;padding:20px;margin:18px 0}h1,h2{font-size:20px;margin:0 0 18px;font-weight:600}h3{font-size:16px}button,input,textarea,select{font:inherit}button{cursor:pointer;color:var(--ink);background:#f5f7f2;border:1px solid var(--line);border-radius:12px;min-height:44px;padding:10px 14px}button:hover{border-color:var(--green);background:#edf3ed}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #bb9137;outline-offset:3px}button:disabled{opacity:.5;cursor:wait}.primary{color:white;background:var(--green);border-color:var(--green)}.primary:hover{background:#244534;color:white}.danger{color:var(--red)}input,textarea,select{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff;min-height:44px;color:var(--ink)}label{display:block;font-size:13px;color:var(--muted);margin-bottom:12px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fields>button{align-self:center}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.works{margin-top:4px}.work{display:flex;flex-direction:column;align-items:flex-start;padding:16px;min-height:170px;text-align:left;background:#f4f3e9}.work strong{font-size:17px}.work small{font-size:11px;margin-top:6px;color:var(--muted)}.work[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--green)}.art{display:flex;align-items:center;justify-content:center;align-self:stretch;height:78px;font-size:56px;color:#799579;margin-bottom:12px;border-radius:12px;background:#e9edde}.balm{color:#a88746;background:#f1ead8}.muted{font-size:12px;color:var(--muted);line-height:1.7}.toolbar,.actions,.inline,.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.toolbar button{font-size:12px}.inline label{flex:1}.chips{margin:12px 0}.chips button{font-size:12px;min-height:36px;padding:7px 12px}.chips button[aria-pressed=true]{background:var(--green);color:white}.check{display:flex;align-items:center;gap:8px}.check input{width:18px;min-height:18px;margin:0}.material{padding:14px;border:1px solid var(--line);border-radius:14px;min-width:0;background:#fafbf7}.material h3{margin:6px 0;overflow-wrap:anywhere}.material p{font-size:12px;color:var(--muted)}.material button{font-size:12px;padding:8px}.recipe-card{display:block;width:100%;text-align:left;margin:8px 0;padding:15px;background:#fafbf8}.recipe-card strong{display:block}.recipe-card span{font-size:13px;color:var(--muted)}.badge{display:inline-block;font-size:12px;background:var(--accent);padding:5px 10px;border-radius:100px}.badge.warn{color:var(--red);background:#fce4df}.summary{position:fixed;bottom:0;left:0;right:0;border-top:1px solid var(--line);background:rgba(250,251,245,.98);padding:14px max(16px,calc((100vw - 948px)/2));padding-bottom:calc(14px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;gap:12px;z-index:2;box-shadow:0 -5px 24px #20372e0c}.summary strong,.summary small,.summary #summaryWeight{display:block}.summary strong{font-size:18px;margin:4px 0}.summary small,.summary #summaryWeight{font-size:11px;color:var(--muted)}.summary>div:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:7px}#connection{font-size:12px;color:var(--muted)}#notice{padding:14px;background:#fff0da;border:1px solid #e8cc9d;border-radius:12px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}#breakdown{font-size:13px;line-height:1.9;padding-top:12px}#safety p{font-size:13px;line-height:1.7;overflow-wrap:anywhere}.saved-row,.log-row{border-top:1px solid var(--line);padding:14px 0;overflow-wrap:anywhere}.saved-row button{margin-top:8px}.saved-row strong{display:block}.log-row small{display:block;color:var(--muted)}dialog{position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,600px);max-height:85dvh;border:0;border-radius:22px 22px 0 0;padding:24px;overflow:auto;color:var(--ink)}dialog::backdrop{background:#132e2388}#editorTitle{margin:0 0 14px}#closeEditor{margin-bottom:10px}.empty{padding:18px;background:#f4f6f0;border-radius:12px;font-size:13px;color:var(--muted)}[hidden]{display:none!important}@media(min-width:760px){header{padding-top:40px}.grid:not(.works){grid-template-columns:repeat(4,minmax(0,1fr))}section{padding:28px}.work{min-height:190px}.summary{flex-direction:row}.summary>div:last-child{flex-direction:row;align-items:center;gap:20px}dialog{inset:50% auto auto 50%;transform:translate(-50%,-50%);border-radius:22px;margin:0}}@media(max-width:380px){main{padding:0 10px 180px}section{padding:16px}.fields{grid-template-columns:1fr}.summary strong{font-size:16px}.summary button{font-size:12px}}
-/* 一般 iPhone 直向配置；較寬螢幕也維持相同卡片閱讀寬度。 */
-header{max-width:430px;padding:28px 20px 22px}main{max-width:430px;padding:0 16px 175px}.summary{max-width:430px;left:50%;right:auto;transform:translateX(-50%);width:100%;padding:14px 16px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}.summary>div:last-child{flex-direction:column;align-items:flex-end;gap:7px}section{padding:20px}.grid:not(.works){grid-template-columns:repeat(2,minmax(0,1fr))}.work{min-height:170px}.summary strong{font-size:18px}dialog{inset:auto 0 0;transform:none;margin:0 auto;width:min(100%,430px);border-radius:22px 22px 0 0}@media(max-width:359px){main{padding:0 10px 175px}section{padding:16px}.summary strong{font-size:15px}.summary button{font-size:12px}}
-/* 儲存結果與錯誤固定顯示，捲動到頁尾時仍可看見。 */
-#notice{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:406px;max-height:35dvh;overflow:auto;z-index:5;box-shadow:0 4px 18px #20372e22}
-/* 收納以原生 details 操作，不離開目前配方，也保留鍵盤操作。 */
-:root{--space:8px;--radius:16px;--page:430px}
-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 20px 16px}.brand{font-size:24px;gap:8px}.brand>span{font-size:20px}.brand small{font-size:11px;letter-spacing:1px;margin-top:4px}header>.badge{font-size:11px;white-space:nowrap}
-main{padding-bottom:calc(168px + env(safe-area-inset-bottom))}section,.fold{margin:12px 0;border-radius:var(--radius);background:white;border:1px solid var(--line)}section{padding:16px}.fold>summary{padding:16px;font-size:15px;font-weight:600;cursor:pointer;min-height:56px}.fold>summary small{display:block;font-size:11px;font-weight:400;margin-top:4px;margin-left:20px;color:var(--muted)}.fold[open]>summary{border-bottom:1px solid var(--line)}.fold-body{padding:16px}.fold-body .fields{margin-top:4px}.fold summary:focus-visible,.advanced summary:focus-visible,.material-tools summary:focus-visible{outline:3px solid #bb9137;outline-offset:2px}
-.advanced{margin-top:16px;border-top:1px solid var(--line)}.advanced>summary{font-size:13px;cursor:pointer;min-height:44px;padding:12px 0;color:var(--green)}.advanced>.fold-body{padding:4px 0 0}.section-head h1{font-size:18px;margin-bottom:12px}#draftState{font-size:11px;max-width:120px;text-align:right}#version{margin:0 0 12px;font-size:11px}.fields{grid-template-columns:minmax(0,1fr) 96px;gap:12px}.fold-body>.fields,#costFields{grid-template-columns:1fr 1fr}.work{min-height:132px;padding:12px}.art{height:48px;font-size:40px;margin-bottom:8px}.work strong{font-size:15px}.work small{line-height:1.5}.recipe-card{padding:12px;margin:8px 0}.recipe-card small{font-size:11px;color:var(--muted)}.add-material{width:100%;border-style:dashed;background:white;margin-top:8px}.material{padding:12px}.material>button{width:100%;font-size:13px;min-height:44px}.material-tools summary{font-size:11px;min-height:44px;padding:12px 0;cursor:pointer;color:var(--muted)}.material-tools p{overflow-wrap:anywhere}.material-tools button{min-height:44px}.material-tools .actions{gap:4px}.saved-row small{display:block;line-height:1.6;color:var(--muted)}.history-row{padding:12px 0;border-top:1px solid var(--line)}#connection{overflow-wrap:anywhere;margin-bottom:16px}.toolbar button{flex:1;min-width:96px}.fold,.recipe-list,section{scroll-margin-top:112px}.summary{padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}.summary strong{font-size:16px}.summary button{min-width:104px;font-size:13px}.summary button:disabled{cursor:default}.summary #summaryWeight{max-width:220px;overflow-wrap:anywhere}
-@media(max-width:359px){.fields,.fold-body>.fields,#costFields{grid-template-columns:1fr}.brand>span{font-size:18px}.summary strong{font-size:14px}.fold-body,section{padding:12px}}
-.cost-groups fieldset{border:0;padding:0;margin:0 0 24px;min-width:0}.cost-groups legend{font-weight:600;font-size:15px;margin-bottom:8px}.cost-groups label{margin:0 0 20px;font-size:14px}.field-help{display:block;font-size:12px;line-height:1.6;color:var(--muted);margin-top:8px}.cost-row{display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding:8px 0}.cost-row span{flex:1}.cost-row strong{white-space:nowrap}.cost-total{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:8px 0;padding:8px 0}#breakdown h3{margin-top:20px}.price-warning{padding:12px;background:#fff0da;border-radius:8px;line-height:1.6}#confirmMessage{line-height:1.7;font-size:15px;overflow-wrap:anywhere}#confirmDialog .actions{flex-direction:column;align-items:stretch}#confirmDialog button{width:100%}
+:root{
+  color-scheme:light;
+  --ink:#1c3329;
+  --green:#2e5240;
+  --cream:#f8f7f2;
+  --line:#dce3d9;
+  --muted:#5c6e63;
+  --accent:#eee5ca;
+  --red:#a32e25;
+  --radius:16px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+  font-feature-settings:"tnum";
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  background:var(--cream);
+  line-height:1.5;
+}
+*{box-sizing:border-box}body{margin:0}
+header{max-width:430px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 20px 16px}
+header p{font-size:14px;color:var(--muted)}
+.brand{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:800;letter-spacing:-0.5px}
+.brand>span{font-size:20px;font-weight:600;letter-spacing:0}
+.brand small{display:block;font-size:10px;letter-spacing:1px;margin-top:2px;color:var(--muted);font-weight:400}
+.header-actions{display:flex;align-items:center;gap:8px}
+.header-actions>.badge{font-size:11px;white-space:nowrap}
+.help-btn{min-height:32px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--line);border-radius:100px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;transition:all .15s ease}
+.help-btn:hover{background:#edf3ed;border-color:var(--green)}
+main{max-width:430px;margin:auto;padding:0 16px;padding-bottom:calc(260px + env(safe-area-inset-bottom))}
+section,.panel-card,.fold{margin:12px 0;border-radius:var(--radius);background:white;border:1px solid var(--line)}
+section,.panel-card{padding:16px}
+
+/* === 字型字體階層 (Typography Hierarchy) === */
+h1{font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-0.3px;margin:0 0 10px;color:var(--ink)}
+h2{font-size:18px;font-weight:700;line-height:1.3;letter-spacing:-0.2px;margin:0 0 10px;color:var(--ink)}
+h3{font-size:15px;font-weight:600;line-height:1.4;margin:12px 0 6px;color:var(--ink)}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.section-head h1{font-size:22px;font-weight:700;margin:0}
+.section-head h2{font-size:18px;font-weight:700;margin:0}
+.section-head>span{font-size:12px;color:var(--muted);font-weight:500}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;color:var(--ink);background:#f5f7f2;border:1px solid var(--line);border-radius:12px;min-height:44px;padding:10px 14px}
+button:hover{border-color:var(--green);background:#edf3ed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #bb9137;outline-offset:3px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{color:white;background:var(--green);border-color:var(--green)}
+.primary:hover{background:#244534;color:white}
+.danger{color:var(--red)}
+input,textarea,select{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff;min-height:44px;color:var(--ink)}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:12px}
+.fields{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:12px}
+.fields>button{align-self:center}
+.fold-body>.fields,#costFields{grid-template-columns:1fr 1fr}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.works{margin-top:4px}
+.work{display:flex;flex-direction:column;align-items:flex-start;padding:12px;min-height:136px;text-align:left;background:#f4f3e9}
+.work strong{font-size:15px}
+.work small{font-size:11px;margin-top:4px;color:var(--muted);line-height:1.4}
+.work[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--green)}
+.art{display:flex;align-items:center;justify-content:center;align-self:stretch;height:52px;font-size:42px;color:#799579;margin-bottom:8px;border-radius:10px;background:#e9edde}
+.balm{color:#a88746;background:#f1ead8}
+.muted{font-size:12px;color:var(--muted);line-height:1.6}
+.toolbar,.actions,.inline,.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar button{font-size:12px;min-height:44px}
+.inline label{flex:1}
+.chips{margin:12px 0}
+.chips button{font-size:12px;min-height:36px;padding:6px 12px}
+.chips button[aria-pressed=true]{background:var(--green);color:white}
+.check{display:flex;align-items:center;gap:8px}
+.check input{width:18px;min-height:18px;margin:0}
+/* === 原料卡片：整張卡片即點擊動作目標 === */
+.material-card{display:flex;flex-direction:column;justify-content:space-between;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;user-select:none;position:relative;transition:all .18s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 4px rgba(32,55,46,.03);min-height:108px}
+.material-card:hover{border-color:var(--green);background:#fafbf8;transform:translateY(-2px);box-shadow:0 6px 18px rgba(32,55,46,.1)}
+.material-card:focus-visible{outline:3px solid #bb9137;outline-offset:2px}
+.material-card.in-recipe{border-color:var(--green);background:#f6f9f6;box-shadow:inset 0 0 0 1.5px var(--green)}
+.material-card.inactive{opacity:.55;cursor:not-allowed}
+.mat-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.mat-gear{min-height:28px;height:28px;width:28px;padding:0;border:0;background:transparent;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:all .15s ease;color:var(--muted)}
+.mat-gear:hover{background:rgba(0,0,0,.08);color:var(--ink);transform:rotate(30deg)}
+.mat-name{font-size:15px;font-weight:700;color:var(--ink);margin:0 0 4px;overflow-wrap:anywhere}
+.mat-meta{font-size:12px;color:var(--muted);margin:0;line-height:1.4}
+.mat-card-status{margin-top:10px;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:600;background:#e2ece2;color:var(--green);text-align:center}
+.recipe-card{display:block;width:100%;text-align:left;margin:8px 0;padding:12px;background:#fafbf8;border:1px solid var(--line);border-radius:12px}
+.recipe-card strong{display:block;font-size:15px}
+.recipe-card span{font-size:13px;color:var(--muted)}
+.recipe-card small{font-size:11px;color:var(--muted)}
+.add-material{width:100%;border-style:dashed;background:white;margin-top:8px;font-weight:600}
+.badge{display:inline-block;font-size:12px;background:var(--accent);padding:5px 10px;border-radius:100px}
+.badge.warn{color:var(--red);background:#fce4df}
+.fold>summary{padding:16px;font-size:15px;font-weight:600;cursor:pointer;min-height:56px}
+.fold>summary small{display:block;font-size:11px;font-weight:400;margin-top:4px;margin-left:20px;color:var(--muted)}
+.fold[open]>summary{border-bottom:1px solid var(--line)}
+.fold-body{padding:16px}
+.fold-body .fields{margin-top:4px}
+.fold summary:focus-visible,.advanced summary:focus-visible,.material-tools summary:focus-visible{outline:3px solid #bb9137;outline-offset:2px}
+.advanced{margin-top:16px;border-top:1px solid var(--line)}
+.advanced>summary{font-size:13px;cursor:pointer;min-height:44px;padding:12px 0;color:var(--green)}
+.advanced>.fold-body{padding:4px 0 0}
+#draftState{font-size:11px;max-width:120px;text-align:right}
+#version{margin:0 0 12px;font-size:11px}
+.summary{position:fixed;bottom:0;left:50%;right:auto;transform:translateX(-50%);width:100%;max-width:430px;border-top:1px solid var(--line);background:rgba(250,251,245,.98);padding:14px 16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:30;box-shadow:0 -5px 24px #20372e12}
+.summary strong,.summary small,.summary #summaryWeight{display:block}
+.summary strong{font-size:16px;margin:2px 0}
+.summary small,.summary #summaryWeight{font-size:11px;color:var(--muted)}
+.summary #summaryWeight{max-width:210px;overflow-wrap:anywhere}
+.summary>div:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:6px;cursor:pointer}
+.summary button{min-width:108px;min-height:46px;font-size:14px;font-weight:600}
+#connection{font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin-bottom:14px}
+#breakdown{font-size:13px;line-height:1.8;padding-top:10px}
+#breakdown h3{margin-top:18px}
+#safety p{font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.saved-row,.log-row{border-top:1px solid var(--line);padding:14px 0;overflow-wrap:anywhere}
+.saved-row button{margin-top:8px}
+.saved-row strong{display:block;font-size:15px}
+.saved-row small,.log-row small{display:block;color:var(--muted);line-height:1.5}
+.history-row{padding:12px 0;border-top:1px solid var(--line)}
+dialog{position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,430px);max-height:85dvh;border:0;border-radius:22px 22px 0 0;padding:20px;padding-bottom:calc(32px + env(safe-area-inset-bottom));overflow:auto;color:var(--ink);background:white;box-shadow:0 -8px 30px rgba(0,0,0,0.22);z-index:90}
+dialog .actions{margin-top:18px;padding-bottom:8px}
+dialog .actions button{min-height:46px}
+dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
+#editorTitle{margin:0 0 14px}
+#closeEditor{margin-bottom:10px}
+.empty{padding:18px;background:#f4f6f0;border-radius:12px;font-size:13px;color:var(--muted)}
+[hidden]{display:none!important}
+.cost-groups fieldset{border:0;padding:0;margin:0 0 20px;min-width:0}
+.cost-groups legend{font-weight:600;font-size:15px;margin-bottom:8px}
+.cost-groups label{margin:0 0 18px;font-size:14px}
+.field-help{display:block;font-size:12px;line-height:1.5;color:var(--muted);margin-top:6px}
+.cost-row{display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding:7px 0}
+.cost-row span{flex:1}
+.cost-row strong{white-space:nowrap}
+.cost-total{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:8px 0;padding:8px 0}
+.price-warning{padding:12px;background:#fff0da;border-radius:8px;line-height:1.6}
+#confirmMessage{line-height:1.7;font-size:15px;overflow-wrap:anywhere}
+#confirmDialog .actions{flex-direction:column;align-items:stretch}
+#confirmDialog button{width:100%}
+
+/* === 新增：三頁籤與導覽最佳化 === */
+.tabs{display:flex;gap:6px;background:#e7ece4;padding:5px;border-radius:14px;margin-bottom:14px}
+.tab-btn{flex:1;min-height:44px;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:14px;border-radius:10px;padding:8px 6px;cursor:pointer;transition:all .15s ease}
+.tab-btn.active{background:var(--green);color:white;box-shadow:0 2px 8px rgba(32,55,46,.18)}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,.5);color:var(--ink)}
+
+/* === 工作視圖雙模式切換（Segmented Control） === */
+.mode-switch{display:flex;gap:4px;background:#e2ebe0;padding:4px;border-radius:12px;margin-bottom:14px}
+.mode-btn{flex:1;min-height:42px;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.mode-btn.active{background:#fff;color:var(--green);font-weight:700;box-shadow:0 2px 6px rgba(32,55,46,.12)}
+.mode-btn:hover:not(.active){color:var(--ink);background:rgba(255,255,255,.45)}
+
+/* === 隨行成本膠囊（指標隨行） === */
+.cost-pill{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:#f2f6ee;border:1px solid #d4dfce;border-radius:12px;margin:12px 0 6px}
+.cost-pill .pill-info{display:flex;flex-direction:column}
+.cost-pill .pill-info small{font-size:11px;color:var(--muted)}
+.cost-pill .pill-info strong{font-size:16px;color:var(--green);font-weight:700}
+.pill-btn{min-height:36px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#fff;background:var(--green);border:1px solid var(--green);border-radius:8px;cursor:pointer;transition:all .15s ease}
+.pill-btn:hover{background:#244534}
+
+.cost-nav-bar{margin-bottom:12px}
+
+/* 通用模式顯示控制（手機與預設） */
+#viewRecipe[data-mode="formulate"] #costPanel{display:none!important}
+#viewRecipe[data-mode="cost"] #materialPicker{display:none!important}
+#viewRecipe[data-mode="cost"] #costPill{display:none!important}
+
+.quick-nav{display:flex;gap:8px;margin-bottom:12px}
+.subtle-btn{flex:1;min-height:40px;font-size:12px;font-weight:500;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:10px;color:var(--muted)}
+.subtle-btn:hover{color:var(--green);border-color:var(--green);background:#edf3ed}
+
+.picker-top-bar{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:12px;border-bottom:1px dashed var(--line);gap:8px}
+.return-btn{font-size:12px;min-height:40px;padding:8px 14px;white-space:nowrap}
+
+/* === 頂部通知：浮動膠囊 Toast === */
+#notice{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:auto;min-width:280px;max-width:min(90vw,480px);max-height:40dvh;overflow:auto;z-index:200;box-shadow:0 8px 30px rgba(32,55,46,.22);padding:10px 18px;border-radius:100px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#253c30;border:1px solid #3d5849;color:#fff;backdrop-filter:blur(6px);animation:slideDown .2s cubic-bezier(.16,1,.3,1)}
+#notice.alert-error{background:#9e2a2b;border-color:#ba3c3d;color:#fff}
+#noticeMsg{flex:1;font-size:13px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+#closeNotice{flex-shrink:0;min-height:28px;height:28px;width:28px;padding:0;border:0;background:transparent;cursor:pointer;font-size:14px;border-radius:50%;color:#fff;opacity:.8;display:flex;align-items:center;justify-content:center}
+#closeNotice:hover{background:rgba(255,255,255,.15);opacity:1}
+@keyframes slideDown{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* === 新手 3 步配方指南卡片 === */
+.guide-card{background:linear-gradient(180deg,#fff,#f9f8f2);border:1px solid #d5ded0;border-radius:var(--radius);padding:14px 16px;margin:0 0 14px;box-shadow:0 2px 10px rgba(32,55,46,.04)}
+.guide-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.guide-title{display:flex;align-items:center;gap:6px;color:var(--green)}
+.guide-title strong{font-size:14px;font-weight:700}
+.guide-close{min-height:28px;height:28px;width:28px;padding:0;border:0;background:transparent;color:var(--muted);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+.guide-close:hover{background:rgba(0,0,0,.06);color:var(--ink)}
+.guide-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.guide-step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.8);border:1px solid var(--line);cursor:pointer;transition:all .15s ease}
+.guide-step:hover,.guide-step:focus-visible{background:#f1f5ee;border-color:var(--green);outline:none}
+.step-num{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:12px;font-weight:700;margin-top:2px}
+.step-content strong{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.step-content p{margin:0;font-size:12px;color:var(--muted);line-height:1.45}
+.guide-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);gap:8px}
+.subtle-link{background:none;border:0;padding:0;color:var(--muted);font-size:11px;min-height:auto;cursor:pointer;text-decoration:underline}
+.subtle-link:hover{color:var(--ink)}
+
+/* === 使用說明手冊 Dialog === */
+.help-dialog{width:min(94%,600px);max-height:88vh}
+.help-content{padding:4px 0 16px;max-height:calc(85vh - 160px);overflow-y:auto}
+.help-block{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.help-block:last-child{border-bottom:0;margin-bottom:0}
+.help-block h3{font-size:15px;font-weight:700;color:var(--green);margin:0 0 8px}
+.help-block p{font-size:13px;line-height:1.6;color:var(--ink);margin:0 0 8px}
+.help-list{margin:0;padding-left:20px;font-size:13px;line-height:1.65;color:var(--ink)}
+.help-list li{margin-bottom:6px}
+.help-block ul{margin:0;padding-left:20px;font-size:13px;line-height:1.65;color:var(--ink)}
+.help-block ul li{margin-bottom:6px}
+.help-block code{background:#f1f4ed;padding:2px 5px;border-radius:4px;font-size:12px;font-family:monospace;color:var(--green)}
+
+@media(max-width:359px){
+  .fields,.fold-body>.fields,#costFields{grid-template-columns:1fr}
+  .brand>span{font-size:18px}
+  .summary strong{font-size:14px}
+  .fold-body,section,.panel-card{padding:12px}
+  .tabs .tab-btn{font-size:13px;padding:6px 2px}
+}
+
+.panel-save-card{display:none}
+
+/* === 電腦／平板寬螢幕響應式（>= 768px） === */
+@media(min-width:768px){
+  header{max-width:1400px;padding:24px 24px 16px}
+  .brand{font-size:26px}
+  .brand>span{font-size:22px}
+  main{max-width:1400px;padding:0 24px 60px}
+
+  h1,.section-head h1{font-size:24px}
+  h2,.section-head h2{font-size:20px}
+
+  .guide-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .guide-step{padding:10px 12px;flex-direction:row;align-items:center;gap:10px}
+  .guide-step .step-num{margin-top:0}
+
+  .tabs{gap:10px;padding:6px;border-radius:16px;margin-bottom:18px}
+  .tab-btn{font-size:15px;min-height:46px}
+
+  .mode-switch{grid-area:mode;margin-bottom:6px}
+  .guide-card{grid-area:guide;margin:0 0 10px}
+  .quick-nav{grid-area:quick;margin:0 0 10px}
+  #workPanel{grid-area:work;margin:0 0 14px}
+  #recipePanel{grid-area:recipe;margin:0}
+
+  /* 模式一：配方調製模式（左欄配方，右欄滿版原料庫） */
+  #viewRecipe[data-mode="formulate"]{
+    display:grid;
+    grid-template-columns:minmax(0,1.15fr) minmax(460px,1.25fr);
+    grid-template-areas:
+      "mode   mode"
+      "guide  guide"
+      "quick  picker"
+      "work   picker"
+      "recipe picker";
+    gap:20px;
+    align-items:start;
+  }
+  #viewRecipe[data-mode="formulate"] #materialPicker{
+    grid-area:picker;
+    margin:0;
+    position:sticky;
+    top:16px;
+    max-height:calc(100vh - 32px);
+    overflow-y:auto;
+    box-shadow:0 4px 20px rgba(32,55,46,.05);
+  }
+  #viewRecipe[data-mode="formulate"] #materialPicker[class*="fold"]>.fold-body{display:block!important}
+  #viewRecipe[data-mode="formulate"] #materialPicker>summary{cursor:default;pointer-events:none}
+  #viewRecipe[data-mode="formulate"] #materialPicker>summary small{display:none}
+
+  /* 模式二：成本利潤模式（左欄配方摘要，右欄成本試算） */
+  #viewRecipe[data-mode="cost"]{
+    display:grid;
+    grid-template-columns:minmax(0,1.15fr) minmax(440px,1.25fr);
+    grid-template-areas:
+      "mode   mode"
+      "quick  cost"
+      "work   cost"
+      "recipe cost";
+    gap:20px;
+    align-items:start;
+  }
+  #viewRecipe[data-mode="cost"] #costPanel{
+    grid-area:cost;
+    margin:0;
+    position:sticky;
+    top:16px;
+    max-height:calc(100vh - 32px);
+    overflow-y:auto;
+    box-shadow:0 4px 20px rgba(32,55,46,.05);
+  }
+  #viewRecipe[data-mode="cost"] #costPanel[class*="fold"]>.fold-body{display:block!important}
+  #viewRecipe[data-mode="cost"] #costPanel>summary{cursor:default;pointer-events:none}
+  #viewRecipe[data-mode="cost"] #costPanel>summary small{display:none}
+
+  /* 桌面右欄專屬試算與一鍵儲存卡片 */
+  .panel-save-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    background:#edf3ed;
+    border:1px solid #d0dfd0;
+    border-radius:12px;
+    margin-bottom:16px;
+  }
+  .panel-cost-val{display:block;font-size:18px;font-weight:700;color:var(--green);margin:2px 0}
+  .panel-weight-val{display:block;font-size:11px;color:var(--muted)}
+  .panel-save-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .panel-save-actions button{min-width:116px;min-height:42px;font-size:14px;font-weight:700}
+
+  /* 作品範本卡片扁平化（高僅 64px），首屏不霸佔高度 */
+  .works{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:2px}
+  .work{flex-direction:row;align-items:center;min-height:64px;gap:10px;padding:10px 12px}
+  .work strong{font-size:14px}
+  .work small{display:none}
+  .work .art{width:40px;height:40px;min-width:40px;font-size:24px;margin-bottom:0}
+
+  /* 原料卡片網格自適應填滿 */
+  #materials{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px}
+
+  #viewManage{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  #viewManage>section:first-child{grid-column:1/-1}
+  #logPanel{grid-column:1;margin:0}
+  #safetyPanel{grid-column:2;margin:0}
+  #viewManage>details:last-child{grid-column:1/-1}
+
+  dialog{
+    inset:50% auto auto 50%;
+    transform:translate(-50%,-50%);
+    width:min(92%,560px);
+    max-height:85vh;
+    border-radius:22px;
+    padding:28px;
+    padding-bottom:28px;
+    margin:0;
+    box-shadow:0 16px 48px rgba(32,55,46,0.22);
+  }
+
+  /* 寬螢幕下隱藏手機底欄，工作檯視野完全乾淨不被遮蔽 */
+  .summary{display:none!important}
+}
+
+/* === 配方操作列、比例色條與發行產品元件 === */
+.recipe-head-actions{display:flex;align-items:center;gap:8px}
+#oilPercentBadge{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:100px;background:#e9f0ea;color:var(--green);border:1px solid #c9dccb;transition:all .15s ease}
+#oilPercentBadge.warn{background:#fdeeed;color:var(--red);border-color:#f5c2be}
+
+.formula-bar{display:flex;height:8px;border-radius:100px;overflow:hidden;background:#e8ece5;margin:10px 0 14px;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+.formula-segment{height:100%;transition:width .25s ease;position:relative}
+.formula-segment:first-child{border-top-left-radius:100px;border-bottom-left-radius:100px}
+.formula-segment:last-child{border-top-right-radius:100px;border-bottom-right-radius:100px}
+.seg-soap{background:#2e5240}
+.seg-oil{background:#a3683f}
+.seg-wax{background:#c49742}
+.seg-essential{background:#795290}
+.seg-other{background:#6c7d71}
+
+.app-footer{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);text-align:center}
+.footer-brand{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.app-footer p{font-size:11.5px;color:var(--muted);line-height:1.65;margin:0}
+
+/* === 專業 A4 列印排版（@media print） === */
+@media print{
+  header,nav,.tabs,.quick-nav,.mode-switch,.cost-pill,.cost-nav-bar,#workPanel,#materialPicker,.guide-card,.panel-save-card,.add-material,.advanced,.summary,#notice,dialog,.print-hide,button{display:none!important}
+  body,main{background:#fff!important;color:#000!important;max-width:100%!important;padding:0!important;margin:0!important}
+  #viewRecipe{display:block!important}
+  #recipePanel,#costPanel{border:1px solid #ccc!important;border-radius:0!important;box-shadow:none!important;margin-bottom:20px!important;page-break-inside:avoid;padding:16px!important}
+  .recipe-card{border:1px solid #ddd!important;background:#fff!important;box-shadow:none!important;margin:6px 0!important;padding:8px!important}
+  .cost-row{border-bottom:1px dashed #eee!important;padding:5px 0!important}
+  .formula-bar{display:none!important}
+  .app-footer{display:block!important;margin-top:20px!important;padding-top:12px!important}
+}
 </style>

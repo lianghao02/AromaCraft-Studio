@@ -26,11 +26,20 @@ if(process.argv[2]==='--build'){
 const port=Number(process.env.PORT || 8765);
 const server=http.createServer((req,res)=>{
   res.setHeader('Cache-Control','no-store');
+  if(req.url==='/favicon.ico'){res.writeHead(204);res.end();return;}
   if(req.method==='GET' && req.url==='/'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(renderPreview());return;}
   if(req.method==='POST' && req.url==='/api'){
     let body='';req.on('data',chunk=>{body+=chunk;if(body.length>250000)req.destroy();});
     req.on('end',()=>{try{const request=JSON.parse(body);const result=h.call(request.action,request.data);res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(result));}catch(e){res.writeHead(400);res.end('{}');}});return;
   }
   res.writeHead(404);res.end('找不到頁面');
+});
+server.on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    console.log('AromaCraft 示範預覽已在運行中：http://localhost:' + port + '/（無須重複啟動，請直接於瀏覽器開啟操作）');
+    process.exit(0);
+  }
+  console.error('伺服器啟動失敗：', err.message);
+  process.exit(1);
 });
 server.listen(port,'127.0.0.1',()=>console.log('AromaCraft 示範預覽：http://localhost:'+port+'（示範資料僅存於記憶體，按 Ctrl+C 結束）'));

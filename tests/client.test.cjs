@@ -19,6 +19,8 @@ test('收納操作保留草稿；空白與未修改配方避免誤存；失敗�
   assert.equal(node('quickSave').disabled,true);
   assert.equal(works[0]['aria-pressed'],'false');
   await works[0].onclick();
+  assert.doesNotMatch(node('oilPercentBadge').className, /safe/);
+  assert.match(node('oilPercentBadge').title, /安全來源/);
   assert.equal(node('workPanel').open,false);
   assert.equal(node('quickSave').disabled,false);
   node('name').value='收納流程驗證';

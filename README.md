@@ -1,6 +1,6 @@
 # AromaCraft Studio｜手作精油配方與成本管理系統
 
-首次公開預覽版 v1.0.0，以 Google Apps Script Web App 與 Google Sheets 保存家庭共用資料。介面採一般 iPhone 直向配置；手機原料卡兩欄、配方卡單欄、底部編輯面板，桌機以同樣的 430 px 上限寬度置中顯示。
+首次公開預覽版 v1.0.0，以 Google Apps Script Web App 與 Google Sheets 保存家庭共用資料。目前原始碼採配方調製／成本利潤雙模式；手機原料卡兩欄、配方卡單欄，桌機以雙欄工作檯呈現。新版尚未更新至正式 Google 部署。
 
 ## 目前工作階段
 
