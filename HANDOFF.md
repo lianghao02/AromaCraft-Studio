@@ -6,7 +6,7 @@
 - **Commit SHA**：首次公開發布提交，實際 SHA 以 Git 為準
 - **Skill Version**：v1.0.0
 - **Task Type**：RELEASE
-- **Local Path Hint**：AromaCraft-Studio
+- **Local Path Hint**：18_AromaCraft-Studio
 
 ## 目前狀態
 
@@ -21,6 +21,8 @@
 Google Apps Script 與八張繁體中文工作表；原生手機前端；價格、配方版本與成本快照追加；安全資料不足時顯示待驗證。本機服務替身不接觸真實 Google 資料。
 
 ## 已完成 (Completed)
+
+2026-10-12 工作區編號：本機資料夾改為 `18_AromaCraft-Studio`；GitHub origin 與 main 追蹤維持原設定。更名前後 HEAD、既有未提交修改與保護檔案雜湊核對通過；GitHub main 可存取且與本機 HEAD 一致。前輪工作完整保留；本輪僅提交與推送編號紀錄，前輪功能修改保留在本機。
 
 兩種作品、自由原料、價格批次、配方版本、成本與毛利、歷史快照、授權錯誤處理。成本欄位逐項標明整批／每件與單位，切換確認採站內對話框。本機前端 HTML 合併、啟動器及調適說明已提供。
 
