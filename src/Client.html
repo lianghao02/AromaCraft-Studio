@@ -191,7 +191,11 @@
       recipe.items=recipe.items.map(i=>i.unit==='%'?{...i,unit:recipe.quantityUnit,quantity:AromaCore.itemAmount(i,recipe,data.prices)}:i);
       recipe.concentration={...recipe.concentration,auto:true,legacySizing:previous};recipe.quantityUnit='mixed';recipe.targetQuantity=null;recipe.baseId='';
     }
-    $('limitBasis').value=recipe.concentration?.limitBasis||'mL';$('costPanel').open=true;
+    if(!recipe.concentration?.basis){
+      const inferred=AromaCore.concentration(recipe,data.materials,data.prices).basis,legacy=recipe.concentration?.legacySizing?.quantityUnit;
+      recipe.concentration={...recipe.concentration,basis:inferred||(['g','mL'].includes(legacy)?legacy:AromaCore.productBasis(recipe.type))};
+    }
+    $('limitBasis').value=recipe.concentration?.limitBasis||recipe.concentration.basis;$('costPanel').open=true;
     $('concentrationTotal').value=recipe.concentration?.totalMl??'';$('concentrationLimit').value=recipe.concentration?.maxPercent??'';
     $('name').value = recipe.name; $('units').value = recipe.units; $('notes').value = recipe.notes;
     $('version').textContent = ((recipe.notes||'').includes('[範本待確認]')?'範本待確認 · ':'') + recipe.type + (recipe.id ? ' · 目前版本 v' + recipe.version + '，修改後另存新版' : ' · 新配方') + (recipe.snapshot ? ' · 沿用此版本採購價格；歷史快照保留' : '');

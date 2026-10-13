@@ -88,9 +88,12 @@ for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收�
   assert.equal(node('savedCount').textContent,'1 份配方');
   assert.match(node('saved').innerHTML,/歷史版本（1）/);
   assert.match(node('saved').innerHTML,/data-version="1"/);
+  // 舊版本沒有 basis；只在載入草稿補基準，不改原資料或快照。
+  const oldRows=h.sheets.get('配方資料').values;oldRows[1][oldRows[0].indexOf('concentrationJson')]=JSON.stringify({auto:true});
   await node('saved').onclick({target:{closest:q=>q==='[data-load]'?{dataset:{load:h.sheets.get('配方資料').values[1][0],version:'1'}}:null}});
   await tick();await tick();
   assert.equal(node('name').value,'收納流程驗證');
+  assert.match(node('workBasis').textContent,/重量配方/);
   assert.equal(node('quickSave').disabled,true);
   node('copy').onclick();
   assert.equal(node('quickSave').disabled,false);
