@@ -601,4 +601,8 @@ body{overflow-wrap:anywhere}main,section,.fold,.fold-body,.recipe-workspace,.fie
 html.keyboard-open .summary{display:none}
 [hidden]{display:none!important}#recipePanel #costPanel{position:static;width:100%;margin:12px 0}#recipePanel #costPanel .panel-save-card{display:block}#recipePanel #costPanel .panel-save-actions{display:none}.production-actions{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.production-actions>*{flex:1;min-width:0}@media(max-width:767px){.production-actions{display:block}.production-actions button{width:100%}.panel-save-card strong{font-size:19px}.panel-weight-val{font-size:12px}#costPanel .panel-save-card{padding:10px}}
 #materialPicker[data-manage="true"] #selectedItems,#materialPicker[data-manage="true"] #selectedItemsTitle{display:none}@media(max-width:767px){.help-btn,.chips button{min-height:44px;min-width:44px}}
+/* Safari 日期控制項不以原生最小寬度撐出卡片。 */
+input[type="date"]{display:block;min-width:0;min-inline-size:0;width:100%;max-width:100%;-webkit-appearance:none;appearance:none}
+input[type="date"]::-webkit-date-and-time-value{min-height:1.5em;text-align:left}
+.production-actions label{display:block;width:100%;max-width:100%}
 </style>

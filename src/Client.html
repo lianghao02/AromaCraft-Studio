@@ -333,7 +333,7 @@
     const display=typeof AromaCatalog!=='undefined'?AromaCatalog.materialInfo(m,p).name:m.name;
     const mixed=recipe.quantityUnit==='mixed',basis=mixed?AromaCore.nativeBasis(p):recipe.quantityUnit||'g';
     const friendly=e=>e.message.includes('密度')?'請用 '+AromaCore.nativeBasis(p)+' 填用量；混合重量與容量時，改選「分開計量」。':e.message.includes('滴數')?'請填這瓶精油每 1 mL 的滴數，或改用 mL。':e.message;
-    openEditor(display+'用量',input('本次使用量','editQuantity',i.unit?i.quantity:i.grams,'number','min="0" step="any" inputmode="decimal"')+'<label>單位<select id="editUnit">'+AromaCore.availableUnits(p,m.category).map(u=>'<option>'+u+'</option>').join('')+'</select></label><input id="editPrice" type="hidden"><div id="dropOptions">'+input('這瓶精油每 1 mL 約幾滴','editDropsPerMl',i.dropsPerMl??p.dropsPerMl??'','number','min="0.000001" step="any"')+'<small>依這瓶精油的實測或已知資料填寫；不確定可改用 mL；也可在原料設定填每 mL 幾滴。</small></div><p id="unitPreview" role="status"></p>',()=>{
+    openEditor(display+'用量',input('本次使用量','editQuantity',i.unit?i.quantity:i.grams,'number','min="0" step="any" inputmode="decimal"')+'<label>單位<select id="editUnit">'+AromaCore.availableUnits(p,m.category).map(u=>'<option>'+u+'</option>').join('')+'</select></label><input id="editPrice" type="hidden"><div id="dropOptions">'+input('這瓶精油每 1 mL 約幾滴','editDropsPerMl',i.dropsPerMl??p.dropsPerMl??'','number','min="0.000001" step="any" inputmode="decimal"')+'<small>依這瓶精油的實測或已知資料填寫；不確定可改用 mL；也可在原料設定填每 mL 幾滴。</small></div><p id="unitPreview" role="status"></p>',()=>{
       const factor=$('editDropsPerMl').value===''?null:AromaCore.number($('editDropsPerMl').value,'每 mL 滴數',Number.MIN_VALUE);
       const next={...recipe,items:recipe.items.map(x=>x.materialId===id?{...x,dropsPerMl:factor}:x)};
       recipe=AromaCore.editQuantity(next,id,$('editQuantity').value,$('editUnit').value,data.materials,data.prices);draft();renderRecipe();$('editor').close();
@@ -348,7 +348,7 @@
   function editMaterial(id) {
     const m=data.materials.find(m=>m.id===id)||{id:uid(),revision:0,name:'',category:'其他',note:'',active:true};
     const p=data.prices.filter(p=>p.materialId===m.id).at(-1),requestId=uid();
-    openEditor(id?'原料與價格':'新增原料',input('商品名稱','matName',m.name,'text','required maxlength="100"')+'<label>原料類別<select id="matCategory">'+['精油','皂基','蜂蠟','基底油','其他'].map(c=>'<option '+(c===m.category?'selected':'')+'>'+c+'</option>').join('')+'</select></label><div class="fields">'+input('每包／每瓶數量','amount',p?.amount??'','number','required min="0.000001" step="any"')+'<label>單位<select id="priceUnit"><option>mL</option><option>L</option><option>g</option><option>kg</option></select></label></div>'+input('每包／每瓶價格（NT$）','paid',p?.paid??'','number','required min="0" step="any"')+'<details class="advanced"><summary>精油滴數換算（選填）</summary>'+input('每 mL 幾滴','productDrops',p?.dropsPerMl??'','number','min="0.000001" step="any"')+'<small>請依這瓶資料設定，不套用所有精油通用滴數。</small></details>',()=>task(async()=>{
+    openEditor(id?'原料與價格':'新增原料',input('商品名稱','matName',m.name,'text','required maxlength="100"')+'<label>原料類別<select id="matCategory">'+['精油','皂基','蜂蠟','基底油','其他'].map(c=>'<option '+(c===m.category?'selected':'')+'>'+c+'</option>').join('')+'</select></label><div class="fields">'+input('每包／每瓶數量','amount',p?.amount??'','number','required min="0.000001" step="any" inputmode="decimal"')+'<label>單位<select id="priceUnit"><option>mL</option><option>L</option><option>g</option><option>kg</option></select></label></div>'+input('每包／每瓶價格（NT$）','paid',p?.paid??'','number','required min="0" step="any"')+'<details class="advanced"><summary>精油滴數換算（選填）</summary>'+input('每 mL 幾滴','productDrops',p?.dropsPerMl??'','number','min="0.000001" step="any" inputmode="decimal"')+'<small>請依這瓶資料設定，不套用所有精油通用滴數。</small></details>',()=>task(async()=>{
       await rpc('saveProduct',{requestId,id:m.id,revision:m.revision,name:$('matName').value,category:$('matCategory').value,note:m.note,active:m.active!==false&&m.active!=='FALSE',amount:$('amount').value,unit:$('priceUnit').value,paid:$('paid').value,dropsPerMl:$('productDrops').value||null,density:p?.density??null,gramsPerUnit:p?.gramsPerUnit??null});
       $('editor').close();await refresh();const selected=recipe.items.find(i=>i.materialId===m.id);if(selected){selected.priceId=data.prices.filter(p=>p.materialId===m.id).at(-1).id;draft();renderRecipe();}notice('商品與價格已儲存，新加入的原料採用此價格。');
     }));
@@ -600,6 +600,12 @@
         notice('已清空目前配方原料。可重新挑選或載入範本。');
       }
     };
+  }
+  // Google 部署使用試算表，不顯示僅供獨立網站使用的 Firebase 登入面板。
+  if(!window.AROMA_LOCAL&&!window.AROMA_DEMO){
+    if($('cloudSyncPanel'))$('cloudSyncPanel').hidden=true;
+    if($('syncStatusText'))$('syncStatusText').textContent='Google 試算表';
+    if($('storageDescription'))$('storageDescription').textContent='本機草稿保存在此瀏覽器；此版本的正式資料保存於 Google 試算表。';
   }
   switchManage('manageBasics');
   task(()=>refresh());
