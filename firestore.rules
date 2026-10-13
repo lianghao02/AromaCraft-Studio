@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 授權家庭成員白名單（限定您與太太的 Email）
+    function isFamilyMember() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() in ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
+    }
+
+    // 預設拒絕所有根目錄未授權存取
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 家庭專屬資料空間：/families/{familyId}/{collectionName}/{docId}
+    match /families/{familyId} {
+      allow read: if isFamilyMember();
+      allow write: if false; // 禁止覆寫家庭根設定
+
+      // 1. 原料資料 (materials)
+      match /materials/{materialId} {
+        allow read: if isFamilyMember();
+        allow create, update: if isFamilyMember() &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 100 &&
+          request.resource.data.category in ['精油', '皂基', '蜂蠟', '基底油', '其他'] &&
+          request.resource.data.active is bool;
+        allow delete: if isFamilyMember();
+      }
+
+      // 2. 原料價格批次 (prices)
+      match /prices/{priceId} {
+        allow read: if isFamilyMember();
+        allow create: if isFamilyMember() &&
+          request.resource.data.materialId is string &&
+          request.resource.data.paid is number &&
+          request.resource.data.paid >= 0 &&
+          request.resource.data.amount is number &&
+          request.resource.data.amount > 0;
+        // 價格批次為歷史紀錄，建立後禁止隨意修改關鍵金額
+        allow update: if isFamilyMember() &&
+          request.resource.data.materialId == resource.data.materialId &&
+          request.resource.data.paid == resource.data.paid &&
+          request.resource.data.amount == resource.data.amount;
+        allow delete: if isFamilyMember();
+      }
+
+      // 3. 配方資料 (recipes)
+      match /recipes/{recipeId} {
+        allow read: if isFamilyMember();
+        allow create: if isFamilyMember() &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 100 &&
+          request.resource.data.type in ['按摩油', '無水精油膏', '融製精油皂', '日常清潔液', '水垢清潔'] &&
+          request.resource.data.version is int &&
+          request.resource.data.version >= 0;
+        // 更新時不得竄改已存歷史快照 (snapshotJson)
+        allow update: if isFamilyMember() &&
+          (resource.data.snapshotJson == null || request.resource.data.snapshotJson == resource.data.snapshotJson);
+        allow delete: if isFamilyMember();
+      }
+
+      // 4. 配方明細 (recipeDetails)
+      match /recipeDetails/{detailId} {
+        allow read: if isFamilyMember();
+        allow create, update, delete: if isFamilyMember();
+      }
+
+      // 5. 製作紀錄 (logs)
+      match /logs/{logId} {
+        allow read: if isFamilyMember();
+        // 製作紀錄為永久歷史存證，只允許新增，建立後不可竄改快照
+        allow create: if isFamilyMember() &&
+          request.resource.data.recipeId is string &&
+          request.resource.data.units is int &&
+          request.resource.data.units >= 1;
+        allow update: if false; // 紀錄鎖定不允許修改
+        allow delete: if isFamilyMember();
+      }
+
+      // 6. 包材與成本預設 (packagingDefaults)
+      match /packagingDefaults/{configId} {
+        allow read: if isFamilyMember();
+        allow create, update: if isFamilyMember() &&
+          request.resource.data.packaging is number &&
+          request.resource.data.packaging >= 0;
+        allow delete: if false;
+      }
+
+      // 7. 安全規則 (safetyRules)
+      match /safetyRules/{ruleId} {
+        allow read: if isFamilyMember();
+        allow create, update, delete: if isFamilyMember();
+      }
+
+      // 8. 系統設定 (settings)
+      match /settings/{settingId} {
+        allow read: if isFamilyMember();
+        allow write: if isFamilyMember();
+      }
+    }
+  }
+}

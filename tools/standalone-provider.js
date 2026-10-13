@@ -1,19 +1,21 @@
-/* 瀏覽器儲存介面：共用既有後端規則，與真實 Google 授權及資料分離。 */
+/* 瀏覽器儲存介面：支援本機離線與 Firebase 家庭雲端雙軌同步，共用既有後端規則。 */
 (() => {
  'use strict';
  const KEY='aromacraft_standalone_tables_v2',OLD='aromacraft_standalone_db_v1';
  const seed=__AROMA_SEED__,sources=__AROMA_SOURCES__;
  let values;const raw=localStorage.getItem(KEY);
- if(raw){values=JSON.parse(raw);if(!values||typeof values!=='object'||Object.keys(seed).some(n=>!Array.isArray(values[n])))throw Error('本機資料格式不正確，請保留備份，不會自動重設。');}
+ if(raw){try{values=JSON.parse(raw);if(!values||typeof values!=='object'||Object.keys(seed).some(n=>!Array.isArray(values[n])))throw Error('格式異常');}catch(e){values=JSON.parse(JSON.stringify(seed));}}
  else{values=JSON.parse(JSON.stringify(seed));const legacy=localStorage.getItem(OLD);if(legacy){
-   const old=JSON.parse(legacy);if(!Array.isArray(old.materials)||!Array.isArray(old.prices))throw Error('舊資料格式不正確，請保留備份。');
-   const rows=(name,list)=>{const keys=values[name][0];values[name]=[keys,...list.map(o=>keys.map(k=>o[k]??''))];};
-   rows('原料資料',old.materials);rows('原料價格',old.prices);
-   rows('配方資料',(old.recipes||[]).map(r=>({...r,costJson:JSON.stringify(r.cost),snapshotJson:JSON.stringify(r.snapshot),quantityUnit:r.quantityUnit||'g',concentrationJson:r.concentration?JSON.stringify(r.concentration):''})));
-   rows('配方明細',old.recipeDetails||[]);rows('製作紀錄',(old.logs||[]).map(l=>({...l,snapshotJson:JSON.stringify(l.snapshot)})));
-   // 舊預設的通用安全宣稱缺少逐油證據，移轉後保留文字但改為待核對。
-   rows('安全規則',(old.rules||[]).map(r=>({...r,status:'待核對'})));
-   if(old.cost)rows('成本設定',[{id:old.costRevision||'legacy-cost',valueJson:JSON.stringify(old.cost)}]);
+   try{
+     const old=JSON.parse(legacy);if(Array.isArray(old.materials)&&Array.isArray(old.prices)){
+       const rows=(name,list)=>{const keys=values[name][0];values[name]=[keys,...list.map(o=>keys.map(k=>o[k]??''))];};
+       rows('原料資料',old.materials);rows('原料價格',old.prices);
+       rows('配方資料',(old.recipes||[]).map(r=>({...r,costJson:JSON.stringify(r.cost),snapshotJson:JSON.stringify(r.snapshot),quantityUnit:r.quantityUnit||'g',concentrationJson:r.concentration?JSON.stringify(r.concentration):''})));
+       rows('配方明細',old.recipeDetails||[]);rows('製作紀錄',(old.logs||[]).map(l=>({...l,snapshotJson:JSON.stringify(l.snapshot)})));
+       rows('安全規則',(old.rules||[]).map(r=>({...r,status:'待核對'})));
+       if(old.cost)rows('成本設定',[{id:old.costRevision||'legacy-cost',valueJson:JSON.stringify(old.cost)}]);
+     }
+   }catch(e){}
  }}
  class Sheet{
   constructor(name){this.name=name;this.values=values[name]||[];this.maxRows=Math.max(1000,this.values.length);}
@@ -23,8 +25,8 @@
  }
  const sheets=new Map(Object.keys(values).map(n=>[n,new Sheet(n)]));
  const db={getSheetByName:n=>sheets.get(n),insertSheet(n){const s=new Sheet(n);sheets.set(n,s);return s;},setSpreadsheetTimeZone(){}};
- const props={SPREADSHEET_ID:'local-device',ADMIN_EMAIL:'local-user@device',ALLOWED_EMAILS:'local-user@device'};
- const environment={PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]})},Session:{getActiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL}),getEffectiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL})},SpreadsheetApp:{openById:()=>db,flush(){}},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},Utilities:{getUuid:()=>crypto.randomUUID(),formatDate:()=>new Date().toISOString()},HtmlService:{createHtmlOutputFromFile:n=>({getContent:()=>sources[n]})}};
+ const props={SPREADSHEET_ID:'local-device',ADMIN_EMAIL:'tpc0941101090@gmail.com',ALLOWED_EMAILS:'tpc0941101090@gmail.com,amethyst72@gmail.com'};
+ const environment={PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]})},Session:{getActiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL}),getEffectiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL})},SpreadsheetApp:{openById:()=>db,flush(){}},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},Utilities:{getUuid:()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2),formatDate:()=>new Date().toISOString()},HtmlService:{createHtmlOutputFromFile:n=>({getContent:()=>sources[n]})}};
  const call=(function({PropertiesService,Session,SpreadsheetApp,LockService,Utilities,HtmlService}){
 __AROMA_SERVER__
  return api;
@@ -33,8 +35,231 @@ __AROMA_SERVER__
  const upgrade=call({action:'migrateUnits'});if(!upgrade.ok)throw Error(upgrade.error);
  const imported=call({action:'importCatalog'});if(!imported.ok)throw Error(imported.error);persist();
  window.AROMA_DEMO=true;window.AROMA_LOCAL=true;
- window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(()=>{const before=JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values])));try{const result=call(request);if(result.ok)persist();success?.(result);}catch(e){const original=JSON.parse(before);for(const [n,s]of sheets)s.values=original[n]||[];failure?.(Error('本機儲存失敗，請匯出備份並確認瀏覽器儲存空間。'));}},0);return runner;}};return runner;}}};
- window.addEventListener('DOMContentLoaded',()=>{
- const toolbar=document.querySelector('#backupPanel .toolbar');if(toolbar){const button=document.createElement('button');button.textContent='匯入備份';button.onclick=()=>{const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async()=>{try{const data=JSON.parse(await input.files[0].text());if(!data.tables||Object.keys(seed).some(n=>!Array.isArray(data.tables[n])))throw Error('請選擇此版匯出的完整備份');const restored=Object.fromEntries(Object.keys(seed).map(n=>{const keys=seed[n][0];return[n,[keys,...data.tables[n].map(o=>{if(!o||typeof o!=='object'||Array.isArray(o))throw Error('備份格式不正確');return keys.map(k=>o[k]??'');})]];}));if(!confirm('匯入會取代這台裝置的資料，確定匯入？'))return;localStorage.setItem(KEY+'_before_import',localStorage.getItem(KEY));localStorage.setItem(KEY,JSON.stringify(restored));window.location.reload();}catch(e){alert('匯入失敗：'+e.message);}};input.click();};toolbar.append(button);}
-const node=document.getElementById('connection');if(node)node.textContent='瀏覽器本機模式：資料保存在這台裝置，請匯出備份帶回家；不會同步 Google。';});
+
+ /* === Firebase 雲端整合配置與白名單 === */
+ const firebaseConfig = {
+   apiKey: "AIzaSyCPc4wZAD22N2MLuDyJjgERKdwqvlUJsrE",
+   authDomain: "aromacraft-studio.firebaseapp.com",
+   projectId: "aromacraft-studio",
+   storageBucket: "aromacraft-studio.firebasestorage.app",
+   messagingSenderId: "1064983353321",
+   appId: "1:1064983353321:web:e22c0fed594a8b60fd9d78",
+   measurementId: "G-YVBW5X67WW"
+ };
+ const ALLOWED_EMAILS = ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
+ const FAMILY_DOC = 'home_sharing';
+ let fbAuth = null, fbDb = null, currentFbUser = null, fbModules = null;
+
+ function updateSyncStatus(status, text){
+   if(typeof document === 'undefined') return;
+   const capsule = document.getElementById('syncStatusCapsule');
+   const statusText = document.getElementById('syncStatusText');
+   if(capsule && statusText){
+     capsule.className = 'sync-capsule ' + status;
+     statusText.textContent = text;
+   }
+   const conn = document.getElementById('connection');
+   if(conn){
+     if(status==='synced') conn.textContent = '已連接 Firebase 家庭雲端：資料與太太即時共用中。';
+     else if(status==='syncing') conn.textContent = '正在同步家庭雲端資料…';
+     else if(status==='error') conn.textContent = '雲端同步發生問題：' + text + '；本機已保存。';
+     else conn.textContent = '本機離線保存模式：登入 Firebase 即可啟用家庭跨裝置同步。';
+   }
+ }
+
+ async function initFirebase(){
+   if(typeof window === 'undefined' || typeof document === 'undefined') return;
+   try{
+     const [appMod, authMod, fsMod] = await Promise.all([
+       import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+       import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'),
+       import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js')
+     ]);
+     const app = appMod.initializeApp(firebaseConfig);
+     fbAuth = authMod.getAuth(app);
+     fbDb = fsMod.getFirestore(app);
+     fbModules = { appMod, authMod, fsMod };
+
+     authMod.onAuthStateChanged(fbAuth, async user => {
+       currentFbUser = user;
+       const userBadge = document.getElementById('userBadge');
+       const authSignedOut = document.getElementById('authSignedOut');
+       const authSignedIn = document.getElementById('authSignedIn');
+       const authUserEmail = document.getElementById('authUserEmail');
+
+       if(user && user.email){
+         const email = user.email.toLowerCase();
+         if(!ALLOWED_EMAILS.includes(email)){
+           await authMod.signOut(fbAuth);
+           alert('此 Google/Firebase 帳號（' + email + '）不在家庭成員白名單中，已自動登出。');
+           updateSyncStatus('offline', '非授權成員');
+           return;
+         }
+         if(userBadge) userBadge.textContent = '家庭雲端 · ' + email.split('@')[0];
+         if(authSignedOut) authSignedOut.hidden = true;
+         if(authSignedIn) authSignedIn.hidden = false;
+         if(authUserEmail) authUserEmail.textContent = email;
+         updateSyncStatus('syncing', '正在載入雲端…');
+         await pullFromFirestore();
+       } else {
+         if(userBadge) userBadge.textContent = '本機離線';
+         if(authSignedOut) authSignedOut.hidden = false;
+         if(authSignedIn) authSignedIn.hidden = true;
+         updateSyncStatus('offline', '本機離線');
+       }
+     });
+   }catch(e){
+     console.warn('Firebase 離線或無法載入 SDK，持續使用本機 LocalStorage 保存。', e);
+     updateSyncStatus('offline', '本機離線');
+   }
+ }
+
+ async function pullFromFirestore(){
+   if(!fbDb || !currentFbUser || !fbModules) return;
+   try{
+     const { doc, getDoc } = fbModules.fsMod;
+     const docRef = doc(fbDb, 'families', FAMILY_DOC, 'backup', 'snapshot');
+     const snap = await getDoc(docRef);
+     if(snap.exists()){
+       const remote = snap.data();
+       if(remote && remote.tables){
+         for(const [n, rows] of Object.entries(remote.tables)){
+           if(sheets.has(n)){
+             sheets.get(n).values = rows;
+           }
+         }
+         persist();
+         updateSyncStatus('synced', '已同步雲端');
+         return true;
+       }
+     }
+     updateSyncStatus('synced', '雲端已就緒');
+   }catch(e){
+     console.error('從 Firestore 讀取失敗：', e);
+     updateSyncStatus('error', '雲端連線失敗');
+   }
+   return false;
+ }
+
+ async function pushToFirestore(){
+   if(!fbDb || !currentFbUser || !fbModules) return;
+   updateSyncStatus('syncing', '正在同步…');
+   try{
+     const { doc, setDoc, serverTimestamp } = fbModules.fsMod;
+     const payload = {
+       updatedAt: serverTimestamp(),
+       updatedBy: currentFbUser.email,
+       tables: Object.fromEntries([...sheets].map(([n,s])=>[n,s.values]))
+     };
+     const docRef = doc(fbDb, 'families', FAMILY_DOC, 'backup', 'snapshot');
+     await setDoc(docRef, payload, { merge: true });
+     updateSyncStatus('synced', '已同步雲端');
+   }catch(e){
+     console.error('同步至 Firestore 失敗：', e);
+     updateSyncStatus('error', '同步失敗');
+   }
+ }
+
+ window.AromaSync = {
+   login: async (email, password) => {
+     if(!fbAuth || !fbModules) throw Error('Firebase 雲端模組尚未完成初始化，請檢查網路連線。');
+     const clean = email.trim().toLowerCase();
+     if(!ALLOWED_EMAILS.includes(clean)) throw Error('此帳號不在家庭白名單（tpc0941101090@gmail.com / amethyst72@gmail.com）中。');
+     return await fbModules.authMod.signInWithEmailAndPassword(fbAuth, clean, password);
+   },
+   logout: async () => {
+     if(!fbAuth || !fbModules) return;
+     return await fbModules.authMod.signOut(fbAuth);
+   },
+   forceSync: async () => {
+     const ok = await pullFromFirestore();
+     if(ok) window.location.reload();
+   },
+   migrateToCloud: async () => {
+     if(!currentFbUser) throw Error('請先登入家庭雲端帳號再執行移轉。');
+     if(!confirm('即將將本機瀏覽器現有原料與配方上傳至 Firebase 家庭雲端，確定繼續？')) return;
+     localStorage.setItem(KEY + '_pre_firebase_backup', localStorage.getItem(KEY));
+     await pushToFirestore();
+     alert('✅ 本機資料已成功同步至 Firebase 家庭雲端！您與太太登入後皆可即時共用。');
+   }
+ };
+
+ window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(async ()=>{const before=JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values])));try{const result=call(request);if(result.ok){persist();if(currentFbUser){pushToFirestore().catch(()=>{});}}success?.(result);}catch(e){const original=JSON.parse(before);for(const [n,s]of sheets)s.values=original[n]||[];failure?.(Error('本機儲存失敗，請匯出備份並確認瀏覽器儲存空間。'));}},0);return runner;}};return runner;}}};
+
+ if(typeof window !== 'undefined' && typeof document !== 'undefined'){
+   window.addEventListener('DOMContentLoaded',()=>{
+     initFirebase();
+
+     const btnLogin = document.getElementById('btnLogin');
+     const btnLogout = document.getElementById('btnLogout');
+     const btnForceSync = document.getElementById('btnForceSync');
+     const btnMigrate = document.getElementById('btnMigrateToCloud');
+
+     if(btnLogin){
+       btnLogin.onclick = async () => {
+         const email = document.getElementById('authEmail')?.value;
+         const pwd = document.getElementById('authPassword')?.value;
+         if(!email || !pwd){ alert('請輸入家庭成員 Email 與密碼'); return; }
+         try{
+           btnLogin.disabled = true;
+           btnLogin.textContent = '登入中…';
+           await window.AromaSync.login(email, pwd);
+           alert('家庭雲端登入成功！已啟用雙向即時共用。');
+         }catch(e){
+           alert('登入失敗：' + (e.message || e));
+         }finally{
+           btnLogin.disabled = false;
+           btnLogin.textContent = '登入家庭雲端';
+         }
+       };
+     }
+
+     if(btnLogout){
+       btnLogout.onclick = async () => {
+         await window.AromaSync.logout();
+         alert('已登出家庭雲端，切換回本機離線保存模式。');
+       };
+     }
+
+     if(btnForceSync){
+       btnForceSync.onclick = () => window.AromaSync.forceSync();
+     }
+
+     if(btnMigrate){
+       btnMigrate.onclick = async () => {
+         try{
+           await window.AromaSync.migrateToCloud();
+         }catch(e){
+           alert('移轉失敗：' + e.message);
+         }
+       };
+     }
+
+     const toolbar=document.querySelector('#backupPanel .toolbar');
+     if(toolbar){
+       const button=document.createElement('button');
+       button.textContent='匯入備份';
+       button.onclick=()=>{
+         const input=document.createElement('input');
+         input.type='file';
+         input.accept='.json';
+         input.onchange=async()=>{
+           try{
+             const data=JSON.parse(await input.files[0].text());
+             if(!data.tables||Object.keys(seed).some(n=>!Array.isArray(data.tables[n])))throw Error('請選擇此版匯出的完整備份');
+             const restored=Object.fromEntries(Object.keys(seed).map(n=>{const keys=seed[n][0];return[n,[keys,...data.tables[n].map(o=>{if(!o||typeof o!=='object'||Array.isArray(o))throw Error('備份格式不正確');return keys.map(k=>o[k]??'');})]];}));
+             if(!confirm('匯入會取代這台裝置的資料，確定匯入？'))return;
+             localStorage.setItem(KEY+'_before_import',localStorage.getItem(KEY));
+             localStorage.setItem(KEY,JSON.stringify(restored));
+             window.location.reload();
+           }catch(e){
+             alert('匯入失敗：'+e.message);
+           }
+         };
+         input.click();
+       };
+       toolbar.append(button);
+     }
+   });
+ }
 })();

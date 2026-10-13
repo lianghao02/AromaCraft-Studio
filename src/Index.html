@@ -3,9 +3,13 @@
 <head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><?!= include_('Styles'); ?></head>
 <body>
 <header>
-  <h1 class="brand">AC <span>AromaCraft <small>手作配方工作室</small></span></h1>
+  <h1 class="brand">AC <span>AromaCraft <small>家庭精油分享會 · 配方與成本</small></span></h1>
   <div class="header-actions">
-    <span class="badge">家庭共用</span>
+    <div id="syncStatusCapsule" class="sync-capsule offline" role="status" aria-live="polite" title="資料同步狀態">
+      <span class="sync-dot"></span>
+      <span id="syncStatusText">本機離線</span>
+    </div>
+    <span id="userBadge" class="badge">家庭共享</span>
     <button id="helpBtn" type="button" class="help-btn" aria-label="開啟使用說明手冊">❓ 說明</button>
   </div>
 </header>
@@ -90,7 +94,10 @@
         <h3 id="concentrationTitle">精油濃度</h3>
         <div class="fields"><label>本次成品總容量（mL）<input id="concentrationTotal" type="number" min="0.000001" step="any" placeholder="含基底與精油的完成容量"></label><label>目標濃度上限（%，可留空）<input id="concentrationLimit" type="number" min="0" max="100" step="any" placeholder="依已確認的配方填寫"></label></div>
         <strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p>
-        <small>以體積估算；濃度低不代表適合兒童，仍需核對年齡、成分與用途。皂或膏若只知道重量，可先留空。</small>
+        <div class="child-safety-notice" role="note">
+          <span class="safety-icon" aria-hidden="true">⚠️</span>
+          <span><strong>安全重要提醒</strong>：濃度低或未超過自訂目標上限，<strong>不代表適合兒童使用</strong>。各精油之皮膚刺激性與兒童/嬰幼兒/孕婦年齡禁忌各異，製作前請務必逐一核對專業來源與安全指引。</span>
+        </div>
       </section>
       <div class="basis-row"><label>計量方式<select id="quantityUnit"><option value="mixed">g／mL 分開</option><option value="g">全部以 g 合計</option><option value="mL">全部以 mL 合計</option></select></label><small class="muted">點原料卡修改用量</small></div>
       <div id="formulaBar" class="formula-bar" aria-label="配方成份分佈" title="配方成份比例分佈"></div>
@@ -158,8 +165,44 @@
       <details id="safetyPanel" class="fold"><summary><h2>安全資訊</h2><small>須核對用途與來源</small></summary><div class="fold-body"><div id="safety"></div><p class="muted">安全規則由管理員於「安全規則」工作表登錄用途、原料、限制與來源。未超出個別規則仍不代表完整安全審查。</p></div></details>
     </div>
     <div id="manageData" class="manage-group" hidden>
-      <section id="backupPanel" class="panel-card"><h2>資料與備份</h2><div class="fold-body"><div id="connection" role="status">正在讀取家庭資料…</div><div class="toolbar"><button id="refresh">重新讀取雲端</button><button id="export">匯出備份</button><button id="recover">恢復本機草稿</button></div></div></section>
-      <details id="setupPanel" class="fold"><summary><h2>首次安裝與資料更新</h2><small>平常製作不用操作；需要更新時才展開</small></summary><div class="fold-body"><p class="muted">管理員更新原始碼後，先升級單位欄位，再按需要載入官網精油。舊配方與已保存成本不會重算。</p><div class="toolbar"><button id="migrateUnits" type="button">升級單位欄位（保留舊資料）</button><button id="importCatalog" type="button">載入官網精油至原料庫</button></div></div></details>
+      <!-- Firebase 家庭雲端同步面板 -->
+      <section id="cloudSyncPanel" class="panel-card" style="border-top: 4px solid var(--green);">
+        <div class="section-head">
+          <h2>☁️ 家庭雲端即時同步</h2>
+          <span id="cloudConnectionBadge" class="badge">Firebase</span>
+        </div>
+        <div class="fold-body">
+          <p class="muted">登入 Firebase 帳號，與太太跨手機與不同電腦即時同步同一份精油配方與原料。未登入時以本機離線保存。</p>
+          <div id="authSignedOut" class="auth-block">
+            <div class="fields" style="grid-template-columns: 1fr 1fr; margin-bottom: 10px;">
+              <label>家庭成員 Email<input id="authEmail" type="email" placeholder="例如：tpc0941101090@gmail.com" autocomplete="username"></label>
+              <label>登入密碼<input id="authPassword" type="password" placeholder="請輸入密碼" autocomplete="current-password"></label>
+            </div>
+            <p class="muted" style="margin-top:0"><small>限定家庭白名單：<code>tpc0941101090@gmail.com</code>、<code>amethyst72@gmail.com</code></small></p>
+            <div class="toolbar">
+              <button id="btnLogin" type="button" class="primary">登入家庭雲端</button>
+            </div>
+          </div>
+          <div id="authSignedIn" class="auth-block" hidden>
+            <p>已連線家庭雲端帳號：<strong id="authUserEmail"></strong></p>
+            <div class="toolbar">
+              <button id="btnLogout" type="button">登出雲端</button>
+              <button id="btnForceSync" type="button" class="primary">立即自雲端重新整理</button>
+            </div>
+          </div>
+          <!-- 本機既有資料移轉精靈 -->
+          <div id="migrationBlock" class="migration-card" style="margin-top: 14px; padding: 14px; background: #fdfaf2; border: 1px dashed #d1b47c; border-radius: 12px;">
+            <strong style="display:block; margin-bottom:4px; font-size:14px;">📦 本機既有資料移轉至雲端</strong>
+            <p class="muted" style="margin:0 0 10px;">將這台裝置先前儲存的原料與配方安全上傳至 Firebase 家庭雲端。確認上傳成功前，<strong>絕不刪除本機舊資料</strong>。</p>
+            <div class="toolbar">
+              <button id="btnMigrateToCloud" type="button">匯入本機資料至家庭雲端</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="backupPanel" class="panel-card"><h2>資料與備份</h2><div class="fold-body"><div id="connection" role="status">正在讀取家庭資料…</div><div class="toolbar"><button id="refresh">重新讀取資料</button><button id="export">匯出備份</button><button id="recover">恢復本機草稿</button></div></div></section>
+      <details id="setupPanel" class="fold"><summary><h2>首次安裝與資料更新</h2><small>平常製作不用操作；需要更新時才展開</small></summary><div class="fold-body"><p class="muted">更新原始碼後，先升級單位欄位，再按需要載入官網精油。舊配方與已保存成本不會重算。</p><div class="toolbar"><button id="migrateUnits" type="button">升級單位欄位（保留舊資料）</button><button id="importCatalog" type="button">載入官網精油至原料庫</button></div></div></details>
       <div id="manageCatalogSlot"></div>
       <div id="demoToolsSlot" class="toolbar"></div>
     </div>
