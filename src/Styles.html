@@ -1,12 +1,19 @@
 <style>
 :root{
   color-scheme:light;
-  --ink:#1c3329;
-  --green:#2e5240;
-  --cream:#f8f7f2;
-  --line:#dce3d9;
-  --muted:#5c6e63;
-  --accent:#eee5ca;
+  --ink:#263746;
+  --green:#28594b;
+  --cream:#f5f4f0;
+  --line:#dce1e6;
+  --muted:#566474;
+  --accent:#f3e4bd;
+  --work-soft:#fff0e4;
+  --work-ink:#854822;
+  --materials-soft:#eee9f7;
+  --materials-ink:#614383;
+  --recipe-soft:#e8f2ec;
+  --cost-soft:#fff4d9;
+  --cost-ink:#76511b;
   --red:#a32e25;
   --radius:16px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
@@ -375,4 +382,181 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
   .formula-bar{display:none!important}
   .app-footer{display:block!important;margin-top:20px!important;padding-top:12px!important}
 }
+.yl-catalog{margin:16px 0;padding:12px;border:1px solid var(--line,#d8e0d5);border-radius:16px}.yl-catalog summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}.yl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.yl-card{min-width:0;border:1px solid #d8e0d5;border-radius:14px;overflow:hidden;background:#fafbf7}.yl-card.selected{border:2px solid #355d48}.yl-pick{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;height:100%;min-height:210px;border:0;border-radius:0;padding:12px;text-align:left;overflow-wrap:anywhere}.yl-pick strong{font-size:15px;line-height:1.5}.yl-card details{padding:0 12px 12px;font-size:12px}.yl-pick:disabled{opacity:.65}.yl-estimate{margin-top:20px;border-top:1px solid #d8e0d5;padding-top:12px}.yl-estimate label{display:block;margin-bottom:12px}.yl-estimate input{width:100%;min-height:44px}.yl-estimate strong{display:block;margin:12px 0}.yl-pick{height:auto}.yl-catalog .chips{flex-wrap:wrap}@media(min-width:900px){.yl-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#viewRecipe[data-mode="share"] .mode-switch{display:none}#viewRecipe[data-mode="share"] #costPanel{display:block!important}#viewRecipe[data-mode="share"] #materialPicker:not([data-manage="true"]) #newMaterial,#viewRecipe[data-mode="share"] #materialPicker:not([data-manage="true"]) .mat-gear{display:none}.work .badge{font-size:11px}.works .work{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+@media(max-width:767px){#recipePanel>.section-head{display:block}#recipePanel .recipe-head-actions{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;margin-top:10px}#recipePanel .recipe-head-actions button{width:auto;min-width:130px;min-height:44px;white-space:nowrap}#recipePanel #version{display:block;line-height:1.6;overflow-wrap:anywhere}#recipePanel #draftState{white-space:nowrap}}
+/* 分享會：桌機工作台與手機單欄使用不同配置。 */
+.basis-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0}
+.oil-kinds{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;flex-wrap:wrap}
+.mat-meta{overflow-wrap:normal;line-height:1.6}
+.basis-row label{display:flex;align-items:center;gap:8px;margin:0;font-size:13px}
+.basis-row select{width:84px;margin:0}
+.basis-row select{width:180px;max-width:100%}
+.brand{margin:0;line-height:1.25;color:var(--ink)}
+.fold>summary h2{display:inline;font-size:19px;line-height:1.4;margin:0;font-weight:700}
+.advanced>summary{font-size:16px;font-weight:600}
+.saved-row h3{font-size:18px;margin:0 0 8px}
+label{font-size:14px}
+.muted,.field-help,.mat-meta{font-size:13px;line-height:1.65}
+#unitPreview{font-size:16px;font-weight:600;color:var(--green);padding:12px;background:#edf3ed;border-radius:12px}
+#dropOptions{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+#materialPicker:not([data-manage="true"]) .inactive-setting,#materialPicker:not([data-manage="true"]) #ylCatalog{display:none}
+#viewRecipe[data-mode="share"] .quick-nav{margin:0}
+#workPanel>summary small{font-size:12px}
+#recipePanel .advanced{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+#recipePanel .advanced>.fold-body{padding:12px 0 0}
+.app-footer p{font-size:12px}
+@media(min-width:768px){
+ #viewRecipe[data-mode="share"]{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-areas:"guide guide" "quick quick" "work work" "picker picker" "workspace workspace";gap:16px;align-items:start}
+ #viewRecipe[data-mode="share"] #materialPicker{grid-area:picker;margin:0;min-width:0}
+ #viewRecipe[data-mode="share"] #costPanel{grid-area:cost;position:sticky;top:16px;align-self:start;margin:0;min-width:0}
+ #viewRecipe[data-mode="share"] #costPanel>.fold-body{display:block!important}
+ #viewRecipe[data-mode="share"] #costPanel>summary{pointer-events:none}
+ #viewRecipe[data-mode="share"] .panel-save-card{display:block;padding:14px}
+ #viewRecipe[data-mode="share"] .panel-save-actions{margin-top:14px;align-items:stretch}
+ #viewRecipe[data-mode="share"] .panel-save-actions .badge{align-self:flex-start}
+ #viewRecipe[data-mode="share"] #costPill{display:none}
+ #viewRecipe[data-mode="share"] .works{grid-template-columns:repeat(5,minmax(0,1fr))}
+ #viewRecipe[data-mode="share"] .work .badge:last-child{display:none}
+ #viewRecipe[data-mode="share"] #recipePanel>.section-head{display:block}
+ #viewRecipe[data-mode="share"] .recipe-head-actions{margin-top:8px;justify-content:flex-start;flex-wrap:wrap}
+}
+@media(min-width:1100px){
+ header,main{max-width:1680px}
+ #viewRecipe[data-mode="share"]{grid-template-columns:minmax(0,1fr) minmax(380px,1fr);grid-template-areas:"guide guide" "quick quick" "work work" "picker workspace";gap:18px}
+ #viewRecipe[data-mode="share"] #materialPicker{position:sticky;top:16px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+ #viewRecipe[data-mode="share"] #materialPicker>.fold-body{display:block!important}
+ #viewRecipe[data-mode="share"] #materialPicker>summary{pointer-events:none}
+ #viewRecipe[data-mode="share"] #materialPicker .picker-top-bar{display:none}
+ #viewRecipe[data-mode="share"] #materialPicker #materials{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ #viewRecipe[data-mode="share"] #materialPicker .fields{display:block}
+ #viewRecipe[data-mode="share"] #materialPicker .material-card{min-width:0;overflow-wrap:anywhere}
+ #viewRecipe[data-mode="share"] #costPanel{max-height:calc(100dvh - 32px);overflow-y:auto}
+ #viewRecipe[data-mode="share"] #addMaterials{display:none}
+ #viewRecipe[data-mode="share"] .quick-nav{justify-content:flex-start}
+ #viewRecipe[data-mode="share"] #workPanel{margin:0}
+ .app-footer{margin-top:24px}
+}
+@media(max-width:767px){
+ #workPanel:not([open]){margin:10px 0}
+ #recipePanel .fields{grid-template-columns:minmax(0,2fr) minmax(90px,1fr);gap:10px}
+ #recipePanel .advanced .fields{grid-template-columns:1fr}
+ #recipePanel .basis-row{flex-wrap:wrap}
+ #viewRecipe[data-mode="share"] #costPanel .panel-save-card{display:none}
+ #costPill{display:none}
+ main{padding-bottom:calc(145px + env(safe-area-inset-bottom))}
+ .app-footer{margin-bottom:12px}
+ .summary button{min-height:44px}
+}
+/* 設定頁只呈現目前用途；位置固定，不以長串折疊卡片導航。 */
+#viewManage{display:block}
+.manage-intro h2{font-size:24px;margin-bottom:6px}
+.manage-nav{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.manage-nav button{flex:1;min-width:100px;font-weight:600}
+.manage-nav button[aria-pressed="true"]{background:var(--green);color:white;border-color:var(--green)}
+#manageBasics{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+#manageMaterialSlot{min-width:0}
+#manageMaterialSlot #materialPicker{margin:0}
+#materialPicker[data-manage="true"]>.fold-body{display:block!important}
+#materialPicker[data-manage="true"]>summary{pointer-events:none;cursor:default}
+#materialPicker[data-manage="true"] .picker-top-bar,#materialPicker[data-manage="true"] .mat-card-status{display:none}
+#manageMaterialSlot #materials{grid-template-columns:repeat(2,minmax(0,1fr))}
+#packagingPanel{margin:0}
+#manageRecords>#logPanel,#manageRecords>#safetyPanel{margin:12px 0}
+#manageCatalogSlot #ylCatalog{background:white;margin:16px 0}
+#demoToolsSlot:empty{display:none}
+@media(min-width:1000px){
+ #manageBasics{grid-template-columns:minmax(0,2.2fr) minmax(280px,1fr)}
+ #manageMaterialSlot #materials{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+ #packagingPanel{position:sticky;top:16px}
+ #manageRecords,#manageData{max-width:960px}
+}
+@media(max-width:767px){.manage-nav{gap:6px}.manage-nav button{font-size:14px;padding:10px 6px}.manage-intro h2{font-size:22px}}
+/* 配方與成本合為一區，原料使用另一半寬度。 */
+.recipe-workspace{min-width:0}
+@media screen and (min-width:768px){
+ #viewRecipe[data-mode="share"] #recipeWorkspace{grid-area:workspace;border:1px solid var(--line);border-radius:var(--radius);background:white;overflow:hidden}
+ #viewRecipe[data-mode="share"] #recipeWorkspace #recipePanel{margin:0;border:0;border-radius:0}
+ #viewRecipe[data-mode="share"] #recipeWorkspace #costPanel{position:static;margin:0;border:0;border-top:1px solid var(--line);border-radius:0;max-height:none;overflow:visible}
+ #recipeWorkspace .panel-save-card{display:flex!important;align-items:center;justify-content:space-between;gap:16px}
+ #recipeWorkspace .panel-save-actions{margin-top:0!important;align-items:flex-end!important}
+ #recipeWorkspace .panel-save-actions button{min-width:130px}
+ #recipeWorkspace #items{max-height:38dvh;overflow-y:auto;overscroll-behavior:contain}
+}
+@media screen and (min-width:1100px){
+ #viewRecipe[data-mode="share"] #recipeWorkspace{position:sticky;top:16px;align-self:start}
+ #viewRecipe[data-mode="share"] #materialPicker .material-card{padding:12px;min-height:110px}
+ #viewRecipe[data-mode="share"] #materialPicker .mat-name{font-size:15px;line-height:1.5}
+}
+@media screen and (min-width:1440px){
+ #viewRecipe[data-mode="share"] #materialPicker #materials{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media print{#recipeWorkspace{border:0!important;overflow:visible!important;position:static!important}#recipeWorkspace #items{max-height:none!important;overflow:visible!important}}
+/* 手機依實際 DOM 順序：作品、原料、配方與成本。 */
+.mobile-picker-next{display:none}
+@media screen and (max-width:767px){
+ #viewRecipe[data-mode="share"] .mobile-picker-next{display:block;width:100%;margin-top:14px}
+ #materialPicker .picker-top-bar{flex-wrap:wrap;gap:8px}
+ #materialPicker .return-btn{width:100%;text-align:center}
+ #materialPicker #materialsMore{width:100%;margin-top:12px}
+ #materialPicker #materials{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #recipe-title{font-size:21px}
+}
+#materialPicker[data-manage="true"] .mobile-picker-next{display:none}
+/* 色彩對應操作階段，分類仍同時保留文字，避免只靠顏色。 */
+@media screen{
+ .brand{color:var(--green)}
+ .brand>span{color:var(--ink)}
+ .tabs{background:#e7ecea;border:1px solid #dae3df}
+ #workPanel{border-color:#ecd5c3}
+ #workPanel>summary{background:var(--work-soft);color:var(--work-ink);border-radius:15px 15px 0 0}
+ #workPanel:not([open])>summary{border-radius:15px}
+ #workPanel h2{color:var(--work-ink)}
+ .works .work{background:#fffaf5;border-color:#ead7c4}
+ .works .work .badge{background:#f7e4d3;color:#754021}
+ #materialPicker{border-color:#d9cce8}
+ #materialPicker>summary{background:var(--materials-soft);color:var(--materials-ink);border-radius:15px 15px 0 0}
+ #materialPicker:not([open])>summary{border-radius:15px}
+ #materialPicker h2{color:var(--materials-ink)}
+ #recipePanel>.section-head{background:var(--recipe-soft);margin:-16px -16px 16px;padding:18px 16px;border-radius:15px 15px 0 0;border-bottom:1px solid #cfe2d6}
+ #recipe-title{color:var(--green)}
+ #costPanel>summary{background:var(--cost-soft);color:var(--cost-ink)}
+ #costPanel h2{color:var(--cost-ink)}
+ #recipeWorkspace .panel-save-card{background:#fffaf0;border-color:#ead8ad}
+ #panelCost,.cost-total strong{color:#694714}
+ .summary{background:#fff7e5;border-color:#e9d6ac}
+ .summary #summaryCost{color:#694714}
+ .material-card{--card-accent:#75869d;--card-tint:#eef2f7;border-top:4px solid var(--card-accent)}
+ .material-card[data-oil-kind="單方"]{--card-accent:#56876a;--card-tint:#eaf3e9}
+ .material-card[data-oil-kind="複方"]{--card-accent:#9473b3;--card-tint:#f0e9f7}
+ .material-card[data-category="皂基"]{--card-accent:#c29043;--card-tint:#fbf0d9}
+ .material-card[data-category="蜂蠟"]{--card-accent:#bd7b53;--card-tint:#f9e9dd}
+ .material-card[data-category="基底油"]{--card-accent:#8b9550;--card-tint:#f0f2df}
+ .material-card .mat-card-header .badge{background:var(--card-tint);color:#35434f}
+ .material-card.in-recipe{background:#eaf4ee;box-shadow:inset 0 0 0 1.5px var(--green)}
+ .material-card:hover{background:var(--card-tint)}
+ .recipe-card{background:white;border-left:4px solid #6a957c}
+ .recipe-card[data-category="精油"]{border-left-color:#9473b3}
+ .recipe-card[data-category="皂基"]{border-left-color:#c29043}
+ .recipe-card[data-category="蜂蠟"]{border-left-color:#bd7b53}
+ .recipe-card[data-category="基底油"]{border-left-color:#8b9550}
+ #packagingPanel{border-top:4px solid #c29043;background:#fffcf4}
+ .manage-nav button:not([aria-pressed="true"]){background:#f5f0fa;color:var(--materials-ink)}
+ #unitPreview{background:var(--recipe-soft)}
+}
+/* 官網精油瓶縮圖固定占位，不改卡片點選區。 */
+.mat-picture{position:absolute;right:12px;top:12px;width:44px;height:54px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+.mat-picture::before{content:"🌿";font-size:22px}
+.mat-picture.has-image::before{display:none}
+.material-thumbnail{width:100%;height:100%;object-fit:contain;display:block}
+.material-card.has-thumbnail .mat-card-header{padding-right:52px}
+.material-card.has-thumbnail .mat-name{padding-right:50px}
+.material-card.has-thumbnail .mat-gear{position:absolute;right:8px;bottom:6px}
+#materialPicker[data-manage="true"] .material-card.has-thumbnail .mat-meta{padding-right:24px}
+@media(max-width:767px){
+ .mat-picture{right:10px;width:38px;height:50px}
+ .material-card.has-thumbnail .mat-card-header{padding-right:44px}
+ .material-card.has-thumbnail .mat-name{padding-right:42px}
+}
+.concentration-panel{padding:16px;margin:14px 0;background:#eef3fa;border:1px solid #ccd9e8;border-radius:14px}.concentration-panel h3{margin:0 0 12px;font-size:1.05rem}.concentration-panel strong{display:block;font-size:1.2rem;margin-top:12px}.concentration-panel p{margin:6px 0}.concentration-panel small{display:block;line-height:1.6}.concentration-panel[data-warning="true"]{background:#fff3df;border-color:#d6aa56}
 </style>

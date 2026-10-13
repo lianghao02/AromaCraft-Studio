@@ -28,7 +28,7 @@ test('配方版本不可覆寫、並行舊版本拒絕、重試不重複',()=>{
 });
 test('寫入失敗後重試不留下重複明細，未提交版本不曝光',()=>{
   const h=start(), r=ok(h,'saveRecipe',recipe());h.state.failWrite='配方資料';
-  const payload={...r,requestId:'retry-failure',items:[{...r.items[0],grams:200}]};
+  const payload={...r,requestId:'retry-failure',items:[{...r.items[0],quantity:200}]};
   assert.equal(h.call('saveRecipe',payload).ok,false);assert.equal(ok(h,'loadRecipe',{id:r.id}).version,1);
   assert.equal(ok(h,'saveRecipe',payload).version,2);
   const exported=ok(h,'export');assert.equal(exported.tables['配方明細'].filter(i=>i.recipeId===r.id && i.version===2).length,1);
@@ -72,4 +72,17 @@ test('表內空白列不造成編輯錯列，追加資料自動擴充列數',()=
   const h=start(),s=h.sheets.get('原料資料');s.values.splice(1,0,[]);const before=s.values[2][1];
   const wax=ok(h,'bootstrap').materials.find(m=>m.id==='demo-wax');ok(h,'saveMaterial',{...wax,name:'新蜂蠟'});assert.equal(s.values[2][1],before);assert.equal(s.values[4][1],'新蜂蠟');
   s.maxRows=s.values.length;ok(h,'saveMaterial',{id:'extra',revision:0,name:'新原料',category:'其他',active:true,note:''});assert.equal(s.maxRows,s.values.length);
+});
+
+test('分享會新增作品支援版本保存，未填配比不能誤存',()=>{
+ const h=start();
+ for(const type of ['按摩油','日常清潔液','水垢清潔']){
+  const r=recipe();r.type=type;r.requestId='share-'+type;r.notes='[範本待確認] 請太太核對用量';r.cost={packaging:2,minutes:0,hourly:0,other:0,loss:0,margin:0,sale:null};
+  const saved=ok(h,'saveRecipe',r);assert.equal(saved.type,type);assert.equal(saved.snapshot.batch,saved.snapshot.material+saved.snapshot.packaging);
+  assert.equal(ok(h,'bootstrap').recipes.find(x=>x.id===saved.id).archived,false);
+  const v2=ok(h,'saveRecipe',{...saved,requestId:r.requestId+'-confirmed',notes:'[太太常用] 已核對用量'});
+  assert.equal(v2.version,2);assert.equal(ok(h,'bootstrap').recipes.find(x=>x.id===v2.id&&x.version===2).archived,false);
+  assert.equal(ok(h,'loadRecipe',{id:saved.id,version:1}).notes,r.notes);
+  assert.equal(h.call('saveRecipe',{...r,requestId:r.requestId+'-empty',items:[]}).ok,false);
+ }
 });

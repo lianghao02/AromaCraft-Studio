@@ -3,12 +3,12 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const {createHarness}=require('./gas-mock.cjs');
-const h=createHarness();h.setup();
+const h=createHarness();h.setup();h.call('importCatalog');
 const root=path.join(__dirname,'../src');
 const bridge=`<script>
 window.AROMA_DEMO=true;
 let failNext=false;
-const demoButton=document.createElement('button');demoButton.textContent='模擬下一次配方儲存失敗';demoButton.id='demoFailure';demoButton.onclick=()=>{failNext=true;demoButton.textContent='已排定模擬失敗，請儲存配方';};document.querySelector('.toolbar').append(demoButton);
+const demoButton=document.createElement('button');demoButton.textContent='模擬下一次配方儲存失敗';demoButton.id='demoFailure';demoButton.onclick=()=>{failNext=true;demoButton.textContent='已排定模擬失敗，請儲存配方';};document.querySelector('#demoToolsSlot').append(demoButton);
 window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){if(failNext && request.action==='saveRecipe'){failNext=false;demoButton.textContent='模擬下一次配方儲存失敗';success({ok:false,error:'示範：模擬寫入失敗，配方內容已保留，可再次儲存。'});return;}fetch('/api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)}).then(r=>r.json()).then(r=>success(r)).catch(e=>failure(e));}};return runner;}}};
 </script>`;
 function renderPreview(){

@@ -9,6 +9,23 @@ const SCHEMA_ = {
   '成本設定': ['id', 'valueJson', 'createdAt', 'createdBy'],
   '系統設定': ['key', 'value']
 };
+const UNIT_COLUMNS_ = {'原料價格':['dropsPerMl'],'配方資料':['quantityUnit','targetQuantity','concentrationJson'],'配方明細':['quantity','unit','dropsPerMl'],'安全規則':['basis']};
+function unitHeader_(sheet,count){const width=typeof sheet.getMaxColumns==='function'?Math.min(count,sheet.getMaxColumns()):count;return [...sheet.getRange(1,1,1,width).getValues()[0],...Array(count-width).fill('')];}
+function columns_(name){const expected=[...SCHEMA_[name],...(UNIT_COLUMNS_[name]||[])];const header=unitHeader_(table_(name),expected.length);return expected.filter((key,i)=>header[i]===key);}
+function migrateUnitSchema_(){
+  // 先驗證全部工作表，再只追加表頭；不搬移、重算或覆寫舊資料。
+  Object.keys(UNIT_COLUMNS_).forEach(name=>{const sheet=table_(name),keys=[...SCHEMA_[name],...UNIT_COLUMNS_[name]],header=unitHeader_(sheet,keys.length);header.forEach((v,i)=>{if(v!==''&&v!==keys[i])throw Error('SCHEMA：'+name+'新增欄位位置已有其他資料，停止遷移');});const extraWidth=typeof sheet.getMaxColumns==='function'?Math.max(0,Math.min(UNIT_COLUMNS_[name].length,sheet.getMaxColumns()-SCHEMA_[name].length)):UNIT_COLUMNS_[name].length;if(sheet.getLastRow()>1&&extraWidth){const body=sheet.getRange(2,SCHEMA_[name].length+1,sheet.getLastRow()-1,extraWidth).getValues();UNIT_COLUMNS_[name].slice(0,extraWidth).forEach((key,i)=>{if(header[SCHEMA_[name].length+i]===''&&body.some(r=>r[i]!==''))throw Error('SCHEMA：'+name+'空白新增表頭下已有資料，停止遷移');});}});
+  Object.keys(UNIT_COLUMNS_).forEach(name=>{const sheet=table_(name),keys=[...SCHEMA_[name],...UNIT_COLUMNS_[name]];if(typeof sheet.getMaxColumns==='function'&&sheet.getMaxColumns()<keys.length)sheet.insertColumnsAfter(sheet.getMaxColumns(),keys.length-sheet.getMaxColumns());sheet.getRange(1,SCHEMA_[name].length+1,1,UNIT_COLUMNS_[name].length).setValues([UNIT_COLUMNS_[name]]);});return {version:2};
+}
+function migrateUnitSchema(){identity_(true);return lock_(migrateUnitSchema_);}
+function importCatalog_(email){
+  if(!columns_('配方明細').includes('unit'))throw Error('SCHEMA：請先在設定頁升級單位欄位');
+  const all=JSON.parse(HtmlService.createHtmlOutputFromFile('CatalogData').getContent());const materials=rows_('原料資料'),prices=rows_('原料價格');let added=0;const newMaterials=[],newPrices=[];
+  for(const r of all){if(!(r.categories||[]).some(c=>['單方精油','配方精油'].includes(c))||(r.categories||[]).includes('精油套裝')||!(r.ml>0)||r.wholesale===null)continue;
+    const id='yl-'+r.id,pid=id+'-catalog-'+Date.parse(r.at);if(!materials.some(m=>m.id===id)){const m={id,name:r.name,category:'精油',active:true,note:'官網批發價估算；含稅未含運費。'+r.url,revision:1};newMaterials.push(m);materials.push(m);}
+    if(!prices.some(p=>p.id===pid)){const p=core_().price({id:pid,materialId:id,label:'官網批發估算／'+r.at,amount:r.ml,unit:'mL',paid:r.wholesale,density:'',dropsPerMl:'',gramsPerUnit:'',createdAt:stamp_(),createdBy:email},'mL');newPrices.push(p);prices.push(p);added++;}
+  }append_('原料資料',newMaterials);append_('原料價格',newPrices);return {added};
+}
 function core_() {
   // 只評估本專案固定檔案，絕不評估使用者輸入。
   const source = HtmlService.createHtmlOutputFromFile('Core').getContent().replace(/^\s*<script>/, '').replace(/<\/script>\s*$/, '');
@@ -38,7 +55,7 @@ function table_(name) {
   return sheet;
 }
 function rows_(name) {
-  const sheet = table_(name), keys = SCHEMA_[name];
+  const sheet = table_(name), keys = columns_(name);
   if (sheet.getLastRow() < 2) return [];
   return sheet.getRange(2, 1, sheet.getLastRow() - 1, keys.length).getValues().map((r, index) => {
     const object = Object.fromEntries(keys.map((k, i) => [k, r[i] instanceof Date ? r[i].toISOString() : r[i]]));
@@ -53,10 +70,11 @@ function cell_(v) {
 }
 function append_(name, objects) {
   if (!objects.length) return;
-  const sheet = table_(name);
+  const sheet = table_(name),keys=columns_(name);
+  for(const key of UNIT_COLUMNS_[name]||[])if(!keys.includes(key)&&objects.some(o=>o[key]!==undefined&&o[key]!==null&&o[key]!==''))throw Error('SCHEMA：請先在設定頁升級單位欄位，不會覆寫舊資料');
   const required = sheet.getLastRow() + objects.length;
   if (required > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), required - sheet.getMaxRows());
-  sheet.getRange(sheet.getLastRow() + 1, 1, objects.length, SCHEMA_[name].length).setValues(objects.map(o => SCHEMA_[name].map(k => cell_(o[k]))));
+  sheet.getRange(sheet.getLastRow() + 1, 1, objects.length, keys.length).setValues(objects.map(o => keys.map(k => cell_(o[k]))));
 }
 function lock_(fn) {
   const lock = LockService.getScriptLock();
@@ -113,7 +131,7 @@ function doGet() {
   }
 }
 function include_(name) {
-  if (!['Core', 'Styles', 'Client'].includes(name)) throw Error('不支援的頁面');
+  if (!['Core', 'Styles', 'Client','Catalog'].includes(name)) throw Error('不支援的頁面');
   return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 function recipes_() {
@@ -123,16 +141,19 @@ function loadRecipe_(id, version) {
   const all = recipes_().filter(r => r.id === id);
   const r = version ? all.find(r => r.version === Number(version)) : all.sort((a, b) => b.version - a.version)[0];
   if (!r) throw Error('NOT_FOUND：配方版本不存在。');
-  const items = rows_('配方明細').filter(i => i.recipeId === id && Number(i.version) === r.version).map(i => ({ materialId: i.materialId, priceId: i.priceId, grams: Number(i.grams) }));
-  return { id: r.id, version: r.version, name: r.name, type: r.type, units: r.units, notes: r.notes, baseId: r.baseId, cost: r.cost, items, snapshot: r.snapshot };
+  const items = rows_('配方明細').filter(i => i.recipeId === id && Number(i.version) === r.version).map(i => i.unit?({materialId:i.materialId,priceId:i.priceId,quantity:Number(i.quantity),unit:i.unit,...(i.dropsPerMl?{dropsPerMl:Number(i.dropsPerMl)}:{})}):({materialId:i.materialId,priceId:i.priceId,grams:Number(i.grams)}));
+  return { id: r.id, version: r.version, name: r.name, type: r.type, units: r.units, notes: r.notes, baseId: r.baseId, cost:r.cost,quantityUnit:r.quantityUnit||'g',targetQuantity:r.targetQuantity===''||r.targetQuantity===undefined?null:Number(r.targetQuantity),items,concentration:r.concentrationJson?JSON.parse(r.concentrationJson):null,snapshot:r.snapshot };
 }
 function bootstrap_() {
   const cost = rows_('成本設定');
-  return { materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
-    recipes: recipes_().map(r => ({ id: r.id, version: r.version, name: r.name, type: r.type, createdAt: r.createdAt, safety: r.snapshot.safety })),
+  const archived=archivedRecipes_();
+  return { unitSchema:columns_('配方明細').includes('dropsPerMl'),materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
+    recipes: recipes_().map(r => ({ id: r.id, version: r.version, name: r.name, type: r.type, archived:archived[r.id]===true,createdAt: r.createdAt, safety: r.snapshot.safety })),
     logs: rows_('製作紀錄').map(l => ({ ...l, snapshot: JSON.parse(l.snapshotJson) })),
     cost: cost.length ? JSON.parse(cost[cost.length - 1].valueJson) : defaults_(), costRevision: cost.length ? cost[cost.length - 1].id : '', serverTime: stamp_() };
 }
+function archivedRecipes_(){const out={};rows_('系統設定').filter(r=>r.key.startsWith('封存配方:')).forEach(r=>{out[r.key.slice(5)]=r.value==='true';});return out;}
+function archiveRecipe_(d){const id=core_().text(d.id,'配方識別碼',100),latest=recipes_().filter(r=>r.id===id).sort((a,b)=>b.version-a.version)[0];if(!latest)throw Error('配方不存在');if(latest.version!==Number(d.version))throw Error('CONFLICT：配方已有新版，請重新讀取後再移除');if(typeof d.archived!=='boolean')throw Error('移除狀態不正確');append_('系統設定',[{key:'封存配方:'+id,value:String(d.archived)}]);return {id,archived:d.archived};}
 function saveRecipe_(d, email) {
   const c = core_(), requestId = requestId_(d.requestId);
   const all = recipes_();
@@ -142,6 +163,7 @@ function saveRecipe_(d, email) {
     return loadRecipe_(already.id, already.version);
   }
   const id = d.id ? c.text(d.id, '配方識別碼', 100) : id_();
+  if(archivedRecipes_()[id])throw Error('此配方已移除，請先在配方庫恢復');
   const previous = all.filter(r => r.id === id).sort((a, b) => b.version - a.version)[0];
   if ((previous ? previous.version : 0) !== Number(d.version || 0)) throw Error('CONFLICT：此配方已有新版；請先複製本機草稿，或載入最新版後再編輯。');
   const version = previous ? previous.version + 1 : 1;
@@ -149,12 +171,21 @@ function saveRecipe_(d, email) {
   if (d.baseId && !d.items.some(i => i.materialId === d.baseId)) throw Error('補足原料不在配方內');
   const materials = rows_('原料資料'), prices = rows_('原料價格'), rules = rows_('安全規則');
   const snapshot = c.calculate({ ...d, name }, materials, prices, rules);
+  c.validateConcentration(d,materials,prices);
   snapshot.calculatedAt = stamp_();
   const row = { id, version, name, type: d.type, units: snapshot.units, notes, baseId: d.baseId || '', costJson: safeJson_(snapshot.cost), snapshotJson: safeJson_(snapshot), requestId, createdAt: stamp_(), createdBy: email };
+  const unitSchema=columns_('配方明細').includes('unit');
+  if(!unitSchema&&(snapshot.quantityUnit!=='g'||snapshot.targetQuantity!==null||d.items.some(i=>i.unit)))throw Error('SCHEMA：請先在設定頁升級單位欄位');
+  if(unitSchema){row.quantityUnit=snapshot.quantityUnit;row.targetQuantity=snapshot.targetQuantity;}
+  if(d.concentration&&(d.concentration.totalMl!==''&&d.concentration.totalMl!=null||d.concentration.maxPercent!==''&&d.concentration.maxPercent!=null)){
+    if(!columns_('配方資料').includes('concentrationJson'))throw Error('SCHEMA：請先在設定頁升級濃度欄位');
+    row.concentrationJson=safeJson_({totalMl:snapshot.concentration.declaredMl,maxPercent:snapshot.concentration.maxPercent});
+  }
   // 清除僅限尚未提交且同版本的孤兒明細；已提交版本永不修改。
   const sheet = table_('配方明細'), pending = rows_('配方明細');
   for (let i = pending.length - 1; i >= 0; i--) if (pending[i].recipeId === id && Number(pending[i].version) === version) sheet.deleteRow(pending[i]._row);
-  append_('配方明細', snapshot.items.map(i => ({ recipeId: id, version, materialId: i.materialId, grams: i.grams, priceId: i.priceId })));
+  if(snapshot.items.some(i=>i.dropsPerMl!==null)&&!columns_('配方明細').includes('dropsPerMl'))throw Error('SCHEMA：請先升級製作滴數欄位');
+  append_('配方明細', snapshot.items.map(i => ({ recipeId:id,version,materialId:i.materialId,grams:i.grams,priceId:i.priceId,...(unitSchema?{quantity:i.quantity,unit:i.unit,dropsPerMl:i.dropsPerMl}:{}) })));
   SpreadsheetApp.flush();
   // 最後寫入配方標記；讀取端只顯示已提交的版本。
   append_('配方資料', [row]);
@@ -183,9 +214,19 @@ function savePrice_(d, email) {
   if (prior) { if (prior.createdBy !== email) throw Error('請求識別碼衝突'); return prior; }
   if (!rows_('原料資料').some(m => m.id === d.materialId)) throw Error('原料不存在');
   const p = c.price({ id: requestId, materialId: d.materialId, label: c.text(d.label, '批次名稱', 100), amount: d.amount,
-    unit: d.unit, paid: d.paid, density: d.density, gramsPerUnit: d.gramsPerUnit, createdAt: stamp_(), createdBy: email });
+    unit:d.unit,paid:d.paid,density:d.density,dropsPerMl:d.dropsPerMl,gramsPerUnit:d.gramsPerUnit,createdAt:stamp_(),createdBy:email },d.unit==='mL'?'mL':'g');
   append_('原料價格', [p]);
   return p;
+}
+function saveProduct_(d,email){
+  const c=core_();if(!['g','mL'].includes(d.unit))throw Error('容量單位請選 g 或 mL');
+  // 先檢查價格，再更新品名；價格紀錄僅在內部追加以保留舊快照。
+  c.price({amount:d.amount,paid:d.paid,unit:d.unit},d.unit);
+  const requestId=requestId_(d.requestId),prior=rows_('原料價格').find(p=>p.id===requestId);
+  if(prior){if(prior.createdBy!==email||prior.materialId!==d.id)throw Error('請求識別碼衝突');return {id:d.id};}
+  const m=saveMaterial_(d);
+  savePrice_({requestId,materialId:m.id,label:'目前設定價格',amount:d.amount,unit:d.unit,paid:d.paid},email);
+  return {id:m.id};
 }
 function saveLog_(d, email) {
   const c = core_(), requestId = requestId_(d.requestId);
@@ -197,7 +238,7 @@ function saveLog_(d, email) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date) || new Date(d.date + 'T00:00:00Z').toISOString().slice(0, 10) !== d.date) throw Error('製作日期無效');
   const s = JSON.parse(JSON.stringify(r.snapshot));
   // 成本以該版本價格與設定凍結；實際產量改變時，重新分攤包材及每件成本。
-  s.units = units; s.gramsPerUnit = s.total / units; s.packaging = s.cost.packaging * units;
+  s.units=units;s.quantityPerUnit=s.total===null?null:s.total/units;s.gramsPerUnit=(s.quantityUnit||'g')==='g'?s.total/units:null; s.packaging = s.cost.packaging * units;
   s.batch = s.material + s.lossCost + s.packaging + s.labor + s.other;
   s.perUnit = s.batch / units; s.suggested = s.perUnit / (1 - s.cost.margin / 100);
   s.grossMargin = !s.cost.sale ? null : (s.cost.sale - s.perUnit) / s.cost.sale * 100;
@@ -214,9 +255,13 @@ function api(request) {
     const value = lock_(() => {
       switch (request.action) {
         case 'bootstrap': return { ...bootstrap_(), email, admin: email === PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL').trim().toLowerCase() };
+        case 'migrateUnits': identity_(true);return migrateUnitSchema_();
+        case 'importCatalog': identity_(true);return importCatalog_(email);
         case 'loadRecipe': return loadRecipe_(d.id, d.version);
         case 'saveRecipe': return saveRecipe_(d, email);
+        case 'archiveRecipe': return archiveRecipe_(d);
         case 'saveMaterial': return saveMaterial_(d);
+        case 'saveProduct': return saveProduct_(d,email);
         case 'savePrice': return savePrice_(d, email);
         case 'saveLog': return saveLog_(d, email);
         case 'saveCost': {

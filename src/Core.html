@@ -1,8 +1,8 @@
 <script>
-/* 前後端共用的純計算核心；所有重量為 g，價格為新臺幣。 */
+/* 前後端共用純計算：統一 g／mL 或分開計量，價格為新臺幣。 */
 var AromaCore = (() => {
   'use strict';
-  const TYPES = ['融製精油皂', '無水精油膏'];
+  const TYPES = ['融製精油皂', '無水精油膏', '按摩油', '日常清潔液', '水垢清潔'];
   function number(v, label, min = 0, max = 1e12) {
     if (v === '' || v === null || v === undefined || typeof v === 'boolean') throw Error(label + '必須填入數字');
     const n = Number(v);
@@ -13,17 +13,90 @@ var AromaCore = (() => {
     if (typeof v !== 'string' || v.length > max || (required && !v.trim())) throw Error(label + '格式不正確');
     return v.trim();
   }
-  function price(p) {
-    const amount = number(p.amount, '採購數量', Number.MIN_VALUE);
-    const paid = number(p.paid, '採購總價');
-    const unit = text(p.unit, '採購單位', 20);
-    let grams;
-    if (unit === 'g') grams = amount;
-    else if (unit === 'kg') grams = amount * 1000;
-    else if (unit === 'mL') grams = amount * number(p.density, '該原料密度（g/mL）', Number.MIN_VALUE);
-    else grams = amount * number(p.gramsPerUnit, '每單位實際重量（g）', Number.MIN_VALUE);
-    if (!Number.isFinite(grams) || grams <= 0 || !Number.isFinite(paid / grams)) throw Error('採購換算結果無效，請檢查數量與單位重量');
-    return { ...p, amount, paid, unit, grams, perGram: paid / grams };
+  const BASIS=['g','mL'];
+  const empty=v=>v===''||v===null||v===undefined;
+  function metadata(p) {
+    return {density:empty(p.density)?null:number(p.density,'密度（g/mL）',Number.MIN_VALUE,1e6),dropsPerMl:empty(p.dropsPerMl)?null:number(p.dropsPerMl,'每 mL 滴數',Number.MIN_VALUE,1e6)};
+  }
+  function convert(value,from,to,p={},target=null,basis='g') {
+    if(!BASIS.includes(to)||!BASIS.includes(basis))throw Error('總量基準必須是 g 或 mL');
+    const n=number(value,'原料用量',0,1e9),m=metadata(p);let v=n,u=from;
+    if(u==='%'){if(empty(target))throw Error('請先設定固定總量，才能輸入百分比');if(n>100)throw Error('比例不可超過 100%');v=n/100*number(target,'百分比需要固定總量',Number.MIN_VALUE,1e9);u=basis;}
+    if(u==='滴'){if(!Number.isInteger(n))throw Error('滴數必須是整數，請改用 mL 輸入精確用量');if(m.dropsPerMl===null)throw Error('缺少此價格批次的每 mL 滴數，不能換算滴數');v=n/m.dropsPerMl;u='mL';}
+    if(!BASIS.includes(u))throw Error('不支援的用量單位');
+    if(u!==to){if(m.density===null)throw Error('缺少此價格批次的密度，不能換算 g 與 mL');v=u==='g'?v/m.density:v*m.density;}
+    if(!Number.isFinite(v)||v>1e12)throw Error('單位換算結果過大或無效');return v;
+  }
+  function convertInput(value,from,to,p,recipe){
+    const basis=basisOf(recipe),amount=convert(value,from,basis,p,targetOf(recipe),basis);let result;
+    if(to==='%'){result=amount/number(targetOf(recipe),'百分比需要固定總量',Number.MIN_VALUE)*100;if(result>100)throw Error('比例不可超過 100%');}
+    else if(to==='滴'){const m=metadata(p);if(m.dropsPerMl===null)throw Error('缺少每 mL 滴數，不能切換滴數');result=convert(amount,basis,'mL',p)*m.dropsPerMl;if(!sameTotal(result,Math.round(result)))throw Error('換算結果不是整滴，請使用 mL 或 g 保留精確用量');result=Math.round(result);}
+    else result=convert(amount,basis,to,p);if(!Number.isFinite(result))throw Error('換算結果無效');return result;
+  }
+  function price(p,basis='g') {
+    const amount=number(p.amount,'採購數量',Number.MIN_VALUE),paid=number(p.paid,'採購總價'),unit=text(p.unit,'採購單位',20);
+    let native,quantity;if(unit==='g'){native='g';quantity=amount;}else if(unit==='kg'){native='g';quantity=amount*1000;}else if(unit==='mL'){native='mL';quantity=amount;}else{native='g';quantity=amount*number(p.gramsPerUnit,'每單位實際重量（g）',Number.MIN_VALUE);}
+    const normalized=convert(quantity,native,basis,p);if(normalized<=0||!Number.isFinite(paid/normalized))throw Error('採購換算結果無效');
+    const m=metadata(p);return {...p,amount,paid,unit,density:m.density,dropsPerMl:m.dropsPerMl,basis,normalized,perUnit:paid/normalized,grams:basis==='g'?normalized:null,perGram:basis==='g'?paid/normalized:null,perMl:basis==='mL'?paid/normalized:null};
+  }
+  function basisOf(recipe){const unit=empty(recipe.quantityUnit)?'g':recipe.quantityUnit;if(![...BASIS,'mixed'].includes(unit))throw Error('總量基準必須是 g 或 mL');return unit;}
+  function itemPrice(i,prices){const p=prices.find(p=>p.id===i.priceId&&p.materialId===i.materialId);if(!p)throw Error('原料尚未設定價格');return empty(i.dropsPerMl)?p:{...p,dropsPerMl:number(i.dropsPerMl,'每 mL 滴數',Number.MIN_VALUE,1e6)};}
+  const nativeBasis=p=>p.unit==='mL'?'mL':'g';
+  function targetOf(recipe){return empty(recipe.targetQuantity)?null:number(recipe.targetQuantity,'固定總量',Number.MIN_VALUE,1e9);}
+  function itemAmount(item,recipe,prices){if(item.unit&&item.grams!==undefined)throw Error('同一原料只能提供一種用量，不能同時填 grams 與 quantity');const p=itemPrice(item,prices),basis=basisOf(recipe)==='mixed'?nativeBasis(p):basisOf(recipe);if(basisOf(recipe)==='mixed'&&(item.unit==='%'||targetOf(recipe)!==null||recipe.baseId))throw Error('分開計量不計濃度；請先選 g 或 mL 總量再用 %');return convert(item.unit?item.quantity:item.grams,item.unit||'g',basis,p,targetOf(recipe),basis);}
+  function releaseTarget(recipe,prices){return {...recipe,targetQuantity:null,baseId:'',items:recipe.items.map(i=>i.unit==='%'?({materialId:i.materialId,priceId:i.priceId,unit:basisOf(recipe),quantity:itemAmount(i,recipe,prices)}):({...i}))};}
+  function totalTolerance(n){return Math.max(Number.MIN_VALUE*8,Math.abs(n)*Number.EPSILON*32);}
+  function sameTotal(a,b){return Math.abs(a-b)<=totalTolerance(b);}
+  function balance(recipe,materials,prices){
+    const next={...recipe,items:recipe.items.map(i=>({...i}))},target=targetOf(next);if(target===null||!next.baseId)return next;
+    const base=next.items.find(i=>i.materialId===next.baseId);if(!base)throw Error('補足原料不在配方內');
+    const others=next.items.filter(i=>i!==base).reduce((sum,i)=>sum+itemAmount(i,next,prices),0);let remainder=target-others;
+    if(remainder < -totalTolerance(target))throw Error('其他原料已超過固定總量，補足原料不足');remainder=Math.max(0,remainder);
+    // 補足原料改以配方基準保存，避免自動四捨五入滴數造成總量偏差。
+    const p=prices.find(p=>p.id===base.priceId&&p.materialId===base.materialId);if(!p)throw Error('補足原料缺少價格批次');price(p,basisOf(next));
+    base.quantity=remainder;base.unit=basisOf(next);delete base.grams;return next;
+  }
+  function editQuantityUnchecked(recipe,id,value,unit,materials,prices){
+    const next={...recipe,items:recipe.items.map(i=>({...i}))};const item=next.items.find(i=>i.materialId===id);if(!item)throw Error('找不到原料');
+    item.quantity=number(value,'原料用量',0,1e9);item.unit=unit;delete item.grams;itemAmount(item,next,prices);
+    const target=targetOf(next);if(next.baseId&&target!==null){if(id===next.baseId){const total=next.items.reduce((s,i)=>s+itemAmount(i,next,prices),0);if(!sameTotal(total,target))throw Error('固定總量的補足原料由系統計算，請修改其他原料或總量');return next;}return balance(next,materials,prices);}return next;
+  }
+  function editQuantity(recipe,id,value,unit,materials,prices){const next=editQuantityUnchecked(recipe,id,value,unit,materials,prices);validateConcentration(next,materials,prices,false);return next;}
+  function scaleRecipe(recipe,total,materials,prices){
+    if(basisOf(recipe)==='mixed')throw Error('分開計量不能依共同總量縮放，請分別調整用量');
+    const target=number(total,'新總量',Number.MIN_VALUE,1e9),old=recipe.items.reduce((s,i)=>s+itemAmount(i,recipe,prices),0);if(old<=0)throw Error('請先設定原料用量');
+    const amounts=recipe.items.map(i=>itemAmount(i,recipe,prices));const next={...recipe,targetQuantity:target,items:recipe.items.map((i,n)=>({...i,unit:basisOf(recipe),quantity:amounts[n]*target/old}))};next.items.forEach(i=>delete i.grams);return balance(next,materials,prices);
+  }
+  // 濃度使用精油體積／成品體積；目標上限由使用者指定，不代表安全建議。
+  function concentration(recipe,materials,prices,selectedId){
+    const cfg=recipe.concentration||{},limit=empty(cfg.maxPercent)?null:number(cfg.maxPercent,'目標濃度上限',0,100);
+    const declared=empty(cfg.totalMl)?null:number(cfg.totalMl,'成品總容量',Number.MIN_VALUE,1e9);
+    let oilMl=0,allMl=0,allKnown=true,oilKnown=true,problem='',selectedMl=0;
+    for(const i of recipe.items||[]){
+      const oil=materials.find(m=>m.id===i.materialId)?.category==='精油';
+      try{const p=itemPrice(i,prices),value=i.unit?i.quantity:i.grams,u=i.unit||'g';
+        const ml=number(value,'原料用量')===0?0:convert(value,u,'mL',p,targetOf(recipe),basisOf(recipe)==='mixed'?nativeBasis(p):basisOf(recipe));
+        allMl+=ml;if(oil){oilMl+=ml;if(i.materialId===selectedId)selectedMl=ml;}
+      }catch(e){allKnown=false;if(oil){oilKnown=false;problem='請完成精油用量及滴數換算；以 g 輸入且無體積資料時，無法估算體積濃度。';}}
+    }
+    const totalMl=declared??(allKnown&&allMl>0?allMl:null),available=oilKnown&&totalMl!==null;
+    const percent=available?oilMl/totalMl*100:null;
+    const mismatch=declared!==null&&allKnown&&!sameTotal(allMl,declared);
+    const over=available&&limit!==null&&oilMl>totalMl*limit/100&&!sameTotal(oilMl,totalMl*limit/100);
+    let message=problem||(!totalMl?'請填成品總容量（包含精油），才能估算濃度。':over?'已超過你設定的目標濃度，請減少精油用量。':mismatch?'材料合計與成品總容量不同，請確認完成後的總容量。':limit!==null?'未超過你設定的目標；不代表適合兒童。':'尚未設定濃度上限。');
+    let maxDrops=null,remainingDrops=null;
+    const selected=(recipe.items||[]).find(i=>i.materialId===selectedId);
+    if(available&&limit!==null&&declared!==null&&selected){const factor=metadata(itemPrice(selected,prices)).dropsPerMl;if(factor!==null){const floor=n=>Math.floor(Math.max(0,n)+totalTolerance(n));maxDrops=floor((declared*limit/100-(oilMl-selectedMl))*factor);remainingDrops=floor((declared*limit/100-oilMl)*factor);}}
+    return {totalMl,declaredMl:declared,maxPercent:limit,oilMl:oilKnown?oilMl:null,percent,available,overLimit:over,totalMismatch:mismatch,maxDrops,remainingDrops,message};
+  }
+  function validateConcentration(recipe,materials,prices,complete=true){
+    const r=concentration(recipe,materials,prices);
+    if(r.maxPercent!==null&&r.declaredMl===null)throw Error('設定濃度上限時，請填成品總容量（包含精油）。');
+    if(r.maxPercent!==null&&!r.available)throw Error(r.message);
+    if(r.overLimit)throw Error(r.message);
+    if(complete&&r.totalMismatch)throw Error(r.message);
+    if(r.available&&r.oilMl>r.totalMl&&!sameTotal(r.oilMl,r.totalMl))throw Error('精油用量已超過成品總容量。');
+    return r;
   }
   function settings(s) {
     return {
@@ -39,22 +112,25 @@ var AromaCore = (() => {
     const units = number(recipe.units, '合格成品數量', 1, 100000);
     if (!Number.isInteger(units)) throw Error('合格成品數量必須為整數');
     if (!Array.isArray(recipe.items) || recipe.items.length < 1 || recipe.items.length > 200) throw Error('請加入 1 至 200 種原料');
+    const basis=basisOf(recipe),target=targetOf(recipe);
     const seen = new Set();
     const items = recipe.items.map(i => {
       if (seen.has(i.materialId)) throw Error('同一原料請合併為一張卡片');
       seen.add(i.materialId);
       const m = materials.find(m => m.id === i.materialId);
       if (!m) throw Error('原料已不存在，請重新選擇');
-      const p = prices.find(p => p.id === i.priceId && p.materialId === m.id);
-      const grams = number(i.grams, '原料重量', 0, 1e7);
+      const p = itemPrice(i,prices);
+      const amount = itemAmount(i,recipe,prices);
       if (!p) throw Error(m.name + '缺少有效採購批次價格');
-      const actual = price(p);
+      const itemBasis=basis==='mixed'?nativeBasis(p):basis;
+      const actual = price(p,itemBasis);
       return { materialId: m.id, name: m.name, category: m.category, priceId: p.id,
-        priceLabel: p.label, perGram: actual.perGram, grams, cost: grams * actual.perGram };
+        priceLabel:p.label,quantity:i.unit?number(i.quantity,'原料用量'):number(i.grams,'原料重量'),unit:i.unit||'g',amount,amountUnit:itemBasis,density:actual.density,dropsPerMl:actual.dropsPerMl,perUnit:actual.perUnit,perGram:actual.perGram,grams:itemBasis==='g'?amount:null,cost:amount*actual.perUnit };
     });
-    const total = items.reduce((s, i) => s + i.grams, 0);
-    if (total <= 0) throw Error('配方總重量必須大於 0');
-    items.forEach(i => i.percent = i.grams / total * 100);
+    const total = items.reduce((s, i) => s + i.amount, 0);
+    if (total <= 0) throw Error('配方總量必須大於 0');
+    if(target!==null&&!sameTotal(total,target))throw Error('配方總量 '+total+' '+basis+' 與固定總量 '+target+' '+basis+' 不一致，請指定補足原料或調整用量');
+    items.forEach(i => i.percent = basis==='mixed'?null:i.amount / total * 100);
     const s = settings(recipe.cost);
     const material = items.reduce((sum, i) => sum + i.cost, 0);
     // 耗損率代表投入材料中未成為成品的比例；為取得所需淨重，材料成本除以良率。
@@ -68,9 +144,11 @@ var AromaCore = (() => {
     if (![total, material, lossCost, packaging, labor, batch, perUnit, suggested].every(Number.isFinite)) throw Error('計算結果過大，請檢查重量與價格');
     const messages = ['待驗證：數學與成本計算不代表完整安全審查；範本不是製作指引。'];
     let exceeded = false;
-    const oilPercent = items.filter(i => i.category === '精油').reduce((sum, i) => sum + i.percent, 0);
-    const relevant = (rules || []).filter(r => r.type === recipe.type);
+    const oilPercent = basis==='mixed'?null:items.filter(i => i.category === '精油').reduce((sum, i) => sum + i.percent, 0);
+    const relevant = basis==='mixed'?[]:(rules || []).filter(r => r.type === recipe.type);
+    if(basis==='mixed')messages.push('g 與 mL 分開計量，分別估材料費；精油體積濃度另外計算，不套用重量安全限制比例。');
     for (const r of relevant) {
+      if((r.basis||'g')!==basis){messages.push('待驗證：安全規則比例基準不符，不能混用重量與體積百分比');continue;}
       const target = r.materialId === '*' ? oilPercent : (items.find(i => i.materialId === r.materialId) || {}).percent;
       if (target === undefined || target === 0) continue;
       if (r.status !== '已核對' || !r.source || r.maxPercent === '' || r.maxPercent === null || !Number.isFinite(Number(r.maxPercent)) || Number(r.maxPercent) < 0 || Number(r.maxPercent) > 100) {
@@ -79,11 +157,12 @@ var AromaCore = (() => {
       if (target > Number(r.maxPercent)) { exceeded = true; messages.push('超出已登錄限制：' + (r.materialId === '*' ? '精油總濃度' : items.find(i => i.materialId === r.materialId).name) + '；來源：' + r.source); }
       else messages.push('未超出此筆已登錄限制；來源：' + r.source + '；仍待完整安全審查');
     }
-    for (const i of items.filter(i => i.category === '精油' && i.grams > 0)) {
+    for (const i of items.filter(i => i.category === '精油' && i.amount > 0)) {
       if (!relevant.some(r => r.materialId === i.materialId && r.status === '已核對' && r.source && r.maxPercent !== '' && Number.isFinite(Number(r.maxPercent)))) messages.push('待驗證：' + i.name + '尚無適用且已核對的安全資料');
     }
-    return { total, units, gramsPerUnit: total / units, items, cost: s, material, lossCost, packaging, labor,
-      other: s.other, batch, perUnit, suggested, grossMargin, oilPercent, safety: exceeded ? '超出限制' : '待驗證', messages };
+    const totals=items.reduce((out,i)=>{out[i.amountUnit]=(out[i.amountUnit]||0)+i.amount;return out;},{});
+    return { total:basis==='mixed'?null:total,totals,quantityUnit:basis,targetQuantity:target,quantityPerUnit:basis==='mixed'?null:total/units, units, gramsPerUnit:basis==='g'?total/units:null, items, cost: s, material, lossCost, packaging, labor,
+      other: s.other, batch, perUnit, suggested, grossMargin, oilPercent, concentration:concentration(recipe,materials,prices), safety: exceeded ? '超出限制' : '待驗證', messages };
   }
   function adjust(items, materialId, grams, baseId) {
     const next = items.map(i => ({ ...i }));
@@ -106,7 +185,7 @@ var AromaCore = (() => {
     if (!old) throw Error('請先設定原料重量');
     return items.map(i => ({ ...i, grams: i.grams * target / old }));
   }
-  return { TYPES, number, text, price, settings, calculate, adjust, scale };
+  return { TYPES, number, text, price, settings, calculate, adjust, scale, metadata,convert,convertInput,basisOf,targetOf,itemAmount,sameTotal,balance,editQuantity,scaleRecipe,releaseTarget,itemPrice,nativeBasis,concentration,validateConcentration };
 })();
 if (typeof module !== 'undefined') module.exports = AromaCore;
 </script>

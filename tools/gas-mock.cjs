@@ -38,6 +38,6 @@ function createHarness() {
     HtmlService:{createHtmlOutputFromFile:name=>({getContent:()=>fs.readFileSync(path.join(__dirname,'../src',name+'.html'),'utf8')}),createHtmlOutput:html=>({html,setTitle(){return this;}}),createTemplateFromFile:()=>({evaluate:()=>({setTitle(){return this;},addMetaTag(){return this;}})})}
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/Code.gs'),'utf8'),ctx,{filename:'Code.gs'});
-  return {state,sheets,ctx,setup:()=>ctx.setupDatabase(),call:(action,data={})=>ctx.api({action,data}),loadCore:()=>ctx.core_()};
+  return {state,sheets,ctx,setup:()=>{ctx.setupDatabase();ctx.migrateUnitSchema();},call:(action,data={})=>ctx.api({action,data}),loadCore:()=>ctx.core_()};
 }
 module.exports={createHarness};

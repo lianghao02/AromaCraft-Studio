@@ -1,0 +1,26 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+test('精油目錄分類分批、搜尋、缺價阻擋及 mL 試算',()=>{
+ const elements=Object.fromEntries(['ylCards','ylSearch','ylPending','ylCategories','ylCount','ylMore','ylChosen','ylTotal','ylClear'].map(id=>[id,{value:'',checked:false,innerHTML:'',textContent:'',hidden:false}]));
+ const ctx=vm.createContext({Intl,Date,Map,document:{getElementById:id=>elements[id]}});
+ const source=fs.readFileSync(path.join(__dirname,'../src/Catalog.html'),'utf8').replace(/^\s*<script>/,'').replace(/<\/script>\s*$/,'');vm.runInContext(source,ctx);
+ const c=ctx.AromaCatalog;assert.equal(c.data.length,154);assert.equal(c.find('全部').length,102);
+ assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,24);
+ elements.ylMore.onclick();assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,48);
+ elements.ylSearch.value='354876';elements.ylSearch.oninput();assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,1);
+ const frank=c.data.find(r=>r.id==='354876');assert.equal(frank.ml,15);assert.equal(c.estimate([{id:'354876',ml:0.5}]),106);
+ const frankMaterial={id:'yl-354876',name:'乳香精油 15ml',category:'精油'};
+ const info=c.materialInfo(frankMaterial,{id:'yl-354876-catalog-test',amount:15,unit:'mL',paid:3180});
+ assert.equal(info.image,'https://static.youngliving.com/productimages/large/354876.jpg');
+ assert.equal(c.materialInfo({...frankMaterial,id:'custom-oil'}).image,null);
+ assert.equal(c.data.filter(r=>r.image).length,94);
+ assert.equal(info.kind,'單方');assert.equal(info.name,'乳香');assert.equal(info.amount,15);assert.equal(info.paid,3180);assert.equal(info.priceLabel,'批發價');
+ const blend=c.data.find(r=>r.categories.includes('配方精油')&&r.ml>0&&r.wholesale!==null&&!r.categories.includes('精油套裝'));
+ assert.equal(c.materialInfo({id:'yl-'+blend.id,name:blend.name,category:'精油'}).kind,'複方');
+ assert.equal(c.materialInfo({...frankMaterial,id:'custom-oil'}).kind,'待分類');
+ const customPrice=c.materialInfo(frankMaterial,{id:'new-purchase',amount:5,unit:'mL',paid:500});
+ assert.equal(customPrice.priceLabel,'採購價');assert.equal(customPrice.amount,5);assert.equal(customPrice.paid,500);
+ assert.throws(()=>c.estimate([{id:'354876',ml:''}]),/用量/);assert.throws(()=>c.estimate([{id:'pending-441',ml:1}]),/完整/);
+ elements.ylCards.onclick({target:{closest:()=>({dataset:{ylPick:'354876'},disabled:false})}});assert.match(elements.ylTotal.textContent,/用量/);
+ elements.ylChosen.oninput({target:{dataset:{ylAmount:'354876'},value:'0.5'}});assert.match(elements.ylTotal.textContent,/106/);
+ elements.ylClear.onclick();assert.equal(elements.ylTotal.textContent,'尚未選取精油');
+});
