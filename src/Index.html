@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><?!= include_('Styles'); ?></head>
+<head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><?!= include_('Styles'); ?></head>
 <body>
 <header>
   <h1 class="brand">AC <span>AromaCraft <small>家庭精油分享會 · 配方與成本</small></span></h1>
@@ -19,10 +19,10 @@
     <button id="closeNotice" type="button" aria-label="關閉通知">✕</button>
   </div>
 
-  <nav class="tabs" role="tablist" aria-label="主要功能頁籤">
-    <button id="tabRecipe" type="button" role="tab" aria-selected="true" class="tab-btn active">🌿 調配方</button>
-    <button id="tabSaved" type="button" role="tab" aria-selected="false" class="tab-btn">📖 配方庫</button>
-    <button id="tabManage" type="button" role="tab" aria-selected="false" class="tab-btn">⚙️ 設定與資料</button>
+  <nav id="primaryNav" class="tabs" role="tablist" aria-label="主要功能頁籤">
+    <button id="tabRecipe" type="button" role="tab" aria-selected="true" class="tab-btn active" aria-controls="viewRecipe"><span class="tab-icon" aria-hidden="true">🌿</span><span>調配方</span></button>
+    <button id="tabSaved" type="button" role="tab" aria-selected="false" class="tab-btn" aria-controls="viewSaved"><span class="tab-icon" aria-hidden="true">📖</span><span>配方庫</span></button>
+    <button id="tabManage" type="button" role="tab" aria-selected="false" class="tab-btn" aria-controls="viewManage" aria-label="設定與資料"><span class="tab-icon" aria-hidden="true">⚙️</span><span class="tab-label-desktop">設定與資料</span><span class="tab-label-mobile">設定</span></button>
   </nav>
 
   <!-- 分頁 1：調配方工作檯 -->
@@ -204,7 +204,7 @@
   </div>
 
   <footer class="app-footer print-hide">
-    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.3.1</div>
+    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.3.2</div>
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br><span id="storageDescription">本機草稿保存在此瀏覽器；家庭雲端資料由 Firebase 即時資料庫保存。</span></p>
   </footer>
 </main>

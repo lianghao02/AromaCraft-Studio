@@ -50,3 +50,21 @@ src/Core.html、Client.html、Index.html；package.json、index.html；tests/uni
 
 ## 發布狀態 (Release Status)
 Apps Script第8版部署成功。正式發布只包含預設滴數簡化；卡片風格僅本機預覽。沿用原Google網址與權限，無Firestore規則修改。
+
+
+## 最新交接：手機下方導覽修訂｜2026-10-14
+
+此段為最新工作狀態，前文 v1.3.1 發布資訊保留。
+
+- Repository：lianghao02/AromaCraft-Studio；Branch：main；基線 Commit：ee8b4f021dff3b8a1e413d933b07c195d16ec7ef；Skill Version：v1.0.0；Task Type：IMPROVE。
+- 開始時工作目錄乾淨。本輪未 Commit、Push 或部署；正式 Pages 與 Apps Script 第 8 版保持上一輪 v1.3.1。
+- 已完成：沿用同一組頁籤，手機固定下方調配方、配方庫、設定；桌機維持上方。成本儲存列位於導覽上方，保留安全區與內容底部空間。切換頁面保留草稿並回頂部；鍵盤開啟時同時收起固定導覽與摘要。
+- 修改檔案：src/Index.html、Styles.html、Client.html、產生的 index.html、README.md、HANDOFF.md。
+- 驗證：59 項既有測試、語法與引用檢查通過。Browser 320、375、390、430、1366px 無橫向溢出；手機固定、桌機靜態，按鈕至少44px，摘要与導覽無重疊。皂基1.5g經配方庫、設定、返回後保留；Console錯誤為零。
+- 未驗證：iPhone Safari 原生鍵盤與底部安全區；截圖 API 不可用。
+- 不修改：計算、歷史快照、雲端權限、正式配色及先前未採用的卡片風格。
+- 下一步：使用者可檢視 http://127.0.0.1:18774/ 本機示範預覽；收到發布需求再提交與更新正式平台。
+
+## 最新發布作業：v1.3.2
+
+使用者已明確要求部署，授權本輪提交、推送及更新原部署。當前進入發布驗證；平台完成狀態將在部署後補記。

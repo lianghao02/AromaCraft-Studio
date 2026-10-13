@@ -85,6 +85,7 @@
     const summaryEl = $('summaryBar');
     if (summaryEl) summaryEl.hidden = (target !== 'tabRecipe');
     if(data&&target!=='tabSaved')renderMaterials();
+    if(window.innerWidth<768&&window.scrollTo)window.scrollTo({top:0,behavior:'instant'});
   }
 
   function switchManage(target){
