@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createHarness}=require('../tools/gas-mock.cjs');
-for(const viewportWidth of [390,1366])test(`${viewportWidth}px 收納操作保留草稿；空白防誤存與失敗重試`,async()=>{
+for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收納操作保留草稿；空白防誤存與失敗重試`,async()=>{
   const h=createHarness();h.setup();h.call('importCatalog');
   const catalogCtx=vm.createContext({Intl,Date,Map});
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/Catalog.html'),'utf8').replace(/^\s*<script>/,'').replace(/<\/script>\s*$/,''),catalogCtx);
@@ -76,6 +76,7 @@ for(const viewportWidth of [390,1366])test(`${viewportWidth}px 收納操作保�
   await saving;
   assert.equal(node('quickSave').disabled,true);
   assert.equal(node('draftState').textContent,'已儲存 · v1');
+  await node('recordProduction').onclick();assert.equal(h.sheets.get('製作紀錄').values.length,2);assert.match(node('items').innerHTML,/100 g/);
   node('name').value='修改後的配方';node('name').oninput();
   h.state.failWrite='配方資料';await node('quickSave').onclick();
   assert.equal(node('quickSave').disabled,false);
@@ -115,7 +116,7 @@ for(const viewportWidth of [390,1366])test(`${viewportWidth}px 收納操作保�
   await node('saved').onclick({target:{closest:q=>q==='[data-archive]'?{dataset:{archive:archiveId,version:'2',restore:'true'}}:null}});
   node('showArchived').checked=false;node('showArchived').onchange();assert.equal(node('savedCount').textContent,'1 份配方');
   node('concentrationTotal').value='30';node('concentrationLimit').value='2';node('concentrationLimit').oninput();
-  assert.match(node('concentrationMessage').textContent,/總容量不同/);assert.equal(node('quickSave').disabled,true);
+  assert.match(node('concentrationMessage').textContent,/基準不同|資料不足/);assert.equal(node('quickSave').disabled,true);assert.equal(node('concentrationTotal').value,'30');assert.equal(node('totalOptions').hidden,true);
   node('concentrationTotal').value='';node('concentrationLimit').value='';node('concentrationLimit').oninput();
   const unchangedRecipe=node('items').innerHTML;
   node('tabManage').onclick();
@@ -127,7 +128,8 @@ for(const viewportWidth of [390,1366])test(`${viewportWidth}px 收納操作保�
   node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:'demo-soap'}}:null}});
   assert.equal(node('editorTitle').textContent,'原料與價格');assert.equal(node('items').innerHTML,unchangedRecipe);
   node('tabRecipe').onclick();assert.equal(node('materialPicker').parentId,'viewRecipe');assert.equal(node('materialPicker').dataset.manage,'false');
-  node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/密度|批次|滴數/);
+
+  node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/密度|批次/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
   node('matName').value='表單合成商品';node('matCategory').value='其他';node('amount').value=15;node('priceUnit').value='mL';node('paid').value=100;
   node('editorForm').onsubmit({preventDefault(){}});await tick();await tick();await tick();await tick();
   assert.equal(h.call('bootstrap').value.materials.filter(m=>m.name==='表單合成商品').length,1);

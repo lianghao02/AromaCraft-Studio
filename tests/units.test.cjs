@@ -138,3 +138,25 @@ test('濃度設定保存讀回，API 超標拒絕且歷史快照保留',()=>{
  const reject=h.call('saveRecipe',{...saved,requestId:'concentration-test-2',items:saved.items.map(i=>i.unit==='滴'?{...i,quantity:13}:i)});assert.equal(reject.ok,false);assert.match(JSON.stringify(reject),/超過/);assert.equal(ok(h,'bootstrap').recipes.length,1);
  const updated=ok(h,'saveRecipe',{...saved,requestId:'concentration-test-3',concentration:{totalMl:30,maxPercent:3}});assert.equal(updated.concentration.maxPercent,3);assert.equal(ok(h,'loadRecipe',{id:saved.id,version:1}).concentration.maxPercent,2);
 });
+
+test('三步驟混合投入與份數驗收，不猜密度也不改整批用量',()=>{
+ const ms=[{id:'soap',name:'測試皂基',category:'皂基'},{id:'base',name:'測試油',category:'基底油'},{id:'oil',name:'測試精油',category:'精油'}],ps=[{id:'s',materialId:'soap',amount:1000,unit:'g',paid:200},{id:'b',materialId:'base',amount:100,unit:'mL',paid:300},{id:'o',materialId:'oil',amount:15,unit:'mL',paid:600,dropsPerMl:20}];
+ const r={name:'三步驟合成驗收',type:'無水精油膏',quantityUnit:'mixed',units:5,cost:{...cost,packaging:0},concentration:{auto:true,totalMl:999},items:[{materialId:'soap',priceId:'s',quantity:100,unit:'g'},{materialId:'base',priceId:'b',quantity:10,unit:'mL'}]};
+ const out=c.calculate(r,ms,ps,[]);near(out.material,50);near(out.batch,50);near(out.perUnit,10);assert.equal(out.totals.g,100);assert.equal(out.totals.mL,10);assert.equal(out.total,null);assert.equal(out.concentration.percent,null);assert.equal(r.items[0].quantity,100);
+ const oil={materialId:'oil',priceId:'o',quantity:10,unit:'滴'};near(c.calculate({...r,items:[oil]},ms,ps,[]).material,20);
+ const weight={...r,items:[r.items[0],oil]};assert.equal(c.calculate(weight,ms,ps,[]).concentration.percent,null);near(c.concentration(weight,ms,ps).dropsPer100g,10);assert.equal(c.validateConcentration({...weight,concentration:{auto:true,maxPercent:1}},ms,ps).available,false);
+ const missing=ps.map(p=>p.id==='o'?{...p,dropsPerMl:null}:p);const partial=c.calculate(weight,ms,missing,[]);near(partial.knownMaterial,20);assert.equal(partial.batch,null);assert.equal(partial.concentration.dropsPer100g,10);assert.match(partial.missingPrices[0].reason,/滴數/);
+ assert.throws(()=>c.calculate({...weight,items:[{...oil,quantity:1.5}]},ms,ps,[]),/整數/);assert.throws(()=>c.calculate({...r,units:1.5},ms,ps,[]),/整數/);
+});
+test('採購同類單位、可選用量單位與零元／缺價區分',()=>{
+ near(c.convert(1,'kg','g',{}),1000);near(c.convert(.5,'L','mL',{}),500);near(c.price({amount:1,unit:'L',paid:200},'mL').perUnit,.2);
+ assert.deepEqual(Array.from(c.availableUnits({unit:'g'},'皂基')),['g','kg']);assert.deepEqual(Array.from(c.availableUnits({unit:'mL'},'基底油')),['mL','L']);assert(c.availableUnits({unit:'mL',density:.9},'精油').includes('g'));assert.throws(()=>c.convert(1,'g','mL',{}),/密度/);
+ const r={...recipe(),quantityUnit:'mixed',baseId:'',targetQuantity:null,units:1,concentration:{auto:true},items:[{materialId:'base',priceId:'pb',quantity:10,unit:'g'}]};const zero=prices.map(p=>({...p,paid:0}));assert.equal(c.calculate(r,materials,zero,[]).costComplete,true);near(c.calculate(r,materials,zero,[]).material,0);
+ const missing=prices.map(p=>({...p,paid:''}));const out=c.calculate(r,materials,missing,[]);assert.equal(out.costComplete,false);assert.equal(out.batch,null);assert.equal(out.missingPrices[0].name,'合成基底');
+ const volume={...r,items:[{materialId:'oil',priceId:'po',quantity:1,unit:'mL'},{materialId:'base',priceId:'pb',quantity:9,unit:'mL'}]};near(c.concentration(volume,materials,prices).percent,10);assert.equal(c.concentration(volume,materials,prices).basis,'mL');
+});
+
+test('三步驟無價格批次可統計用量並明示未完整；自動基準設定保存及歷史容量不清除',()=>{
+ const r={name:'缺價合成測試',type:'按摩油',quantityUnit:'mixed',units:1,cost,concentration:{auto:true,totalMl:30,maxPercent:2,limitBasis:'g'},items:[{materialId:'oil',priceId:'',unit:'mL',quantity:1}]};const out=c.calculate(r,materials,[],[]);assert.equal(out.costComplete,false);assert.equal(out.batch,null);assert.equal(out.totals.mL,1);assert.equal(out.missingPrices[0].name,'合成測試精油');
+ const h=createHarness();h.setup();const b=ok(h,'bootstrap'),p=b.prices.find(p=>p.materialId==='demo-soap');const d={...r,name:'自動濃度保存合成測試',requestId:'automatic-save-1',items:[{materialId:'demo-soap',priceId:p.id,quantity:100,unit:'g'}]};const saved=ok(h,'saveRecipe',d);assert.equal(saved.concentration.auto,true);assert.equal(saved.concentration.totalMl,30);assert.equal(saved.concentration.limitBasis,'g');assert.equal(saved.snapshot.concentration.basis,'g');
+});

@@ -43,7 +43,7 @@
         </li>
         <li class="guide-step" data-step="2" tabindex="0" role="button" aria-label="第 2 步：調原料與比例">
           <span class="step-num">2</span>
-          <div class="step-content"><strong>調原料與比例</strong><p>點原料卡選 g、mL、滴數或 %（百分比需固定總量），或按「＋加入原料」挑選。</p></div>
+          <div class="step-content"><strong>調原料與比例</strong><p>點原料卡加入，填入使用量；已選原料在第 2 步修改或移除。</p></div>
         </li>
         <li class="guide-step" data-step="3" tabindex="0" role="button" aria-label="第 3 步：看成本並儲存">
           <span class="step-num">3</span>
@@ -66,8 +66,8 @@
       <p class="muted">先選作品，再填入太太確認的材料與用量。以下都是空白作品範本，不是可直接製作的配方。</p><button id="blank">建立空白配方</button>
     </div></details>
 
-    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 挑選原料</h2><small id="materialPickerHint">搜尋後點卡片加入</small></summary><div class="fold-body">
-      <div class="picker-top-bar"><span class="muted">挑選原料加入配方</span><button type="button" id="returnToRecipe" class="primary return-btn">完成挑選，查看配方 ↓</button></div>
+    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">搜尋後點卡片加入</small></summary><div class="fold-body">
+      <h3 id="selectedItemsTitle">已選原料與用量</h3><div id="selectedItems" class="recipe-list"></div><div class="picker-top-bar"><span class="muted">挑選原料加入配方</span><button type="button" id="returnToRecipe" class="primary return-btn">完成挑選，查看配方 ↓</button></div>
       <details id="ylCatalog" class="yl-catalog"><summary>悠樂芳精油目錄與成本試算</summary><p class="muted">官網批發價估算，含稅未含運費。每 mL 計算；此區只算精油，不含基底與包材，也不併入目前 g 重量配方。試算清單重新整理會重設。</p><label>搜尋精油或商品編號<input id="ylSearch" type="search" placeholder="例如：薰衣草、乳香"></label><div id="ylCategories" class="chips" aria-label="悠樂芳分類"></div><label class="check"><input id="ylPending" type="checkbox">顯示容量或價格待補品項</label><p id="ylCount" role="status"></p><div id="ylCards" class="yl-grid"></div><button id="ylMore" type="button">再顯示 24 筆</button><div class="yl-estimate"><h3>本次精油用量</h3><div id="ylChosen"></div><strong id="ylTotal" role="status" aria-live="polite"></strong><button id="ylClear" type="button">清空精油試算</button></div></details>
       <div class="fields"><label>搜尋原料<input id="search" type="search" placeholder="輸入名稱或備註"></label><button id="newMaterial">＋ 新增原料</button></div>
       <div id="categories" class="chips" aria-label="原料類別"></div><div id="oilKinds" class="chips oil-kinds" aria-label="精油分類" hidden></div><label class="check inactive-setting"><input id="showInactive" type="checkbox">顯示停用原料</label><p id="materialCount" role="status"></p><div id="materials" class="grid"></div><button id="materialsMore" type="button">再顯示原料</button><button id="mobileReviewRecipe" type="button" class="primary mobile-picker-next">查看配方與成本</button>
@@ -88,18 +88,13 @@
       </div>
       <div class="fields">
         <label>配方名稱<input id="name" maxlength="100" placeholder="例如：薰衣草舒緩修護皂"></label>
-        <label>本次分成幾份<input id="units" type="number" min="1" step="1" value="1"></label>
+        <label>本次分成幾份<input id="units" inputmode="numeric" type="number" min="1" step="1" value="1"></label>
       </div>
-      <section class="concentration-panel" aria-labelledby="concentrationTitle">
-        <h3 id="concentrationTitle">精油濃度</h3>
-        <div class="fields"><label>本次成品總容量（mL）<input id="concentrationTotal" type="number" min="0.000001" step="any" placeholder="含基底與精油的完成容量"></label><label>目標濃度上限（%，可留空）<input id="concentrationLimit" type="number" min="0" max="100" step="any" placeholder="依已確認的配方填寫"></label></div>
-        <strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p>
-        <div class="child-safety-notice" role="note">
-          <div class="safety-title">⚠️ 安全重要提醒</div>
-          <p class="safety-desc">濃度低或未超過自訂目標上限，<strong>不代表適合兒童使用</strong>。各精油之皮膚刺激性與兒童／孕婦年齡禁忌各異，製作前請務必逐一核對專業來源與安全指引。</p>
-        </div>
-      </section>
-      <div class="basis-row"><label>計量方式<select id="quantityUnit"><option value="mixed">g／mL 分開</option><option value="g">全部以 g 合計</option><option value="mL">全部以 mL 合計</option></select></label><small class="muted">點原料卡修改用量</small></div>
+    <details id="costPanel" class="fold" open><summary><h2>大約成本</h2><small>材料＋包材</small></summary><div class="fold-body"><div class="panel-save-card"><div><small>本次總成本／每份成本</small><strong id="panelCost" class="panel-cost-val">—</strong><span id="panelWeight" class="panel-weight-val"></span></div><div class="panel-save-actions"><span id="panelSafety" class="badge">待驗證</span><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div></div><div id="breakdown" aria-live="polite"></div>
+
+    </div></details>
+      <div class="concentration-panel"><h3 id="concentrationTitle">精油比例</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><small>比例低不代表適合兒童，仍需核對成分與用途。</small><details class="advanced"><summary>參考上限與說明（選填）</summary><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；混合 g、mL、滴數不直接產生百分比。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div>
+      <input id="concentrationTotal" type="hidden"><select id="quantityUnit" hidden><option value="mixed">分開計量</option><option value="g">g</option><option value="mL">mL</option></select>
       <div id="formulaBar" class="formula-bar" aria-label="配方成份分佈" title="配方成份比例分佈"></div>
       <div id="items" class="recipe-list"></div>
       <!-- 隨行輕量成本膠囊（指標隨行） -->
@@ -110,11 +105,11 @@
         </div>
         <button id="btnGotoCost" type="button" class="pill-btn">查看大約成本 ➔</button>
       </div>
-      <div class="recipe-actions-bar">
-        <button id="addMaterials" class="add-material">＋ 加入原料</button>
+      <div class="production-actions"><label>製作日期<input id="productionDate" type="date"></label><button id="recordProduction" type="button">儲存本次製作紀錄</button></div><div class="recipe-actions-bar">
+        <button id="addMaterials" class="add-material">返回第 2 步調整</button>
       </div>
       <details class="advanced"><summary>製作備註與工具</summary><div class="fold-body">
-<div id="totalOptions"><h3>總量與比例</h3><label class="check"><input id="fixedTotal" type="checkbox">指定本次總量（使用 % 時必須先設定）</label><div class="fields"><label>本次目標總量（沿用上方 g／mL）<input id="targetQuantity" type="number" min="0.000001" step="any" placeholder="例如：要做 30 mL，填 30"></label></div><p class="muted">所有項目須換算到同一基準才能合計，不能直接相加 g 與 mL。切換基準會保留實際用量，清除舊固定總量。</p>
+<div id="totalOptions" hidden><h3>總量與比例</h3><label class="check"><input id="fixedTotal" type="checkbox">指定本次總量（使用 % 時必須先設定）</label><div class="fields"><label>本次目標總量（沿用上方 g／mL）<input id="targetQuantity" type="number" min="0.000001" step="any" placeholder="例如：要做 30 mL，填 30"></label></div><p class="muted">所有項目須換算到同一基準才能合計，不能直接相加 g 與 mL。切換基準會保留實際用量，清除舊固定總量。</p>
 
         <div class="inline"><label>等比例縮放至新總量（沿用上方基準）<input id="batchWeight" type="number" min="0" step="any"></label><button id="scale">等比例換算</button></div>
         <label>固定總量補足原料<select id="base"><option value="">不補足，依實際用量合計</option></select></label>
@@ -126,9 +121,7 @@
         </div>
       </div></details>
     </section>
-    <details id="costPanel" class="fold" open><summary><h2>大約成本</h2><small>材料＋包材</small></summary><div class="fold-body"><div class="panel-save-card"><div><small>本次總成本／每份成本</small><strong id="panelCost" class="panel-cost-val">—</strong><span id="panelWeight" class="panel-weight-val"></span></div><div class="panel-save-actions"><span id="panelSafety" class="badge">待驗證</span><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div></div><div id="breakdown" aria-live="polite"></div>
 
-    </div></details>
     </div>
 
 
@@ -211,7 +204,7 @@
   </div>
 
   <footer class="app-footer print-hide">
-    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.2.0</div>
+    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.2.1</div>
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br>本機草稿保存在此瀏覽器；家庭雲端資料由 Firebase 即時資料庫保存。</p>
   </footer>
 </main>

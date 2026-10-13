@@ -3,89 +3,50 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：f21f7b39c09bf87ad751225da38656d0a7900b95（本輪開始基準；最新以 Git log 為準）
+- **Commit SHA**：本輪基準 c2be593b931607de8d755f6fbe9a98580499f63e；發布提交以最新 Git log 查核
 - **Skill Version**：v1.0.0
-- **Task Type**：IMPROVE
+- **Task Type**：FIX
 - **Local Path Hint**：18_AromaCraft-Studio
-- **交接日期**：2026-10-13
-
----
 
 ## 目前狀態
-完成商業級 UI/UX 完整修訂與 Firebase 家庭雲端雙軌同步整合。GitHub Pages 靜態前端保留，整合 Firebase Auth 登入與 Cloud Firestore，實現使用者與太太跨手機與不同電腦即時共用同一份配方與原料；本機離線模式無縫支援，資料無損移轉精靈完備。全套 44 項測試與檢查通過。
+v1.2.1 三步驟與單位修正完成，準備推送 Pages。使用者追加授權：本輪完成後修正 Firebase 四項問題，另提交。
 
 ## 本輪目標
-收斂專案定位為家庭精油分享會專用工具，兼顧電腦網頁版與手機版直覺操作；整合 Firebase 提供即時雲端共用，強化精油兒童安全防護，排除商業銷售雜訊，完成全套驗證並推送至 GitHub。
+依已確認手機操作流程局部修改，保留配色、資料、歷史快照及既有功能。
 
 ## 基準與已確認事實 (Baseline & Confirmed Facts)
-- **專案定位**：使用者與太太的家庭精油分享會工具，估算材料及包材大約成本；完全不需要工時、毛利或售價。
-- **線上網站**：https://lianghao02.github.io/AromaCraft-Studio/
-- **Firebase 專案**：`aromacraft-studio`，已配置 Web Config 與家庭白名單（`tpc0941101090@gmail.com` 與 `amethyst72@gmail.com`）。
-- **資料安全與權限**：已建立 `firestore.rules` 生產級安全規則，嚴格限制非白名單登入者或未登入者無法讀寫，歷史配方快照防覆寫。
-- **計算核心保留**：沿用 v1.1.0 的單位換算（g/mL）、每 mL 滴數換算、成品體積濃度、配方版本控制（v1, v2...）與歷史快照。
+開始時 main 與 origin/main 同步且 Clean；44 項基線測試通過。Pages 使用生成 index.html，Apps Script 共用 src；Google 正式部署尚未更新。
 
 ## 已完成 (Completed)
-1. **商業級 UI/UX 升級與雙棲最佳化**：
-   - 頂部新增四態同步膠囊指示燈（🟢 已同步 / 🟡 同步中 / ⚡ 離線暫存 / 🔴 同步失敗），即時反映連線與儲存狀態。
-   - 桌機寬螢幕（≥1100px）左右雙欄齊頭飽滿排版，右側配方工作檯與大約成本面板黏滯吸頂（Sticky），徹底解決右側空白缺角。
-   - 手機直式單欄（390px）深度適配：卡片熱區觸控放大，底部摘要欄增加毛玻璃半透明效果，主視圖預留安全間距，滾動到底部不遮擋任何按鈕。
-2. **第二輪深度實測修訂（Playwright 手機與桌機真測）**：
-   - **Header 響應式排版**：縮小品牌字體與邊距，右側同步膠囊精簡文字（🟢 已同步 / 🟡 同步中 / ⚡ 本機 / 🔴 失敗），家庭成員徽章在手機隱藏或簡化，徹底解決擠壓折行。
-   - **登入表單結構**：使用標準 `<form>` 包裹，支援 Enter 直接送出，手機窄螢幕垂直滿寬排列，無截斷問題。
-   - **分頁浮動列連動**：切換至「配方庫」或「設定與資料」時自動隱藏底部浮動列，避免遮擋設定內容。
-   - **表單欄位擠壓根治**：提高選擇器權重消除 `#recipePanel .fields` 對子區塊的污染，解決「目標濃度上限」、「作品類型選單」與「合格產量」被 90px/96px 擠扁問題，改為自適應雙欄與手機垂直排列。
-   - **兒童安全警語排版優化**：重構為獨立標題與描述段落，消除繁體中文標點符號換行孤行（orphan punctuation）。
-   - **測試環境 DOM 容錯**：修復 `tests/client.test.cjs` 輕量 DOM Mock 環境不支援 `querySelector` 的問題，改用 `$('summaryBar')`，保持 100% 測試覆蓋率。
-3. **專案定位收斂與純粹化**：
-   - 介面徹底移除工時、時薪、損耗率、預計售價、毛利率，成本結構固定為「材料費 ＋ 包材費 ＝ 大約總成本／每份成本」。
-4. **精油兒童安全防護提醒**：
-   - 精油濃度區塊顯目新增重要警語：「濃度低或未超過目標上限，不代表適合兒童使用」，杜絕虛假安全感。
-5. **Firebase 雙軌同步與資料移轉**：
-   - 在「設定與資料」->「資料與維護」新增家庭雲端登入與帳號狀態面板。
-   - 登入時自動校驗家庭白名單，非名單成員自動拒絕並登出。
-   - 實作本機資料移轉精靈：支援將本機 LocalStorage 原料與配方上傳至雲端，確認成功前絕不刪除本機舊資料，並提供永久歷史備份。
-   - 離線時自動退回 LocalStorage 本機保存，絕不白屏或卡死。
-6. **生產級安全規則**：
-   - 撰寫 `firestore.rules` 與 `firebase.json`，鎖定 `/families/{familyId}/...` 白名單授權與資料型別防護。
-7. **測試與建置**：
-   - 執行 `npm run build` 生成最新 `index.html`。
-   - 執行 `npm test`，44/44 項測試全數通過（44 pass, 0 fail）。
-   - 執行 `npm run check`，語法、檔案引用與目錄檢查全數通過。
+原料編輯集中第 2 步，確認步驟只改名稱／份數、成本自動統計、製作紀錄沿用用量。g/mL 分別合計，滴數單列，缺價／換算原因具體顯示，0 元有效。自動比例與選填同基準上限，保留歷史濃度資料。手機單欄、可捲動編輯與簡短底列。
 
 ## 異動檔案 (Changed Files)
-- `src/Index.html`：Header 同步狀態膠囊、兒童安全警語、Firebase 家庭登入與移轉精靈面板、頁尾 summaryBar ID。
-- `src/Styles.html`：同步膠囊微動態、兒童安全警示框、毛玻璃底部摘要、表單欄位響應式自適應與雙螢幕適配樣式。
-- `src/Client.html`：頁籤切換時控制底部浮動列顯示隱藏，採用相容 DOM Mock 的 `$('summaryBar')`。
-- `tools/standalone-provider.js`：整合 Firebase Auth & Firestore 雙模態資料提供者、白名單驗證、狀態管理與本機移轉方法。
-- `firestore.rules`：生產級 Cloud Firestore 安全規則。
-- `firebase.json`：Firebase 專案規則設定。
-- `index.html`：重新編譯生成之發布靜態頁。
-- `CHANGELOG.md`：新增 v1.2.0 版本紀錄。
-- `HANDOFF.md`：記錄本輪成果與驗證狀態。
+src/Core.html、Code.gs、Client.html、Index.html、Styles.html；tests/client.test.cjs、units.test.cjs；版本、操作文件與生成 index.html。
 
 ## 刻意未修改 (Do Not Do / Deliberately Omitted)
-- 不引入重型前端框架（Vue/React），維持純原生 HTML/CSS/JS 極致效能與零建置相依性。
-- 未覆寫或刪除本機瀏覽器原有 LocalStorage 資料，提供多重安全備份防線。
-- 不捏造通用兒童安全濃度或各精油密度，維持嚴謹安全基準。
+本輪未改 Firebase 認證、規則或同步程式；未改 Google 正式資料，未清除任何本機資料。Firebase 後续另階段。
 
 ## 尚未完成 (Remaining Work)
-- **P1 (阻斷/必須)**：無阻斷性問題。
-- **P2 (重要/待使用者體驗)**：請使用者與太太在手機與電腦上實際登入 Firebase 帳號體驗跨裝置即時同步。
-- **P3 (改善建議/暫緩)**：未來若有大量配方歷史，可擴充依日期範圍篩選製作紀錄。
+- **P1**：Firebase backup/snapshot 路徑與規則不符、二維陣列、失敗成功提示及即時／衝突四項問題，依追加指示下一階段處理。
+- **P2**：Apps Script 更新需人工操作；新版真實 Google 保存未驗證。
+- **P3**：手機原生數字鍵盤、Safari 與視覺截圖未驗證。
 
 ## 驗證結果 (Validation)
 ### 已執行測試與結果
-1. `npm test`：44/44 項單元測試全數通過（核心計算、伺服器模擬、用戶端互動、目錄分批、單位換算、靜態持久化）。
-2. `npm run check`：Code.gs、Core.html、Client.html、Catalog.html 語法通過，檔案引用與官網資料一致性通過。
-3. `npm run build`：成功編譯生成 `index.html`（312,227 字元）。
-
+50 項測試通過。真實本機瀏覽器完成三步驟及保存；四種手機寬度 DOM 幾何無橫向溢出、1366px 桌機三欄原料與唯讀確認正常。皂基1000g/200元使用100g讀回20元、5份每份4元；製作紀錄保存成功。
 ### 尚未驗證項目
-- 需由使用者與太太輸入真實 Google 帳號密碼進行最終真機連線驗收。
+截圖API不可用。手機實機鍵盤、Safari及Firebase跨裝置未驗證。
+### 已知風險 (Known Risks)
+Firebase既有問題仍在，本輪不以本機保存冒充雲端同步。
 
 ## Git 狀態
-- 本輪修訂包含程式碼、規則、文件與靜態打包成品，準備執行提交與推送。
+- Commit：以本輪發布提交查核
+- Push：發布前查核
+- Working Tree：Modified（本輪修改）
+- Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-1. 檢視最新 GitHub Pages 線上版本。
-2. 前往「設定與資料」->「資料與維護」，使用 `tpc0941101090@gmail.com` 或 `amethyst72@gmail.com` 登入家庭雲端。
-3. 點擊「匯入本機資料至家庭雲端」，即可將目前瀏覽器建立的原料與配方同步至雲端，太太在手機登入即可看見！
+推送 Pages 並讀回版本後，再以獨立提交處理 Firebase 四項問題；保留本機備份與失敗狀態。
+
+## 發布狀態 (Release Status)
+本機驗證通過；以 Pages 工作流程及線上讀回確認實際部署。Apps Script 未更新。
