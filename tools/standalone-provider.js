@@ -1,10 +1,11 @@
 /* 瀏覽器儲存介面：支援本機離線與 Firebase 家庭雲端雙軌同步，共用既有後端規則。 */
 (() => {
  'use strict';
+__AROMA_CLOUD_PROTOCOL__
  const KEY='aromacraft_standalone_tables_v2',OLD='aromacraft_standalone_db_v1';
  const seed=__AROMA_SEED__,sources=__AROMA_SOURCES__;
  let values;const raw=localStorage.getItem(KEY);
- if(raw){try{values=JSON.parse(raw);if(!values||typeof values!=='object'||Object.keys(seed).some(n=>!Array.isArray(values[n])))throw Error('格式異常');}catch(e){values=JSON.parse(JSON.stringify(seed));}}
+ if(raw){try{values=JSON.parse(raw);if(!values||typeof values!=='object'||Object.keys(seed).some(n=>!Array.isArray(values[n])))throw Error('格式異常');}catch(e){localStorage.setItem(KEY+'_unreadable_backup',raw);throw Error('本機資料格式不正確，原始內容已保留，請先匯出或復原備份。');}}
  else{values=JSON.parse(JSON.stringify(seed));const legacy=localStorage.getItem(OLD);if(legacy){
    try{
      const old=JSON.parse(legacy);if(Array.isArray(old.materials)&&Array.isArray(old.prices)){
@@ -49,6 +50,20 @@ __AROMA_SERVER__
  const ALLOWED_EMAILS = ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
  const FAMILY_DOC = 'home_sharing';
  let fbAuth = null, fbDb = null, currentFbUser = null, fbModules = null;
+ const PENDING=KEY+'_pending_cloud';let cloud=null,cloudRevision=0,cloudConflict=false,stopCloud=null,ownSnapshotId=null,writeCount=0,writeQueue=Promise.resolve();
+ if(raw&&localStorage.getItem(PENDING)===null&&(values['配方資料']?.length>1||values['製作紀錄']?.length>1))localStorage.setItem(PENDING,'true');
+ const tables=()=>Object.fromEntries([...sheets].map(([n,s])=>[n,s.values]));
+ const hasPending=()=>localStorage.getItem(PENDING)==='true'||writeCount>0||Boolean(window.AromaDraftPending?.());
+ function applyRemote(remote,force=false){
+   if(!remote.tables){cloudRevision=remote.revision;updateSyncStatus('offline','本機待移轉');return;}
+   if(!force&&remote.snapshotId===ownSnapshotId)return;
+   if(hasPending()&&!force&&JSON.stringify(remote.tables)!==JSON.stringify(tables())){cloudConflict=true;updateSyncStatus('error','有未同步修改，請先備份');return;}
+   localStorage.setItem(KEY+'_before_cloud_pull',JSON.stringify(tables()));
+   for(const [n,rows] of Object.entries(remote.tables))if(sheets.has(n))sheets.get(n).values=rows;
+   const upgraded=call({action:'migrateUnits'});if(!upgraded.ok)throw Error(upgraded.error);persist();cloudRevision=remote.revision;cloudConflict=false;localStorage.setItem(PENDING,'false');updateSyncStatus('synced','已同步');window.dispatchEvent?.(new Event('aroma-cloud-update'));
+ }
+ function cloudError(e){if(e.code==='sync/conflict')cloudConflict=true;localStorage.setItem(PENDING,'true');updateSyncStatus('error',e.code==='sync/conflict'?'版本衝突':'同步失敗');}
+
 
  function updateSyncStatus(status, text){
    if(typeof document === 'undefined') return;
@@ -81,7 +96,7 @@ __AROMA_SERVER__
      fbModules = { appMod, authMod, fsMod };
 
      authMod.onAuthStateChanged(fbAuth, async user => {
-       currentFbUser = user;
+       if(stopCloud){stopCloud();stopCloud=null;}cloud=null;cloudConflict=false;currentFbUser = user;
        const userBadge = document.getElementById('userBadge');
        const authSignedOut = document.getElementById('authSignedOut');
        const authSignedIn = document.getElementById('authSignedIn');
@@ -103,7 +118,8 @@ __AROMA_SERVER__
          if(authSignedIn) authSignedIn.hidden = false;
          if(authUserEmail) authUserEmail.textContent = email;
          updateSyncStatus('syncing', '同步中');
-         await pullFromFirestore();
+         cloud=AromaCloudProtocol.create({sdk:fsMod,db:fbDb,family:FAMILY_DOC,uid:user.uid,keys:Object.keys(seed)});
+         try{await pullFromFirestore();}catch(e){cloudError(e);}stopCloud=cloud.listen(remote=>{try{if(remote.revision!==cloudRevision||remote.snapshotId===null)applyRemote(remote);}catch(e){cloudError(e);}},cloudError);
        } else {
          if(userBadge) userBadge.hidden = true;
          if(authSignedOut) authSignedOut.hidden = false;
@@ -117,50 +133,11 @@ __AROMA_SERVER__
    }
  }
 
- async function pullFromFirestore(){
-   if(!fbDb || !currentFbUser || !fbModules) return;
-   try{
-     const { doc, getDoc } = fbModules.fsMod;
-     const docRef = doc(fbDb, 'families', FAMILY_DOC, 'backup', 'snapshot');
-     const snap = await getDoc(docRef);
-     if(snap.exists()){
-       const remote = snap.data();
-       if(remote && remote.tables){
-         for(const [n, rows] of Object.entries(remote.tables)){
-           if(sheets.has(n)){
-             sheets.get(n).values = rows;
-           }
-         }
-         persist();
-         updateSyncStatus('synced', '已同步雲端');
-         return true;
-       }
-     }
-     updateSyncStatus('synced', '雲端已就緒');
-   }catch(e){
-     console.error('從 Firestore 讀取失敗：', e);
-     updateSyncStatus('error', '雲端連線失敗');
-   }
-   return false;
- }
-
- async function pushToFirestore(){
-   if(!fbDb || !currentFbUser || !fbModules) return;
-   updateSyncStatus('syncing', '正在同步…');
-   try{
-     const { doc, setDoc, serverTimestamp } = fbModules.fsMod;
-     const payload = {
-       updatedAt: serverTimestamp(),
-       updatedBy: currentFbUser.email,
-       tables: Object.fromEntries([...sheets].map(([n,s])=>[n,s.values]))
-     };
-     const docRef = doc(fbDb, 'families', FAMILY_DOC, 'backup', 'snapshot');
-     await setDoc(docRef, payload, { merge: true });
-     updateSyncStatus('synced', '已同步雲端');
-   }catch(e){
-     console.error('同步至 Firestore 失敗：', e);
-     updateSyncStatus('error', '同步失敗');
-   }
+ async function pullFromFirestore(force=false){if(!cloud||!currentFbUser)throw Error('請先登入家庭雲端');const remote=await cloud.read();applyRemote(remote,force);if(cloudConflict)throw Error('本機有未同步修改，已保留原資料，請先匯出備份');return Boolean(remote.tables);}
+ function pushToFirestore(){
+  if(!cloud||!currentFbUser)return Promise.reject(Error('請先登入家庭雲端'));
+  const payload=JSON.parse(JSON.stringify(tables()));writeCount++;localStorage.setItem(PENDING,'true');
+  const work=writeQueue.catch(()=>{}).then(async()=>{if(cloudConflict){const e=Error('雲端版本衝突，請先匯出本機備份並讀回雲端');e.code='sync/conflict';throw e;}updateSyncStatus('syncing','同步中');ownSnapshotId='r'+(cloudRevision+1)+'_'+crypto.randomUUID();const result=await cloud.write(payload,cloudRevision,ownSnapshotId);cloudRevision=result.revision;writeCount--;if(writeCount===0)localStorage.setItem(PENDING,'false');updateSyncStatus('synced','已同步');return result;}).catch(e=>{writeCount--;cloudError(e);throw e;});writeQueue=work;return work;
  }
 
  window.AromaSync = {
@@ -175,7 +152,7 @@ __AROMA_SERVER__
      return await fbModules.authMod.signOut(fbAuth);
    },
    forceSync: async () => {
-     const ok = await pullFromFirestore();
+     if(hasPending()&&!confirm('讀回雲端會取代本機表格；將保留本機備份，是否繼續？'))return;const ok = await pullFromFirestore(true);
      if(ok) window.location.reload();
    },
    migrateToCloud: async () => {
@@ -187,11 +164,11 @@ __AROMA_SERVER__
    }
  };
 
- window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(async ()=>{const before=JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values])));try{const result=call(request);if(result.ok){persist();if(currentFbUser){pushToFirestore().catch(()=>{});}}success?.(result);}catch(e){const original=JSON.parse(before);for(const [n,s]of sheets)s.values=original[n]||[];failure?.(Error('本機儲存失敗，請匯出備份並確認瀏覽器儲存空間。'));}},0);return runner;}};return runner;}}};
+ window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(async ()=>{const before=JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values])));try{const result=call(request);if(result.ok){persist();if(['saveRecipe','archiveRecipe','saveMaterial','saveProduct','savePrice','saveLog','saveCost','migrateUnits','importCatalog'].includes(request.action)){localStorage.setItem(PENDING,'true');if(currentFbUser){pushToFirestore().catch(()=>{});}else updateSyncStatus('offline','本機已保存');}}success?.(result);}catch(e){const original=JSON.parse(before);for(const [n,s]of sheets)s.values=original[n]||[];failure?.(Error('本機儲存失敗，請匯出備份並確認瀏覽器儲存空間。'));}},0);return runner;}};return runner;}}};
 
  if(typeof window !== 'undefined' && typeof document !== 'undefined'){
    window.addEventListener('DOMContentLoaded',()=>{
-     initFirebase();
+     initFirebase();window.addEventListener('online',()=>{if(currentFbUser&&hasPending()&&!cloudConflict)pushToFirestore().catch(()=>{});});
 
      const btnLogin = document.getElementById('btnLogin');
      const btnLogout = document.getElementById('btnLogout');
@@ -207,7 +184,7 @@ __AROMA_SERVER__
            btnLogin.disabled = true;
            btnLogin.textContent = '登入中…';
            await window.AromaSync.login(email, pwd);
-           alert('家庭雲端登入成功！已啟用雙向即時共用。');
+           alert('已登入，請查看同步狀態；待移轉或衝突時，資料仍保存在本機。');
          }catch(e){
            alert('登入失敗：' + (e.message || e));
          }finally{

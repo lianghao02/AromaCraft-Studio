@@ -25,6 +25,7 @@
   const materialPageSize=()=>window.innerWidth<768?8:24;
   let materialLimit=materialPageSize(),validationError='';
   let data, recipe, category = '全部', oilKind = '全部', busy = false, dirty = false, editorAction, pendingSave, pendingLog, draftKey, noticeTimer = null;
+  window.AromaDraftPending=()=>dirty;window.addEventListener('aroma-cloud-update',()=>{if(!busy&&!dirty)refresh().catch(fail);});
   const blank = type => ({ id: '', version: 0, name: type + '新配方', type, quantityUnit:'mixed',targetQuantity:null, units: 1, notes: '', baseId: '', items: [], cost: { ...data.cost, minutes:0, hourly:0, other:0, loss:0, margin:0, sale:null } });
 
   function notice(message, isError = false) {

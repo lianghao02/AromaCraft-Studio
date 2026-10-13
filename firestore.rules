@@ -19,6 +19,22 @@ service cloud.firestore {
       allow read: if isFamilyMember();
       allow write: if false; // 禁止覆寫家庭根設定
 
+      // 同步快照使用 JSON 字串，不寫入二維陣列；歷史快照只允許建立。
+      function validHead(){return request.resource.data.keys().hasAll(['schemaVersion','revision','snapshotId','updatedAt','updatedBy']) && request.resource.data.keys().hasOnly(['schemaVersion','revision','snapshotId','updatedAt','updatedBy']) && request.resource.data.schemaVersion==2 && request.resource.data.revision is int && request.resource.data.revision>0 && request.resource.data.snapshotId is string && request.resource.data.snapshotId.size()<100 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;}
+      function headMatchesSnapshot(){let snapshot=getAfter(/databases/$(database)/documents/families/$(familyId)/backup/$(request.resource.data.snapshotId)).data;return snapshot.revision==request.resource.data.revision && snapshot.updatedBy==request.auth.uid;}
+      function validSnapshot(){let head=getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data;return request.resource.data.keys().hasAll(['schemaVersion','revision','tablesJson','updatedAt','updatedBy']) && request.resource.data.keys().hasOnly(['schemaVersion','revision','tablesJson','updatedAt','updatedBy']) && request.resource.data.schemaVersion==2 && request.resource.data.revision is int && request.resource.data.revision>0 && request.resource.data.tablesJson is string && request.resource.data.tablesJson.size()>0 && request.resource.data.tablesJson.size()<=900000 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time && head.revision==request.resource.data.revision;}
+      match /backup/{snapshotId}{
+        allow read: if isFamilyMember() && familyId=='home_sharing';
+        allow create: if isFamilyMember() && familyId=='home_sharing' && snapshotId!='snapshot' && validSnapshot() && getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data.snapshotId==snapshotId;
+        allow update,delete: if false;
+      }
+      match /settings/syncHead{
+        allow read: if isFamilyMember() && familyId=='home_sharing';
+        allow create: if isFamilyMember() && familyId=='home_sharing' && validHead() && request.resource.data.revision==1 && headMatchesSnapshot();
+        allow update: if isFamilyMember() && familyId=='home_sharing' && validHead() && request.resource.data.revision==resource.data.revision+1 && headMatchesSnapshot();
+        allow delete: if false;
+      }
+
       // 1. 原料資料 (materials)
       match /materials/{materialId} {
         allow read: if isFamilyMember();
@@ -99,8 +115,8 @@ service cloud.firestore {
 
       // 8. 系統設定 (settings)
       match /settings/{settingId} {
-        allow read: if isFamilyMember();
-        allow write: if isFamilyMember();
+        allow read: if isFamilyMember() && settingId!='syncHead';
+        allow write: if isFamilyMember() && settingId!='syncHead';
       }
     }
   }
