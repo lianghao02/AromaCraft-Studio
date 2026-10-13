@@ -197,3 +197,19 @@ test('補充重量經伺服器保存讀回，價格更新不改歷史比例快�
  const saved=h.call('saveRecipe',r);assert.equal(saved.ok,true,saved.error);assert.equal(saved.value.concentration.measuredWeights[oil.id].grams,.9);near(saved.value.snapshot.concentration.percent,.9/99.9*100);
  const loaded=h.call('loadRecipe',{id:saved.value.id,version:1});assert.equal(loaded.ok,true);near(loaded.value.snapshot.concentration.percent,saved.value.snapshot.concentration.percent);
 });
+
+
+test('日常精油預設20滴換算，個別設定優先且不影響其他原料',()=>{
+ const ps=prices.map(p=>({...p,density:null,dropsPerMl:null}));
+ const r={...recipe(),quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,useDefaultDrops:true,basis:'mL'},items:[{materialId:'oil',priceId:'po',quantity:10,unit:'滴'},{materialId:'base',priceId:'pb',quantity:29.5,unit:'mL'}]};
+ const pp=[ps[0],{...ps[1],unit:'mL'}];const out=c.calculate(r,materials,pp,[]);near(out.items[0].amount,.5);near(out.items[0].cost,10);near(out.concentration.percent,.5/30*100);assert.match(out.concentration.message,/估算/);
+ const custom=c.calculate({...r,items:[{...r.items[0],dropsPerMl:40},r.items[1]]},materials,pp,[]);near(custom.items[0].amount,.25);
+ const byPrice=c.calculate(r,materials,[{...pp[0],dropsPerMl:25},pp[1]],[]);near(byPrice.items[0].amount,.4);
+ assert.equal(c.applyDropDefaults(r,materials,pp).items[1].dropsPerMl,undefined);assert.equal(ps[0].dropsPerMl,null);
+ const weight={...r,concentration:{...r.concentration,basis:'g'},items:[r.items[0],{...r.items[1],unit:'g',quantity:100}]};assert.equal(c.concentration(weight,materials,ps).available,false);near(c.concentration(weight,materials,ps).dropsPer100g,10);
+});
+test('預設滴數由伺服器重新計算並保存至配方，舊快照不追溯更新',()=>{
+ const h=createHarness();h.setup();h.call('migrateUnits');const b=h.call('bootstrap').value,oil=b.materials.find(m=>m.category==='精油'),op=b.prices.find(p=>p.materialId===oil.id);
+ const r={...recipe(),id:'',version:0,requestId:'default-drops-001',quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,useDefaultDrops:true,basis:'mL'},items:[{materialId:oil.id,priceId:op.id,quantity:10,unit:'滴'}]};
+ const saved=h.call('saveRecipe',r);assert.equal(saved.ok,true,saved.error);assert.equal(saved.value.items[0].dropsPerMl,20);assert.equal(saved.value.concentration.useDefaultDrops,true);
+});

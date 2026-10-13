@@ -13,6 +13,7 @@ var AromaCore = (() => {
     if (typeof v !== 'string' || v.length > max || (required && !v.trim())) throw Error(label + '格式不正確');
     return v.trim();
   }
+  const DEFAULT_DROPS_PER_ML=20;
   const BASIS=['g','mL'];
   const empty=v=>v===''||v===null||v===undefined;
   function metadata(p) {
@@ -59,6 +60,7 @@ var AromaCore = (() => {
     base.quantity=remainder;base.unit=basisOf(next);delete base.grams;return next;
   }
   function editQuantityUnchecked(recipe,id,value,unit,materials,prices){
+    recipe=applyDropDefaults(recipe,materials,prices);
     const next={...recipe,items:recipe.items.map(i=>({...i}))};const item=next.items.find(i=>i.materialId===id);if(!item)throw Error('找不到原料');
     item.quantity=number(value,'原料用量',0,1e9);item.unit=unit;delete item.grams;try{itemAmount(item,next,prices);}catch(e){if(!next.concentration?.auto||!/(缺少.*密度|缺少.*滴數)/.test(e.message))throw e;if(unit==='滴'&&!Number.isInteger(item.quantity))throw Error('滴數必須是整數');}
     const target=targetOf(next);if(next.baseId&&target!==null){if(id===next.baseId){const total=next.items.reduce((s,i)=>s+itemAmount(i,next,prices),0);if(!sameTotal(total,target))throw Error('固定總量的補足原料由系統計算，請修改其他原料或總量');return next;}return balance(next,materials,prices);}return next;
@@ -70,6 +72,14 @@ var AromaCore = (() => {
     const amounts=recipe.items.map(i=>itemAmount(i,recipe,prices));const next={...recipe,targetQuantity:target,items:recipe.items.map((i,n)=>({...i,unit:basisOf(recipe),quantity:amounts[n]*target/old}))};next.items.forEach(i=>delete i.grams);return balance(next,materials,prices);
   }
   // 濃度使用精油體積／成品體積；目標上限由使用者指定，不代表安全建議。
+  function applyDropDefaults(recipe,materials,prices){
+    if(recipe.concentration?.useDefaultDrops!==true)return recipe;
+    return {...recipe,items:(recipe.items||[]).map(i=>{
+      if(materials.find(m=>m.id===i.materialId)?.category!=='精油')return i;
+      const p=prices.find(p=>p.id===i.priceId&&p.materialId===i.materialId);
+      return empty(i.dropsPerMl)&&empty(p?.dropsPerMl)?{...i,dropsPerMl:DEFAULT_DROPS_PER_ML}:i;
+    })};
+  }
   function productBasis(type){return ['無水精油膏','融製精油皂'].includes(type)?'g':'mL';}
   function automaticConcentration(recipe,materials,prices,selectedId){
     const cfg=recipe.concentration||{},sums={g:0,mL:0},oils={g:0,mL:0},known={g:true,mL:true},oilKnown={g:true,mL:true},issues={g:[],mL:[]};
@@ -112,9 +122,10 @@ var AromaCore = (() => {
     }
     const problems=basis?issues[basis]:[...issues.g,...issues.mL],noOil=oilCount===0;
     return {available:percent!==null,percent,basis,total,oilMl:oilKnown.mL?oils.mL:null,totalMl:basis==='mL'?total:null,declaredMl:null,maxPercent:limit,overLimit:over,totalMismatch:false,maxDrops,remainingDrops,drops,allOilDropsKnown,noOil,issues:problems,baseG:baseKnown?baseG:null,dropsPer100g:ratio,
-      message:noOil?(limit!==null&&!comparable?'未加入精油；參考上限基準不同或資料不足，未比較。':'未加入精油。'):over?'超過自訂參考上限，請核對配方。':limit!==null&&!comparable?'參考上限基準不同或資料不足，未比較。':percent!==null?'依配方投入量計算。':problems.length?problems.map(x=>x.name+'：'+x.action+'。').join(' '):ratio!==null?'滴數添加比例，不是濃度百分比。':'請先填寫原料用量。'};
+      message:noOil?(limit!==null&&!comparable?'未加入精油；參考上限基準不同或資料不足，未比較。':'未加入精油。'):over?'超過自訂參考上限，請核對配方。':limit!==null&&!comparable?'參考上限基準不同或資料不足，未比較。':percent!==null?((recipe.items||[]).some(i=>i.unit==='滴')?'依配方投入量計算；滴數換算的容量與材料費為估算。':'依配方投入量計算。'):problems.length?problems.map(x=>x.name+'：'+x.action+'。').join(' '):ratio!==null?'滴數添加比例，不是濃度百分比。':'請先填寫原料用量。'};
   }
   function concentration(recipe,materials,prices,selectedId){
+    recipe=applyDropDefaults(recipe,materials,prices);
     if(recipe.concentration?.auto)return automaticConcentration(recipe,materials,prices,selectedId);
     const cfg=recipe.concentration||{},limit=empty(cfg.maxPercent)?null:number(cfg.maxPercent,'目標濃度上限',0,100);
     const declared=empty(cfg.totalMl)?null:number(cfg.totalMl,'成品總容量',Number.MIN_VALUE,1e9);
@@ -155,6 +166,7 @@ var AromaCore = (() => {
     };
   }
   function calculate(recipe, materials, prices, rules) {
+    recipe=applyDropDefaults(recipe,materials,prices);
     if (!TYPES.includes(recipe.type)) throw Error('不支援的作品類型');
     text(recipe.name, '配方名稱', 100);
     const units = number(recipe.units, '合格成品數量', 1, 100000);
@@ -235,7 +247,7 @@ var AromaCore = (() => {
     if (!old) throw Error('請先設定原料重量');
     return items.map(i => ({ ...i, grams: i.grams * target / old }));
   }
-  return { TYPES, number, text, price, settings, calculate, adjust, scale, metadata,convert,convertInput,basisOf,targetOf,itemAmount,sameTotal,balance,editQuantity,scaleRecipe,releaseTarget,itemPrice,nativeBasis,concentration,validateConcentration,automaticConcentration,productBasis,availableUnits };
+  return { TYPES, number, text, price, settings, calculate, adjust, scale, metadata,convert,convertInput,basisOf,targetOf,itemAmount,sameTotal,balance,editQuantity,scaleRecipe,releaseTarget,itemPrice,nativeBasis,concentration,validateConcentration,automaticConcentration,productBasis,applyDropDefaults,DEFAULT_DROPS_PER_ML,availableUnits };
 })();
 if (typeof module !== 'undefined') module.exports = AromaCore;
 </script>
