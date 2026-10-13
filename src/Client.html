@@ -81,6 +81,8 @@
       if (btn.setAttribute) btn.setAttribute('aria-selected', String(active));
       view.hidden = !active;
     });
+    const summaryEl = $('summaryBar');
+    if (summaryEl) summaryEl.hidden = (target !== 'tabRecipe');
     if(data&&target!=='tabSaved')renderMaterials();
   }
 

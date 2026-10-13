@@ -24,14 +24,16 @@
   line-height:1.5;
 }
 *{box-sizing:border-box}body{margin:0}
-header{max-width:430px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 20px 16px}
+header{max-width:430px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 16px 12px}
 header p{font-size:14px;color:var(--muted)}
-.brand{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:800;letter-spacing:-0.5px}
-.brand>span{font-size:20px;font-weight:600;letter-spacing:0}
-.brand small{display:block;font-size:10px;letter-spacing:1px;margin-top:2px;color:var(--muted);font-weight:400}
-.header-actions{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:800;letter-spacing:-0.5px;min-width:0;flex:1}
+.brand>span{font-size:18px;font-weight:600;letter-spacing:0;min-width:0}
+.brand small{display:block;font-size:10px;letter-spacing:.5px;margin-top:2px;color:var(--muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .header-actions>.badge{font-size:11px;white-space:nowrap}
-.help-btn{min-height:32px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--line);border-radius:100px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;transition:all .15s ease}
+.auth-fields{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.auth-fields label{margin-bottom:0}
+.help-btn{min-height:30px;padding:4px 9px;font-size:12px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--line);border-radius:100px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;transition:all .15s ease;white-space:nowrap;flex-shrink:0}
 .help-btn:hover{background:#edf3ed;border-color:var(--green)}
 main{max-width:430px;margin:auto;padding:0 16px;padding-bottom:calc(260px + env(safe-area-inset-bottom))}
 section,.panel-card,.fold{margin:12px 0;border-radius:var(--radius);background:white;border:1px solid var(--line)}
@@ -573,10 +575,22 @@ label{font-size:14px}
 .sync-capsule.error .sync-dot{background:#e74c3c;box-shadow:0 0 6px rgba(231,76,60,.5)}
 @keyframes pulse-sync{0%{opacity:.4;transform:scale(.85)}100%{opacity:1;transform:scale(1.25)}}
 
-/* === 兒童精油安全警告區塊 === */
-.child-safety-notice{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;background:#fef5ec;border:1px solid #f9d3b4;border-radius:11px;font-size:12px;color:#783810;line-height:1.6;margin-top:10px}
+/* === 表單欄位自適應排版（解決輸入框被 96px/90px 擠壓問題） === */
+#recipePanel .concentration-panel .fields,
+#savedPanel .fields,
+#logPanel .fields{grid-template-columns:1fr 1fr}
+#recipePanel>.fields{grid-template-columns:minmax(0,1fr) 115px}
+@media(max-width:480px){
+  #recipePanel .concentration-panel .fields,
+  #savedPanel .fields,
+  #logPanel .fields{grid-template-columns:1fr;gap:8px}
+}
+
+/* === 兒童精油安全警告區塊階層排版 === */
+.child-safety-notice{padding:12px 14px;background:#fef5ec;border:1px solid #f9d3b4;border-radius:12px;font-size:12px;color:#783810;line-height:1.6;margin-top:10px}
+.child-safety-notice .safety-title{font-size:13px;font-weight:700;color:#b33c06;margin-bottom:4px}
+.child-safety-notice .safety-desc{margin:0;font-size:12px;color:#8c4e20;line-height:1.6}
 .child-safety-notice strong{color:#b33c06}
-.safety-icon{font-size:16px;flex-shrink:0;line-height:1.2}
 
 /* === 毛玻璃底部摘要與安全觸控熱區 === */
 .summary{background:rgba(255,247,229,0.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(220,200,160,0.85);box-shadow:0 -5px 22px rgba(40,55,46,0.08)}

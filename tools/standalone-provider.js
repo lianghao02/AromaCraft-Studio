@@ -92,20 +92,23 @@ __AROMA_SERVER__
          if(!ALLOWED_EMAILS.includes(email)){
            await authMod.signOut(fbAuth);
            alert('此 Google/Firebase 帳號（' + email + '）不在家庭成員白名單中，已自動登出。');
-           updateSyncStatus('offline', '非授權成員');
+           updateSyncStatus('offline', '非授權');
            return;
          }
-         if(userBadge) userBadge.textContent = '家庭雲端 · ' + email.split('@')[0];
+         if(userBadge){
+           userBadge.textContent = '🏠 ' + email.split('@')[0];
+           userBadge.hidden = window.innerWidth < 600;
+         }
          if(authSignedOut) authSignedOut.hidden = true;
          if(authSignedIn) authSignedIn.hidden = false;
          if(authUserEmail) authUserEmail.textContent = email;
-         updateSyncStatus('syncing', '正在載入雲端…');
+         updateSyncStatus('syncing', '同步中');
          await pullFromFirestore();
        } else {
-         if(userBadge) userBadge.textContent = '本機離線';
+         if(userBadge) userBadge.hidden = true;
          if(authSignedOut) authSignedOut.hidden = false;
          if(authSignedIn) authSignedIn.hidden = true;
-         updateSyncStatus('offline', '本機離線');
+         updateSyncStatus('offline', '本機');
        }
      });
    }catch(e){
