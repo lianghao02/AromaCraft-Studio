@@ -302,7 +302,7 @@
   async function refresh(preserve = true) {
     const next = await rpc('bootstrap');
     data = next; draftKey = 'aromacraft-draft-v1:' + data.email;
-    $('connection').textContent = (window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
+    $('connection').textContent = (window.AROMA_LOCAL ? '瀏覽器本機模式 · 換裝置前請匯出備份 · ' : window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
     if (!recipe || !preserve) recipe = blank('融製精油皂');
     renderMaterials(); renderSaved(); renderRecipe();
   }

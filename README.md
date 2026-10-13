@@ -8,6 +8,10 @@
 
 先完成前端調適，再更新 Google 部署。開啟專案根目錄的「啟動預覽.cmd」即可啟動本機示範；需 Node.js 20 以上。詳細步驟與驗收順序見 [前端調適](docs/前端調適.md)。
 
+## 線上使用
+
+[開啟 AromaCraft Studio](https://lianghao02.github.io/AromaCraft-Studio/)：資料保存在目前瀏覽器，不同步 Google 或其他裝置。換電腦前請在「資料與維護」匯出備份。也可直接開啟下載包的 index.html。
+
 ## 開始使用
 
 1. 正式使用：依 [安裝部署說明](docs/安裝部署.md) 建立試算表、貼上 `src/` 原始碼、設定家庭 Google 帳號白名單並部署。
