@@ -160,3 +160,40 @@ test('三步驟無價格批次可統計用量並明示未完整；自動基準�
  const r={name:'缺價合成測試',type:'按摩油',quantityUnit:'mixed',units:1,cost,concentration:{auto:true,totalMl:30,maxPercent:2,limitBasis:'g'},items:[{materialId:'oil',priceId:'',unit:'mL',quantity:1}]};const out=c.calculate(r,materials,[],[]);assert.equal(out.costComplete,false);assert.equal(out.batch,null);assert.equal(out.totals.mL,1);assert.equal(out.missingPrices[0].name,'合成測試精油');
  const h=createHarness();h.setup();const b=ok(h,'bootstrap'),p=b.prices.find(p=>p.materialId==='demo-soap');const d={...r,name:'自動濃度保存合成測試',requestId:'automatic-save-1',items:[{materialId:'demo-soap',priceId:p.id,quantity:100,unit:'g'}]};const saved=ok(h,'saveRecipe',d);assert.equal(saved.concentration.auto,true);assert.equal(saved.concentration.totalMl,30);assert.equal(saved.concentration.limitBasis,'g');assert.equal(saved.snapshot.concentration.basis,'g');
 });
+
+
+test('作品基準、零用量、具名缺資料與添加比例',()=>{
+ const ps=prices.map(p=>({...p,density:null,dropsPerMl:null}));
+ const r={...recipe(),quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,basis:'mL'},items:[{materialId:'oil',priceId:'po',quantity:1,unit:'mL'},{materialId:'base',priceId:'pb',quantity:0,unit:'g'}]};
+ assert.equal(c.productBasis('按摩油'),'mL');assert.equal(c.productBasis('融製精油皂'),'g');
+ near(c.concentration(r,materials,ps).percent,100);
+ const mixed={...r,concentration:{auto:true,basis:'g'},items:[r.items[0],{...r.items[1],quantity:100}]};
+ const result=c.concentration(mixed,materials,ps);assert.equal(result.available,false);assert.equal(result.issues[0].materialId,'oil');assert.match(result.message,/合成測試精油.*實秤重量/);
+ const drop={...mixed,items:[{...mixed.items[0],quantity:10,unit:'滴'},mixed.items[1]]};near(c.concentration(drop,materials,ps).dropsPer100g,10);
+ const partial={...drop,items:[...drop.items,{materialId:'oil2',priceId:'po2',quantity:1,unit:'mL'}]};
+ assert.equal(c.concentration(partial,[...materials,{id:'oil2',name:'另一瓶',category:'精油'}],[...ps,{...ps[0],id:'po2',materialId:'oil2'}]).dropsPer100g,null);
+});
+test('實秤重量只補濃度不雙算成本，用量變動後失效',()=>{
+ const ps=prices.map(p=>({...p,density:null}));
+ const r={...recipe(),quantityUnit:'mixed',targetQuantity:null,baseId:'',units:1,concentration:{auto:true,basis:'g',measuredWeights:{oil:{grams:.9,quantity:1,unit:'mL',priceId:'po'}}},items:[{materialId:'oil',priceId:'po',quantity:1,unit:'mL'},{materialId:'base',priceId:'pb',quantity:99,unit:'g'}]};
+ const result=c.calculate(r,materials,ps,[]);near(result.concentration.percent,.9/99.9*100);near(result.material,20+99*.8);
+ near(c.calculate({...r,units:5},materials,ps,[]).concentration.percent,result.concentration.percent);
+ assert.equal(c.concentration({...r,items:[{...r.items[0],quantity:2},r.items[1]]},materials,ps).available,false);
+ assert.throws(()=>c.concentration({...r,concentration:{...r.concentration,measuredWeights:{oil:{...r.concentration.measuredWeights.oil,grams:-1}}}},materials,ps),/實秤重量/);
+});
+test('自由總量滴數上限使用包含精油的分母，各瓶換算分開',()=>{
+ const ps=[{...prices[0],density:null,dropsPerMl:20},{...prices[1],unit:'mL',density:null}];
+ const r={...recipe(),quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,basis:'mL',limitBasis:'mL',maxPercent:1},items:[{materialId:'oil',priceId:'po',quantity:0,unit:'滴'},{materialId:'base',priceId:'pb',quantity:30,unit:'mL'}]};
+ const result=c.concentration(r,materials,ps,'oil');assert.equal(result.maxDrops,6);assert.equal(result.remainingDrops,6);
+ const withOil={...r,items:[{...r.items[0],quantity:6},r.items[1]]};near(c.concentration(withOil,materials,ps).percent,.3/30.3*100);
+ const multi={...r,concentration:{auto:true,basis:'mL'},items:[{...r.items[0],quantity:20},{materialId:'oil2',priceId:'po2',quantity:40,unit:'滴'},r.items[1]]};
+ const out=c.concentration(multi,[...materials,{id:'oil2',name:'第二瓶',category:'精油'}],[...ps,{...ps[0],id:'po2',materialId:'oil2',dropsPerMl:40}]);near(out.percent,2/32*100);
+});
+test('補充重量經伺服器保存讀回，價格更新不改歷史比例快照',()=>{
+ const h=createHarness();h.setup();h.call('migrateUnits');
+ const b=h.call('bootstrap').value,base=b.materials.find(m=>m.category==='基底油'),oil=b.materials.find(m=>m.category==='精油');
+ const bp=b.prices.find(p=>p.materialId===base.id),op=b.prices.find(p=>p.materialId===oil.id);
+ const r={...recipe(),id:'',version:0,requestId:'ratio-save-001',quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,basis:'g',measuredWeights:{[oil.id]:{grams:.9,quantity:1,unit:'mL',priceId:op.id}}},items:[{materialId:oil.id,priceId:op.id,quantity:1,unit:'mL'},{materialId:base.id,priceId:bp.id,quantity:99,unit:'g'}]};
+ const saved=h.call('saveRecipe',r);assert.equal(saved.ok,true,saved.error);assert.equal(saved.value.concentration.measuredWeights[oil.id].grams,.9);near(saved.value.snapshot.concentration.percent,.9/99.9*100);
+ const loaded=h.call('loadRecipe',{id:saved.value.id,version:1});assert.equal(loaded.ok,true);near(loaded.value.snapshot.concentration.percent,saved.value.snapshot.concentration.percent);
+});

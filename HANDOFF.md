@@ -1,51 +1,52 @@
 # HANDOFF
 
-## 核心中繼資料 (Metadata)
+## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：44c4df1（本輪基準；最終修改見最新 Git Commit）
+- **Commit SHA**：db975a5c3d41f5ef8f71e2a9b5726fcce7093cc1（本輪基準；最終實作見最新 Commit）
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX / RELEASE
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ## 目前狀態
-Firebase 規則與 Pages v1.2.2 已發布；本輪更新既有 Apps Script 至第 5 版，Google 正式網址讀回新版與舊配方。手機欄位修正已完成，最新實機回測待使用者回報。
+v1.3.0 精油比例引導可交付；Apps Script 第 6 版已發布，Pages 隨本輪推送更新。最新 iPhone Safari 回測待使用者。
 
 ## 本輪目標
-完成手機原生鍵盤／Safari 驗證與 Apps Script 更新。依使用者截圖局部修正，不重構。
+按既定規格修改作品基準、即時比例、具名缺資料與實秤重量，驗證後發布。
 
 ## 基準與已確認事實 (Baseline & Confirmed Facts)
-接手 main 44c4df1，工作目錄乾淨。53 項測試通過。Google 舊版六檔、部署第 3 版，存取權限僅本人。
+main db975a5；只有前輪建立的濃度規格與交接未提交，已確認是本對話產物並保留。原程式 v1.2.2／57 測試中的原有 53 項基線；Google 原部署第 5 版。
 
 ## 已完成 (Completed)
-Google 原六檔已私人備份，七個新版程式檔已上傳並比對；manifest 的僅本人權限保留。migrateUnitSchema 執行完畢；正式部署第 5 版顯示 v1.2.2，既有配方 v6 可讀。Google 隱藏 Firebase 登入面板及修正頁尾。iPhone 截圖確認 1.5 輸入、原生鍵盤及本機配方保存；修正日期溢出樣式及滴數 decimal 鍵盤。
+新作品固定重量／容量基準。第 2 步即時比例及補資料入口，第 3 步重用結果；原料可補本次實秤重量，保存於 concentrationJson.measuredWeights，對應用量／單位／價格 ID 失配時不採用。成本保持原用量，不雙算。零用量、部分滴數與正確分母的整滴上限已修正；無百分比顯示添加量。Google 四檔私人備份及上傳逐檔比對一致，第 6 版發布，沿用原網址／僅本人權限。
 
-## 變更檔案 (Changed Files)
-src/Client.html、src/Index.html、src/Styles.html、產生的 index.html、docs/手機與Google部署驗證.md、本交接。
+## 異動檔案 (Changed Files)
+src/Core.html、Client.html、Index.html、Styles.html；package.json、index.html；tests/units.test.cjs；README.md、CHANGELOG.md、濃度規格、本交接。
 
 ## 刻意未修改 (Do Not Do / Deliberately Omitted)
-不清空手機或雲端資料，不改認證或家庭白名單，不放寬 Google 權限，不在兩平台間搬移資料。沒有寫入額外 Google 測試配方。
+不新增必填密度、不猜測 g＝mL、不新增資料表、不改認證或 Firebase 同步架構、不改歷史快照、不清除舊資料。正式 Google 未寫入額外測試配方。
 
 ## 尚未完成 (Remaining Work)
-- **P2**：最新日期／鍵盤樣式需 iPhone Safari 回測；手機截圖只證明本機保存，家庭帳號跨裝置同步仍待驗收。
-- **P3**：自動截圖介面不可用，未提供自動截圖證據。
+- **P1 (阻斷/必須)**：無已知阻斷問題。
+- **P2 (重要/當次)**：使用者 iPhone Safari 最新介面、鍵盤及補重量保存回測；家庭跨裝置同步待實際帳號驗收。
+- **P3 (改善建議/暫緩)**：自動截圖仍不可用，沒有截圖證據。
 
 ## 驗證結果 (Validation)
 ### 已執行測試與結果
-53 項測試通過，語法檢查通過。Google 官方頁面顯示第 5 版更新成功，原正式網址讀回 v1.2.2、Google 試算表標示與舊配方。iPhone 截圖確認小數輸入與手機驗證 v1 保存。
+57 項回歸通過，新增四組涵蓋零用量、缺資料、實秤不雙算、失配、滴數上限與保存讀回。語法檢查通過。本機 Browser：99 g＋1 mL 精油補 0.9 g＝0.90%，五份比例不變，成本 278／每份 55.60；保存成功、改量需補重量。320／375／390／430／1366 px DOM 無溢出，console error 為空。Apps Script 官方顯示第 6 版部署成功。
 ### 尚未驗證項目
-最新日期樣式與滴數輸入模式的實機回測；完整手機返回／份數與保存讀回；家庭跨裝置同步。
+真實 iPhone Safari 最新變更、正式家庭跨裝置同步。
 ### 已知風險 (Known Risks)
-Google 網址與 Pages Firebase 網站使用不同資料，不能將一邊保存視為另一邊已同步。原生日期樣式需由真實 Safari 確認。
+歷史配方無新 basis 時維持舊自動基準；不因作品名重寫。缺重量或滴數不強行產生百分比；比例只是投入量估算，不判定兒童適用性。
 
 ## Git 狀態
-- Commit：本輪修正提交於最新 Commit
-- Push：本輪提交推送 main
-- Working Tree：本輪提交完成後應為 Clean
+- Commit：本輪相關修改提交於最新 Commit
+- Push：本輪推送 main
+- Working Tree：提交前僅本輪相關檔案
 - Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-請使用者在 iPhone Safari 重新整理後，確認日期欄位、小數鍵盤、套用與份數操作；依具體回報修正，勿清除舊資料。
+確認 Pages 對應 Commit Actions 成功，再請使用者在 iPhone 重新整理 v1.3.0，測試重量配方補重量與液體滴數比例。不要清除舊資料。
 
 ## 發布狀態 (Release Status)
-Apps Script 第 5 版已部署，原網址與存取權限保留；Pages 隨本輪推送更新；實際結果需檢查對應 Actions。
+Apps Script 第 6 版已發布；Pages 隨本輪推送發布。沒有變更 Firestore 規則。
