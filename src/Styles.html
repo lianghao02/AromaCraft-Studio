@@ -625,4 +625,24 @@ input[type="date"]::-webkit-date-and-time-value{min-height:1.5em;text-align:left
  html.keyboard-open main{padding-bottom:24px}
 }
 @media(prefers-reduced-motion:reduce){.tab-btn{transition:none}}
+
+.saved-category{margin:16px 0 24px}.saved-category>h2{font-size:20px;color:var(--green);padding-bottom:8px;border-bottom:1px solid var(--line)}.saved-category>h2 small{font-size:13px;color:var(--muted);font-weight:400;margin-left:8px}
+/* 類別只有名稱，使用緊湊按鈕保留觸控空間。 */
+#workPanel .grid.works{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+#workPanel .work{min-height:52px;height:auto;padding:10px 8px;justify-content:center;align-items:center;flex-direction:row;border-radius:12px;text-align:center}
+#workPanel .work small{display:none}
+#workPanel .work strong{font-size:15px}
+@media(min-width:768px){#workPanel .grid.works{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+#recipePanel>summary{cursor:pointer;min-height:44px;list-style:none}#recipePanel>summary::-webkit-details-marker{display:none}#recipePanel>summary::before{content:"▸";color:var(--green)}#recipePanel[open]>summary::before{content:"▾"}#recipePanel:not([open])>summary{margin-bottom:0;border-radius:15px}.saved-recipe-summary{font-size:14px;line-height:1.6;overflow-wrap:anywhere}.saved-recipe-actions{display:flex;gap:8px;margin-top:12px}.saved-recipe-actions button{min-height:44px}
+/* 收合時讓第三步與前兩步一樣，箭頭與標題並排。 */
+#viewRecipe[data-mode="share"] #recipePanel>summary.section-head{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;align-items:start}
+#recipePanel>summary::before{grid-column:1;grid-row:1;font-size:16px;line-height:24px}
+#recipePanel>summary>div{grid-column:2;min-width:0}
+#recipePanel>summary .recipe-head-actions{grid-column:2;grid-row:2}
+#recipePanel:not([open]){padding-bottom:0}
+#recipePanel:not([open])>summary .recipe-head-actions{display:none}
+@media(max-width:767px){#viewRecipe[data-mode="share"] #recipePanel{margin:0}}
+
+#selectedItems{display:flex;flex-wrap:wrap;gap:8px}.selected-material-chip{display:flex;align-items:center;gap:4px;padding:0 4px 0 12px;border:1px solid var(--line);border-radius:12px;background:var(--materials-soft,#f3edf9);min-width:0;max-width:100%}.selected-material-chip span{overflow-wrap:anywhere;font-size:14px}.selected-material-chip button{min-width:44px;min-height:44px;padding:4px;border:0;background:transparent}#materialPicker:not([data-manage="true"]) .mat-gear{display:none}.picker-top-bar .return-btn{min-height:48px}.recipe-notes{margin-top:16px}
 </style>

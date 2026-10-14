@@ -4,6 +4,32 @@ const {createHarness}=require('../tools/gas-mock.cjs');
 function start(){const h=createHarness();h.setup();return h;}
 function ok(h,action,d){const r=h.call(action,d);assert.equal(r.ok,true,r.error);return r.value;}
 function recipe(){return {id:'',version:0,requestId:'request-1',name:'家庭測試皂',type:'融製精油皂',units:2,notes:'',baseId:'demo-soap',cost:{packaging:2,minutes:0,hourly:0,other:0,loss:0,margin:20,sale:null},items:[{materialId:'demo-soap',priceId:'demo-soap-price',grams:100}]};}
+test('配方庫精油摘要與比例讀取已存快照，不隨原料名稱改動',()=>{
+  const h=start();ok(h,'importCatalog');const data=ok(h,'bootstrap');
+  const oil=data.materials.find(m=>m.id==='yl-354876'),price=data.prices.find(p=>p.materialId===oil.id);
+  const saved=ok(h,'saveRecipe',{...recipe(),type:'按摩油',baseId:'',quantityUnit:'mixed',concentration:{auto:true,basis:'mL'},items:[{materialId:oil.id,priceId:price.id,quantity:1,unit:'mL'}]});
+  ok(h,'saveMaterial',{...oil,name:'變更後名稱'});
+  const summary=ok(h,'bootstrap').recipes.find(r=>r.id===saved.id);
+  assert.equal(summary.oils[0].name,oil.name);
+  assert.deepEqual(summary.concentration,saved.snapshot.concentration);
+  assert.deepEqual(ok(h,'loadRecipe',{id:saved.id,version:1}).snapshot,saved.snapshot);
+});
+test('自製配方類別可保存，舊類型分組不改歷史內容或計算基準',()=>{
+  const h=start(),core=h.loadCore();
+  const legacy=ok(h,'saveRecipe',recipe());
+  for(const type of core.CATEGORIES){
+    const r={...recipe(),type,requestId:'category-'+type,name:type+'自製測試'};
+    const saved=ok(h,'saveRecipe',r);
+    assert.equal(saved.type,type);
+    assert.equal(ok(h,'loadRecipe',{id:saved.id,version:saved.version}).type,type);
+  }
+  assert.equal(core.categoryOf('日常清潔液'),'清潔劑');
+  assert.equal(core.categoryOf('水垢清潔'),'清潔劑');
+  for(const type of ['精油膏','無水精油膏','精油皂','融製精油皂'])assert.equal(core.productBasis(type),'g');
+  for(const type of ['按摩油','清潔劑','其他'])assert.equal(core.productBasis(type),'mL');
+  const reread=ok(h,'loadRecipe',{id:legacy.id,version:legacy.version});
+  assert.equal(reread.type,'融製精油皂');assert.deepEqual(reread.snapshot,legacy.snapshot);
+});
 test('初始化八表、重跑不重複且保留既有資料',()=>{
   const h=start();assert.equal(h.sheets.size,8);h.setup();assert.equal(ok(h,'bootstrap').materials.length,4);assert.equal(ok(h,'bootstrap').prices.length,4);
 });

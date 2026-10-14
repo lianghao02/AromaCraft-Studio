@@ -148,7 +148,8 @@ function bootstrap_() {
   const cost = rows_('成本設定');
   const archived=archivedRecipes_();
   return { unitSchema:columns_('配方明細').includes('dropsPerMl'),materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
-    recipes: recipes_().map(r => ({ id: r.id, version: r.version, name: r.name, type: r.type, archived:archived[r.id]===true,createdAt: r.createdAt, safety: r.snapshot.safety })),
+    recipes: recipes_().map(r => ({ id: r.id, version: r.version, name: r.name, type: r.type, archived:archived[r.id]===true,createdAt: r.createdAt, safety: r.snapshot.safety,
+      oils:(r.snapshot.items||[]).filter(i=>i.category==='精油').map(i=>({materialId:i.materialId,name:i.name})),concentration:r.snapshot.concentration||null })),
     logs: rows_('製作紀錄').map(l => ({ ...l, snapshot: JSON.parse(l.snapshotJson) })),
     cost: cost.length ? JSON.parse(cost[cost.length - 1].valueJson) : defaults_(), costRevision: cost.length ? cost[cost.length - 1].id : '', serverTime: stamp_() };
 }

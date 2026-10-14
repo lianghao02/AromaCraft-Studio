@@ -1,4 +1,12 @@
 {
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "AromaCraft Studio",
+        "supportEmail": "tpc0941101090@gmail.com"
+      }
+    }
+  },
   "firestore": {
     "rules": "firestore.rules"
   }

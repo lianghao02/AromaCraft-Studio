@@ -37,9 +37,9 @@
         <button id="dismissGuide" type="button" class="guide-close" aria-label="收合新手指南">✕</button>
       </div>
       <ol class="guide-steps">
-        <li class="guide-step" data-step="1" tabindex="0" role="button" aria-label="第 1 步：選作品範本">
+        <li class="guide-step" data-step="1" tabindex="0" role="button" aria-label="第 1 步：選製作類別">
           <span class="step-num">1</span>
-          <div class="step-content"><strong>選作品範本</strong><p>點「融製精油皂」或「無水精油膏」載入基礎試算，或自訂空白配方。</p></div>
+          <div class="step-content"><strong>選製作類別</strong><p>選精油膏、清潔劑、精油皂、按摩油或其他，再自行調配。</p></div>
         </li>
         <li class="guide-step" data-step="2" tabindex="0" role="button" aria-label="第 2 步：調原料與比例">
           <span class="step-num">2</span>
@@ -57,35 +57,35 @@
     </div>
 
     <div class="quick-nav">
-      <button id="toggleWork" type="button" class="subtle-btn">✨ 作品範本 / 空白</button>
+      <button id="toggleWork" type="button" class="subtle-btn">＋ 新增自製配方</button>
       <button id="gotoSaved" type="button" class="subtle-btn">📂 前往配方庫</button>
     </div>
 
-    <details id="workPanel" class="fold"><summary><h2 id="workLabel">1 選作品</h2><small>更換 / 收合</small></summary><div class="fold-body">
-      <div class="grid works"><button class="work" data-type="按摩油" data-template-note="請填寫基底油、精油實際用量與適用用途。可用 mL 計算；滴數需事先設定每 mL 滴數。"><span class="badge">身體保養</span><strong>按摩油</strong><small>基底油＋經確認的精油＋瓶子</small><span class="badge">範本待確認</span></button><button class="work" data-type="無水精油膏" data-template-note="請由太太確認植物油、蜂蠟與精油用量，以及製作步驟。"><span class="badge">身體保養</span><strong>無水精油膏</strong><small>植物油＋蜂蠟＋精油＋小罐</small><span class="badge">範本待確認</span></button><button class="work" data-type="融製精油皂" data-template-note="請確認使用的是融製皂基；不適用冷製皂，不提供皂化計算。"><span class="badge">手作肥皂</span><strong>融製精油皂</strong><small>融製皂基＋精油＋包裝</small><span class="badge">範本待確認</span></button><button class="work" data-type="日常清潔液" data-template-note="請依清潔基底產品說明確認添加材料、用量、適用表面及是否需沖洗；此範本不代表消毒配方。"><span class="badge">居家清潔</span><strong>日常清潔液</strong><small>指定清潔基底＋材料＋容器</small><span class="badge">範本待確認</span></button><button class="work" data-type="水垢清潔" data-template-note="請確認除垢材料、濃度、接觸時間與適用表面；不預設精油能去除水垢，不提供混合化學品建議。"><span class="badge">居家清潔</span><strong>水垢清潔</strong><small>指定除垢材料＋容器</small><span class="badge">範本待確認</span></button></div>
-      <p class="muted">先選作品，再填入太太確認的材料與用量。以下都是空白作品範本，不是可直接製作的配方。</p><button id="blank">建立空白配方</button>
+    <details id="workPanel" class="fold"><summary><h2 id="workLabel">1 選製作類別</h2><small>更換 / 收合</small></summary><div class="fold-body">
+      <div class="grid works"><button class="work" data-type="精油膏" type="button"><strong>精油膏</strong><small>自製配方</small></button><button class="work" data-type="清潔劑" type="button"><strong>清潔劑</strong><small>自製配方</small></button><button class="work" data-type="精油皂" type="button"><strong>精油皂</strong><small>自製配方</small></button><button class="work" data-type="按摩油" type="button"><strong>按摩油</strong><small>自製配方</small></button><button class="work" data-type="其他" type="button"><strong>其他</strong><small>自製配方</small></button></div>
+      <p class="muted">選擇預計製作的類別，再加入原料與用量。</p>
     </div></details>
 
-    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">搜尋後點卡片加入</small></summary><div class="fold-body">
-      <div class="concentration-panel picker-ratio"><strong id="workBasis"></strong><h3>目前精油比例</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><div id="pickerConcentrationIssues" class="toolbar"></div></div><h3 id="selectedItemsTitle">已選原料與用量</h3><div id="selectedItems" class="recipe-list"></div><div class="picker-top-bar"><span class="muted">挑選原料加入配方</span><button type="button" id="returnToRecipe" class="primary return-btn">完成挑選，查看配方 ↓</button></div>
+    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">可多選，選好後集中填用量</small></summary><div class="fold-body">
+      <div class="concentration-panel picker-ratio" hidden><strong id="workBasis"></strong><h3>目前精油比例</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><small>精油比例僅供參考，使用前請確認成分與用途是否適合。</small></div><h3 id="selectedItemsTitle">已選原料與用量</h3><div id="selectedItems" class="recipe-list"></div><div class="picker-top-bar"><span class="muted">點卡片勾選／取消原料</span><button type="button" id="returnToRecipe" class="primary return-btn">填寫用量 →</button></div>
       <details id="ylCatalog" class="yl-catalog"><summary>悠樂芳精油目錄與成本試算</summary><p class="muted">官網批發價估算，含稅未含運費。每 mL 計算；此區只算精油，不含基底與包材，也不併入目前 g 重量配方。試算清單重新整理會重設。</p><label>搜尋精油或商品編號<input id="ylSearch" type="search" placeholder="例如：薰衣草、乳香"></label><div id="ylCategories" class="chips" aria-label="悠樂芳分類"></div><label class="check"><input id="ylPending" type="checkbox">顯示容量或價格待補品項</label><p id="ylCount" role="status"></p><div id="ylCards" class="yl-grid"></div><button id="ylMore" type="button">再顯示 24 筆</button><div class="yl-estimate"><h3>本次精油用量</h3><div id="ylChosen"></div><strong id="ylTotal" role="status" aria-live="polite"></strong><button id="ylClear" type="button">清空精油試算</button></div></details>
       <div class="fields"><label>搜尋原料<input id="search" type="search" placeholder="輸入名稱或備註"></label><button id="newMaterial">＋ 新增原料</button></div>
-      <div id="categories" class="chips" aria-label="原料類別"></div><div id="oilKinds" class="chips oil-kinds" aria-label="精油分類" hidden></div><label class="check inactive-setting"><input id="showInactive" type="checkbox">顯示停用原料</label><p id="materialCount" role="status"></p><div id="materials" class="grid"></div><button id="materialsMore" type="button">再顯示原料</button><button id="mobileReviewRecipe" type="button" class="primary mobile-picker-next">查看配方與成本</button>
+      <div id="categories" class="chips" aria-label="原料類別"></div><div id="oilKinds" class="chips oil-kinds" aria-label="精油分類" hidden></div><label class="check inactive-setting"><input id="showInactive" type="checkbox">顯示停用原料</label><p id="materialCount" role="status"></p><div id="materials" class="grid"></div><button id="materialsMore" type="button">再顯示原料</button><button id="mobileReviewRecipe" type="button" class="primary mobile-picker-next">填寫用量</button>
     </div></details>
 
     <div id="recipeWorkspace" class="recipe-workspace" aria-label="配方與成本">
-    <section id="recipePanel" aria-labelledby="recipe-title">
-      <div class="section-head">
+    <details id="recipePanel" class="panel-card" aria-labelledby="recipe-title" open>
+      <summary class="section-head">
         <div>
           <h2 id="recipe-title">3 確認配方與成本</h2>
           <span id="version" class="muted"></span>
         </div>
         <div class="recipe-head-actions">
-          <span id="oilPercentBadge" class="badge">精油 0%</span>
+          <span id="oilPercentBadge" class="badge" hidden>精油 0%</span>
           <span id="draftState" role="status">尚未儲存</span>
 
         </div>
-      </div>
+      </summary>
       <div class="fields">
         <label>配方名稱<input id="name" maxlength="100" placeholder="例如：薰衣草舒緩修護皂"></label>
         <label>本次分成幾份<input id="units" inputmode="numeric" type="number" min="1" step="1" value="1"></label>
@@ -93,10 +93,10 @@
     <details id="costPanel" class="fold" open><summary><h2>大約成本</h2><small>材料＋包材</small></summary><div class="fold-body"><div class="panel-save-card"><div><small>本次總成本／每份成本</small><strong id="panelCost" class="panel-cost-val">—</strong><span id="panelWeight" class="panel-weight-val"></span></div><div class="panel-save-actions"><span id="panelSafety" class="badge">待驗證</span><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div></div><div id="breakdown" aria-live="polite"></div>
 
     </div></details>
-      <div class="concentration-panel"><h3 id="concentrationTitle">精油比例</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><small>比例低不代表適合兒童，仍需核對成分與用途。</small><details class="advanced"><summary>參考上限與說明（選填）</summary><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；混合 g、mL、滴數不直接產生百分比。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div>
+      <div class="concentration-panel"><h3 id="concentrationTitle">精油濃度</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><small>精油比例僅供參考，使用前請確認成分與用途是否適合。</small><details class="advanced"><summary>濃度設定與換算說明（選填）</summary><p id="concentrationDetailsMessage"></p><div id="pickerConcentrationIssues" class="toolbar"></div><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；混合 g、mL、滴數不直接產生百分比。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div>
       <input id="concentrationTotal" type="hidden"><select id="quantityUnit" hidden><option value="mixed">分開計量</option><option value="g">g</option><option value="mL">mL</option></select>
       <div id="formulaBar" class="formula-bar" aria-label="配方成份分佈" title="配方成份比例分佈"></div>
-      <div id="items" class="recipe-list"></div>
+      <details class="advanced"><summary>查看各項用量與每份用量</summary><div id="items" class="recipe-list"></div></details>
       <!-- 隨行輕量成本膠囊（指標隨行） -->
       <div id="costPill" class="cost-pill">
         <div class="pill-info">
@@ -105,7 +105,7 @@
         </div>
         <button id="btnGotoCost" type="button" class="pill-btn">查看大約成本 ➔</button>
       </div>
-      <div class="production-actions"><label>製作日期<input id="productionDate" type="date"></label><button id="recordProduction" type="button">儲存本次製作紀錄</button></div><div class="recipe-actions-bar">
+      <label class="recipe-notes">註記<textarea id="notes" rows="2" maxlength="3000" placeholder="用途、做法或其他備註"></textarea></label><div class="production-actions"><label>製作日期<input id="productionDate" type="date"></label><button id="recordProduction" type="button">儲存本次製作紀錄</button></div><div class="recipe-actions-bar">
         <button id="addMaterials" class="add-material">返回第 2 步調整</button>
       </div>
       <details class="advanced"><summary>製作備註與工具</summary><div class="fold-body">
@@ -113,14 +113,14 @@
 
         <div class="inline"><label>等比例縮放至新總量（沿用上方基準）<input id="batchWeight" type="number" min="0" step="any"></label><button id="scale">等比例換算</button></div>
         <label>固定總量補足原料<select id="base"><option value="">不補足，依實際用量合計</option></select></label>
-        </div><label>製作說明與備註<textarea id="notes" rows="2" maxlength="3000" placeholder="記錄製程溫度、攪拌時間或包裝注意要點"></textarea></label>
+        </div>
         <div class="toolbar" style="margin-top:10px">
           <button id="btnPrintRecipe" type="button" class="subtle-btn print-hide" title="列印或另存為 A4 配方工作單">🖨️ 列印工作單</button>
           <button id="copy">複製成新配方</button>
           <button id="btnResetRecipe" class="subtle-btn">清空目前原料</button>
         </div>
       </div></details>
-    </section>
+    </details>
 
     </div>
 
@@ -133,7 +133,7 @@
   <div id="viewSaved" class="tab-view" hidden>
     <section id="savedPanel" class="panel-card" aria-labelledby="savedHeading">
       <div class="section-head"><h2 id="savedHeading">已儲存配方</h2><span id="savedCount">讀取中</span></div>
-      <div class="fields"><label>搜尋名稱<input id="recipeSearch" type="search" placeholder="輸入名稱或備註"></label><label>作品類型<select id="recipeType"><option value="">全部作品</option><option>按摩油</option><option>無水精油膏</option><option>融製精油皂</option><option>日常清潔液</option><option>水垢清潔</option></select></label></div>
+      <div class="fields"><label>搜尋名稱<input id="recipeSearch" type="search" placeholder="輸入名稱或備註"></label><label>製作類別<select id="recipeType"><option value="">全部類別</option><option>精油膏</option><option>清潔劑</option><option>精油皂</option><option>按摩油</option><option>其他</option></select></label></div>
       <label class="check"><input id="showArchived" type="checkbox">顯示已移除配方</label><div id="saved"></div>
     </section>
   </div>
@@ -148,7 +148,7 @@
     </nav>
     <div id="manageBasics" class="manage-group">
       <div id="manageMaterialSlot"></div>
-      <section id="packagingPanel" class="panel-card"><h2>包材費</h2><p class="muted">設定每份作品的瓶子、罐子或袋子費用。之後建立的新配方會使用此金額。</p><div id="costFields" class="cost-groups"></div><button id="saveCost" type="button">儲存包材預設</button><p class="muted">既有配方與歷史成本保留原金額。</p></section>
+      <section id="packagingPanel" class="panel-card"><h2>包材費</h2><p class="muted">設定每份作品的瓶子、罐子或袋子費用。</p><div id="costFields" class="cost-groups"></div><button id="saveCost" type="button">儲存並套用包材價格</button><p class="muted">套用目前配方草稿，新配方也使用此金額；已儲存的歷史成本保留。</p></section>
     </div>
     <div id="manageRecords" class="manage-group" hidden>
       <p class="manage-context muted">記錄目前載入的配方。請先在「調配方」儲存，再填本次製作日期與份數。</p>
@@ -165,8 +165,11 @@
           <span id="cloudConnectionBadge" class="badge">Firebase</span>
         </div>
         <div class="fold-body">
-          <p class="muted">登入 Firebase 帳號，與太太跨手機與不同電腦即時同步同一份精油配方與原料。未登入時以本機離線保存。</p>
+          <p class="muted">使用 Google 帳號登入，手機與電腦共用家庭配方及原料。顯示「已同步」後，另一台裝置即可讀取；未登入時保存在本機。</p>
           <div id="authSignedOut" class="auth-block">
+            <button id="btnGoogleLogin" type="button" class="primary">使用 Google 帳號登入</button>
+            <p id="authLoginStatus" class="muted" role="status" aria-live="polite">請選擇已授權的家庭 Google 帳號，不需另設密碼。</p>
+            <details class="fold"><summary>原有密碼登入</summary>
             <form id="authForm" onsubmit="event.preventDefault(); document.getElementById('btnLogin').click();">
               <div class="auth-fields">
                 <label>家庭成員 Email<input id="authEmail" type="email" placeholder="例如：tpc0941101090@gmail.com" autocomplete="username" required></label>
@@ -177,9 +180,10 @@
                 <button id="btnLogin" type="submit" class="primary">登入家庭雲端</button>
               </div>
             </form>
+            </details>
           </div>
           <div id="authSignedIn" class="auth-block" hidden>
-            <p>已連線家庭雲端帳號：<strong id="authUserEmail"></strong></p>
+            <p>已登入帳號：<strong id="authUserEmail"></strong></p>
             <div class="toolbar">
               <button id="btnLogout" type="button">登出雲端</button>
               <button id="btnForceSync" type="button" class="primary">立即自雲端重新整理</button>
@@ -204,13 +208,13 @@
   </div>
 
   <footer class="app-footer print-hide">
-    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.3.2</div>
+    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.4.0</div>
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br><span id="storageDescription">本機草稿保存在此瀏覽器；家庭雲端資料由 Firebase 即時資料庫保存。</span></p>
   </footer>
 </main>
 <footer id="summaryBar" class="summary"><div><small>本次總成本／每份成本</small><strong id="summaryCost">— / —</strong><span id="summaryWeight">尚未加入原料</span></div><div><span id="summarySafety" class="badge">待驗證</span><button id="quickSave" class="primary">儲存版本</button></div></footer>
 <dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage"><h2 id="confirmTitle"></h2><p id="confirmMessage"></p><div class="actions"><button id="confirmKeep" type="button" class="primary">返回繼續編輯</button><button id="confirmProceed" type="button" class="danger">放棄修改並切換</button></div></dialog>
-<dialog id="editor" aria-labelledby="editorTitle"><form id="editorForm"><div class="section-head"><h2 id="editorTitle">編輯</h2><button id="closeEditor" type="button" aria-label="關閉編輯面板">✕</button></div><p id="editorError" role="alert" class="danger" hidden></p><div id="editorBody"></div><div class="actions"><button type="submit" class="primary">套用</button><button id="removeItem" type="button" class="danger" hidden>移除此原料</button></div></form></dialog>
+<dialog id="editor" aria-labelledby="editorTitle"><form id="editorForm"><div class="section-head"><h2 id="editorTitle">編輯</h2><button id="closeEditor" type="button" aria-label="關閉編輯面板">✕</button></div><p id="editorError" role="alert" class="danger" hidden></p><div id="editorBody"></div><div class="actions"><button id="applyEditor" type="submit" class="primary">套用</button><button id="removeItem" type="button" class="danger" hidden>移除此原料</button></div></form></dialog>
 <dialog id="helpDialog" aria-labelledby="helpTitle" class="help-dialog">
   <div class="section-head">
     <h2 id="helpTitle">AromaCraft 使用說明</h2>
@@ -220,9 +224,9 @@
     <section class="help-block">
       <h3>🌿 三步驟完成配方試算</h3>
       <ol class="help-list">
-        <li><strong>選作品範本</strong>：初學者可點擊「融製精油皂」或「無水精油膏」建立待確認的空白作品範本，或點「建立空白配方」。</li>
-        <li><strong>調原料與比例</strong>：點擊配方卡可直接修改用量與輸入單位，系統自動以同一基準總量換算即時佔比（%），亦可指定補足原料（如皂基）維持總重。</li>
-        <li><strong>看成本並儲存</strong>：先在設定頁準備材料價格與包材費，現場只調用量、看大約成本、儲存。範本不預設配比，請由太太核對材料與做法。</li>
+        <li><strong>選製作類別</strong>：先選預計製作的類別，儲存後可在配方庫依類別查找。</li>
+        <li><strong>選原料與填用量</strong>：可一次勾選多種原料，再按「填寫用量」依序輸入。確認時顯示可計算的精油濃度；換算不足時會提示補資料。</li>
+        <li><strong>看成本並儲存</strong>：先在設定頁準備材料價格與包材費，現場只調用量、看大約成本、儲存。請核對材料、用量與做法。</li>
       </ol>
     </section>
 

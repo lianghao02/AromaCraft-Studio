@@ -12,7 +12,8 @@ globalThis.AromaCatalog = (()=>{
   const r=data.find(r=>'yl-'+r.id===m.id);
   const kinds=(r?.categories||[]).filter(c=>c==='單方精油'||c==='配方精油');
   const kind=m.category==='精油'?(kinds.length===1?(kinds[0]==='單方精油'?'單方':'複方'):'待分類'):m.category;
-  const name=m.category==='精油'?(m.name.replace(/\s*\d+(?:\.\d+)?\s*ml\s*$/i,'').replace(/精油/g,'').trim()||m.name):m.name;
+  const shortName=m.name.replace(/\s*\d+(?:\.\d+)?\s*ml\s*$/i,'').replace(/精油/g,'');
+  const name=m.category==='精油'?((kind==='複方'?shortName.replace(/配方/g,''):shortName).trim()||m.name):m.name;
   const official=Boolean(r&&p?.id?.startsWith(m.id+'-catalog-'));
   const image=r&&m.category==='精油'&&r?.image==='https://static.youngliving.com/productimages/large/'+r.id+'.jpg'?r.image:null;
   return {kind,name,image,amount:p?.amount,unit:p?.unit,paid:p?.paid,priceLabel:official?'批發價':'採購價'};

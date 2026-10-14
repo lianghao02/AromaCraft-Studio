@@ -141,6 +141,17 @@ __AROMA_SERVER__
  }
 
  window.AromaSync = {
+   loginGoogle: async () => {
+     if(!fbAuth || !fbModules) throw Error('Google 登入尚未準備完成，請稍後重試並確認網路連線。');
+     const provider = new fbModules.authMod.GoogleAuthProvider();
+     provider.setCustomParameters({prompt:'select_account'});
+     const result = await fbModules.authMod.signInWithPopup(fbAuth, provider);
+     if(!ALLOWED_EMAILS.includes((result.user?.email||'').toLowerCase())){
+       await fbModules.authMod.signOut(fbAuth);
+       throw Error('此 Google 帳號未授權使用家庭資料，請改選家庭帳號。');
+     }
+     return result;
+   },
    login: async (email, password) => {
      if(!fbAuth || !fbModules) throw Error('Firebase 雲端模組尚未完成初始化，請檢查網路連線。');
      const clean = email.trim().toLowerCase();
@@ -171,9 +182,35 @@ __AROMA_SERVER__
      initFirebase();window.addEventListener('online',()=>{if(currentFbUser&&hasPending()&&!cloudConflict)pushToFirestore().catch(()=>{});});
 
      const btnLogin = document.getElementById('btnLogin');
+     const btnGoogleLogin = document.getElementById('btnGoogleLogin');
      const btnLogout = document.getElementById('btnLogout');
      const btnForceSync = document.getElementById('btnForceSync');
      const btnMigrate = document.getElementById('btnMigrateToCloud');
+
+     if(btnGoogleLogin){
+       btnGoogleLogin.onclick = async () => {
+         const status = document.getElementById('authLoginStatus');
+         try{
+           btnGoogleLogin.disabled = true;
+           if(status) status.textContent = '請在 Google 視窗選擇家庭帳號…';
+           await window.AromaSync.loginGoogle();
+           if(status) status.textContent = '已登入，請查看上方同步狀態。';
+         }catch(e){
+           const messages = {
+             'auth/popup-closed-by-user':'已取消登入，本機資料保留。',
+             'auth/cancelled-popup-request':'登入視窗已取消，請重新點選登入。',
+             'auth/popup-blocked':'瀏覽器阻擋登入視窗，請允許彈出式視窗後再點選登入。',
+             'auth/unauthorized-domain':'此網址尚未允許 Google 登入，請使用正式網站或聯絡管理員。',
+             'auth/operation-not-allowed':'家庭雲端尚未啟用 Google 登入，請聯絡管理員。',
+             'auth/network-request-failed':'網路連線失敗，請稍後重試。本機資料保留。',
+             'auth/account-exists-with-different-credential':'此帳號已有其他登入方式，請先使用下方原有密碼登入。'
+           };
+           if(status) status.textContent = messages[e.code] || ('登入失敗：'+e.message);
+         }finally{
+           btnGoogleLogin.disabled = false;
+         }
+       };
+     }
 
      if(btnLogin){
        btnLogin.onclick = async () => {
