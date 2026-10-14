@@ -223,6 +223,7 @@
     let result;validationError='';
     try{
       const r=AromaCore.concentration(recipe,data.materials,data.prices);
+      if(r.basis&&!recipe.concentration?.maxPercent)$('limitBasis').value=r.basis;
       const value=r.noOil?'未加入精油':r.available?(r.basis==='mL'?'約 ':'')+r.percent.toFixed(2)+'% · '+(r.basis==='g'?'重量百分比':'容量估算'):r.dropsPer100g!==null?'每 100 g 基底 '+fmt(r.dropsPer100g)+' 滴 · 添加比例':r.oilMl>0&&r.baseG>0?'精油 '+fmt(r.oilMl)+' mL／基底 '+fmt(r.baseG)+' g · 添加量':r.drops>0&&!r.allOilDropsKnown?'已知 '+fmt(r.drops)+' 滴 · 尚未完整換算':'尚無法算百分比';
       $('concentrationValue').textContent=r.available?recipe.name+' · '+value:r.noOil?'未加入精油':'濃度資料不足';$('concentrationMessage').textContent=r.available?'':r.noOil?'':'換算資料不足，請展開下方說明補齊。';$('concentrationDetailsMessage').textContent=r.message;
       $('pickerConcentrationValue').textContent=value;$('pickerConcentrationMessage').textContent=r.message;

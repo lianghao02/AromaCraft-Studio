@@ -33,7 +33,9 @@ var AromaCore = (() => {
     if(!Number.isFinite(v)||v>1e12)throw Error('單位換算結果過大或無效');return v;
   }
   function convertInput(value,from,to,p,recipe){
-    const basis=basisOf(recipe),amount=convert(value,from,basis,p,targetOf(recipe),basis);let result;
+    const declared=basisOf(recipe),basis=declared==='mixed'?nativeBasis(p):declared;
+    if(declared==='mixed'&&(from==='%'||to==='%'))throw Error('分開計量不能直接使用百分比，請先設定固定總量與一致基準');
+    const amount=convert(value,from,basis,p,targetOf(recipe),basis);let result;
     if(to==='%'){result=amount/number(targetOf(recipe),'百分比需要固定總量',Number.MIN_VALUE)*100;if(result>100)throw Error('比例不可超過 100%');}
     else if(to==='滴'){const m=metadata(p);if(m.dropsPerMl===null)throw Error('缺少每 mL 滴數，不能切換滴數');result=convert(amount,basis,'mL',p)*m.dropsPerMl;if(!sameTotal(result,Math.round(result)))throw Error('換算結果不是整滴，請使用 mL 或 g 保留精確用量');result=Math.round(result);}
     else if(to==='kg'||to==='L')result=convert(amount,basis,to==='kg'?'g':'mL',p)/1000;else result=convert(amount,basis,to,p);if(!Number.isFinite(result))throw Error('換算結果無效');return result;
@@ -109,7 +111,7 @@ var AromaCore = (() => {
     }
     const inferred=known.g&&(weightInput||!known.mL)?'g':known.mL?'mL':null;
     if(cfg.basis!==undefined&&!['g','mL'].includes(cfg.basis))throw Error('精油比例基準不正確');
-    const basis=cfg.basis||inferred,total=basis&&known[basis]?sums[basis]:null,percent=total>0?oils[basis]/total*100:null;
+    const basis=cfg.basis&&known[cfg.basis]?cfg.basis:inferred||cfg.basis||null,total=basis&&known[basis]?sums[basis]:null,percent=total>0?oils[basis]/total*100:null;
     const limit=empty(cfg.maxPercent)?null:number(cfg.maxPercent,'目標比例上限',0,100),referenceBasis=cfg.limitBasis||basis||'mL';
     const comparable=percent!==null&&limit!==null&&basis===referenceBasis,over=comparable&&percent>limit&&!sameTotal(percent,limit);
     const ratio=baseKnown&&baseG>0&&drops>0&&allOilDropsKnown?drops/baseG*100:null;

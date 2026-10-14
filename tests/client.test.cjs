@@ -207,7 +207,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   const changeUnit=(id,value)=>node('selectedItems').onchange({target:{closest:q=>q==='[data-quantity-unit]'?{dataset:{quantityUnit:id},value}:null}});
   changeUnit('yl-354876','滴');quantity('demo-oil','30');quantity('yl-354876','0.5');assert.equal(node('quickSave').disabled,true);assert.equal(node('recordProduction').disabled,true);assert.equal(node('panelCost').textContent,'—');assert.match(node('concentrationValue').textContent,/待填/);
   node('confirmQuantities').onclick();assert.equal(node('quantityError').hidden,false);assert.equal(node('materialPicker').open,true);
-  quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);
+  quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);changeUnit('yl-354876','mL');assert.match(node('items').innerHTML,/0.3 mL/);changeUnit('yl-354876','滴');assert.match(node('items').innerHTML,/6 滴/);assert.match(node('concentrationValue').textContent,/0.99%/);
   quantity('yl-354876','');assert.equal(node('quickSave').disabled,true);assert.ok([...storage.values()].some(v=>JSON.parse(v).uiPendingQuantities?.includes('yl-354876')));quantity('yl-354876','6');
   node('selectedItems').onclick({target:{closest:q=>q==='[data-unselect]'?{dataset:{unselect:'demo-oil'}}:null}});assert.doesNotMatch(node('items').innerHTML,/30 mL/);
   node('undoSelection').onclick();assert.match(node('items').innerHTML,/30 mL/);assert.match(node('items').innerHTML,/6 滴/);

@@ -213,3 +213,30 @@ test('預設滴數由伺服器重新計算並保存至配方，舊快照不追�
  const r={...recipe(),id:'',version:0,requestId:'default-drops-001',quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,useDefaultDrops:true,basis:'mL'},items:[{materialId:oil.id,priceId:op.id,quantity:10,unit:'滴'}]};
  const saved=h.call('saveRecipe',r);assert.equal(saved.ok,true,saved.error);assert.equal(saved.value.items[0].dropsPerMl,20);assert.equal(saved.value.concentration.useDefaultDrops,true);
 });
+
+
+test('分開計量下已填用量可切換mL與滴，不以mixed當換算基準',()=>{
+ const r={...recipe(),quantityUnit:'mixed',targetQuantity:null,baseId:''};
+ const p={...prices[0],density:null,dropsPerMl:20};
+ assert.equal(c.convertInput(2,'mL','滴',p,r),40);near(c.convertInput(40,'滴','mL',p,r),2);near(c.convertInput(1000,'mL','L',p,r),1);
+ assert.throws(()=>c.convertInput(.51,'mL','滴',p,r),/整滴/);
+ assert.throws(()=>c.convertInput(10,'g','mL',p,r),/密度/);
+ assert.throws(()=>c.convertInput(1,'mL','%',p,r),/分開計量/);
+});
+
+test('精油膏依可用基準計算容量濃度，混合重量不捏造百分比',()=>{
+ const ps=prices.map(p=>({...p,unit:'mL',density:null,dropsPerMl:null}));
+ const r={...recipe(),type:'精油膏',quantityUnit:'mixed',targetQuantity:null,baseId:'',concentration:{auto:true,useDefaultDrops:true,basis:'g',limitBasis:'g'},items:[{materialId:'oil',priceId:'po',quantity:6,unit:'滴'},{materialId:'base',priceId:'pb',quantity:30,unit:'mL'}]};
+ const before=JSON.stringify(r),out=c.concentration(r,materials,ps);assert.equal(out.available,true);assert.equal(out.basis,'mL');near(out.percent,.3/30.3*100);assert.equal(JSON.stringify(r),before);
+ const mixed=c.concentration({...r,items:[r.items[0],{...r.items[1],unit:'g',quantity:100}]},materials,ps);assert.equal(mixed.available,false);assert.equal(mixed.percent,null);near(mixed.dropsPer100g,6);
+ const weight=c.concentration({...r,items:[{...r.items[0],unit:'g',quantity:1},{...r.items[1],unit:'g',quantity:99}]},materials,ps);assert.equal(weight.basis,'g');near(weight.percent,1);
+ const limited=c.concentration({...r,concentration:{...r.concentration,maxPercent:2,limitBasis:'g'}},materials,ps);assert.equal(limited.overLimit,false);assert.match(limited.message,/基準不同/);
+});
+
+
+test('精油膏容量與滴數濃度由後端重算保存，讀回基準一致',()=>{
+ const h=createHarness();h.setup();ok(h,'importCatalog');const b=ok(h,'bootstrap');
+ const oil=b.prices.find(p=>p.materialId==='yl-354876'),base=b.prices.find(p=>p.materialId==='demo-oil');
+ const r={name:'容量膏合成測試',type:'精油膏',quantityUnit:'mixed',targetQuantity:null,baseId:'',units:1,cost,concentration:{auto:true,basis:'g',limitBasis:'g',useDefaultDrops:true},items:[{materialId:'yl-354876',priceId:oil.id,quantity:6,unit:'滴'},{materialId:'demo-oil',priceId:base.id,quantity:30,unit:'mL'}],requestId:'volume-balm'};
+ const saved=ok(h,'saveRecipe',r),loaded=ok(h,'loadRecipe',{id:saved.id,version:saved.version});assert.equal(loaded.snapshot.concentration.basis,'mL');near(loaded.snapshot.concentration.percent,.3/30.3*100);assert.equal(loaded.items.find(i=>i.materialId==='yl-354876').unit,'滴');
+});
