@@ -186,7 +186,18 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('editQuantity').value='10';node('editorForm').onsubmit({preventDefault(){}});
   assert.match(node('editorTitle').textContent,/3／3/);node('editQuantity').value='2.5';node('editorForm').onsubmit({preventDefault(){}});
   assert.equal(node('editor').open,false);assert.equal(node('materialPicker').open,false);assert.equal(node('recipePanel').open,true);
-  assert.match(node('items').innerHTML,/0.5 g/);assert.match(node('items').innerHTML,/10 滴/);assert.match(node('items').innerHTML,/2.5 g/);
+  assert.match(node('items').innerHTML,/0.5 g/);assert.match(node('items').innerHTML,/10 滴/);assert.match(node('items').innerHTML,/2.5 mL/);
+  const oldPrice=h.call('savePrice',{requestId:'legacy-carrier',materialId:'demo-oil',label:'舊重量批次',amount:100,unit:'g',paid:200});assert.equal(oldPrice.ok,true);
+  await node('refresh').onclick();choose('demo-oil');choose('demo-oil');
+  node('returnToRecipe').onclick();node('editorForm').onsubmit({preventDefault(){}});node('editorForm').onsubmit({preventDefault(){}});
+  assert.match(node('editorBody').innerHTML,/修改採購單位與價格/);assert.equal(node('editUnit').value,'g');node('editQuantity').value='12';node('editorForm').onsubmit({preventDefault(){}});
+  assert.match(node('items').innerHTML,/12 g/);
+  node('returnToRecipe').onclick();node('editorForm').onsubmit({preventDefault(){}});node('editorForm').onsubmit({preventDefault(){}});
+  node('editPurchaseUnit').onclick();node('matName').value='基底油（試算）';node('matCategory').value='基底油';node('amount').value=100;node('priceUnit').value='mL';node('paid').value=300;node('productDrops').value='';
+  node('editorForm').onsubmit({preventDefault(){}});for(let n=0;n<6;n++)await tick();
+  assert.equal(node('editor').open,true);assert.equal(node('editUnit').value,'mL');assert.equal(node('editQuantity').value,'');assert.match(node('items').innerHTML,/12 g/);
+  node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('editorError').hidden,false);assert.match(node('items').innerHTML,/12 g/);
+  node('editQuantity').value='10';node('editQuantity').oninput();assert.match(node('unitPreview').textContent,/NT\$30\.00/);node('editorForm').onsubmit({preventDefault(){}});assert.match(node('items').innerHTML,/10 mL/);assert.doesNotMatch(node('items').innerHTML,/12 g/);
 });
 
 test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內嵌',()=>{

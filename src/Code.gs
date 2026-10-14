@@ -117,7 +117,7 @@ function setupDatabase() {
         { id: 'demo-essential', name: '精油（請改為實際品名）', category: '精油' }
       ].map(m => ({ ...m, active: true, note: '示範資料，請輸入實際價格與原料資訊', revision: 1 }));
       append_('原料資料', materials);
-      append_('原料價格', materials.map(m => ({ id: m.id + '-price', materialId: m.id, label: '零元示範批次／必須更新', amount: 100, unit: 'g', paid: 0, density: '', gramsPerUnit: '', createdAt: stamp_(), createdBy: email })));
+      append_('原料價格', materials.map(m => ({ id: m.id + '-price', materialId: m.id, label: '零元示範批次／必須更新', amount: 100, unit: m.category==='基底油'?'mL':'g', paid: 0, density: '', gramsPerUnit: '', createdAt: stamp_(), createdBy: email })));
     }
     return '8 張繁體中文工作表已就緒；原始工作表保留，請自行確認空白預設工作表後移除。';
   });

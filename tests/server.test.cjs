@@ -32,6 +32,16 @@ test('自製配方類別可保存，舊類型分組不改歷史內容或計算�
 });
 test('初始化八表、重跑不重複且保留既有資料',()=>{
   const h=start();assert.equal(h.sheets.size,8);h.setup();assert.equal(ok(h,'bootstrap').materials.length,4);assert.equal(ok(h,'bootstrap').prices.length,4);
+  assert.equal(ok(h,'bootstrap').prices.find(p=>p.materialId==='demo-oil').unit,'mL');
+});
+
+test('基底油新預設容量，舊重量價格與歷史配方不因改採購單位覆寫',()=>{
+ const h=start();const legacy=ok(h,'savePrice',{requestId:'carrier-g',materialId:'demo-oil',label:'舊重量',amount:100,unit:'g',paid:200});
+ const saved=ok(h,'saveRecipe',{...recipe(),baseId:'',quantityUnit:'mixed',items:[{materialId:'demo-oil',priceId:legacy.id,quantity:12,unit:'g'}]});
+ const before=ok(h,'loadRecipe',{id:saved.id,version:1});const material=ok(h,'bootstrap').materials.find(m=>m.id==='demo-oil');
+ ok(h,'saveProduct',{...material,requestId:'carrier-ml',amount:100,unit:'mL',paid:300});
+ const prices=ok(h,'bootstrap').prices.filter(p=>p.materialId==='demo-oil');assert.equal(prices.at(-1).unit,'mL');assert.equal(prices.find(p=>p.id===legacy.id).unit,'g');
+ assert.deepEqual(ok(h,'loadRecipe',{id:saved.id,version:1}),before);h.setup();assert.equal(ok(h,'bootstrap').prices.filter(p=>p.materialId==='demo-oil').length,prices.length);
 });
 test('空身分、未授權帳號、身分不符均無法讀寫與匯出',()=>{
   for(const mode of ['empty','stranger','mismatch']){

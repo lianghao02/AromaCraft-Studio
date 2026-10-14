@@ -353,9 +353,10 @@
     }, 40);
   }
   function input(label, id, value = '', type = 'text', extra = '') { return `<label>${label}<input id="${id}" type="${type}" value="${escape(value)}" ${extra}></label>`; }
-  function editItem(id, sequential=false) {
+  function editItem(id, sequential=false, priceOverride=null) {
     readInputs();
-    const i=recipe.items.find(i=>i.materialId===id),m=data.materials.find(m=>m.id===id),p=AromaCore.itemPrice(i,data.prices);
+    const stored=recipe.items.find(i=>i.materialId===id);
+    const i=priceOverride?{...stored,priceId:priceOverride.id,quantity:0,unit:AromaCore.nativeBasis(priceOverride)}:stored,m=data.materials.find(m=>m.id===id),p=AromaCore.itemPrice(i,data.prices);
     const display=typeof AromaCatalog!=='undefined'?AromaCatalog.materialInfo(m,p).name:m.name;
     const mixed=recipe.quantityUnit==='mixed',basis=mixed?AromaCore.nativeBasis(p):recipe.quantityUnit||'g';
     const friendly=e=>e.message.includes('密度')?'請用 '+AromaCore.nativeBasis(p)+' 填用量；混合重量與容量時，改選「分開計量」。':e.message.includes('滴數')?'請填這瓶精油每 1 mL 的滴數，或改用 mL。':e.message;
@@ -367,14 +368,20 @@
       recipe=AromaCore.editQuantity(next,id,$('editQuantity').value,$('editUnit').value,data.materials,data.prices);draft();renderRecipe();$('editor').close();if(sequential)nextQuantity();
     },()=>{if(recipe.baseId===id&&recipe.targetQuantity)throw Error('請先取消補足原料，再移除');recipe=AromaCore.balance({...recipe,items:recipe.items.filter(x=>x.materialId!==id)},data.materials,data.prices);draft();renderRecipe();$('editor').close();if(sequential)nextQuantity();});
     $('applyEditor').textContent=sequential?(quantityPosition<quantityQueue.length-1?'套用並填下一項':'套用並確認配方'):'套用';
+    if(m.category==='基底油'&&AromaCore.nativeBasis(p)==='g'&&AromaCore.metadata(p).density===null){
+      $('editorBody').innerHTML+='<p class="muted">這筆採購資料仍以 g 建立。若瓶裝容量以 mL 標示，請先修改採購單位；已填重量不會直接當成容量。</p><button id="editPurchaseUnit" type="button">修改採購單位與價格</button>';
+      $('editPurchaseUnit').onclick=()=>editMaterial(id,nextPrice=>editItem(id,sequential,nextPrice));
+    }
+    if(priceOverride)$('editorBody').innerHTML+='<p class="muted">請依新採購單位重新填本次用量；套用前保留原配方用量。</p>';
     $('editQuantity').value=originalQuantity;$('editUnit').value=originalUnit;$('editPrice').value=i.priceId;$('editDropsPerMl').value=i.dropsPerMl??p.dropsPerMl??(m.category==='精油'?AromaCore.DEFAULT_DROPS_PER_ML:'');
+    if(priceOverride)$('editQuantity').value='';
     $('dropConversionNote').textContent='滴數以每 mL 約 '+$('editDropsPerMl').value+' 滴估算，不必逐項填寫。';
     const effective=()=>({...p,dropsPerMl:$('editDropsPerMl').value||null});
     const candidate=()=>{
       const factor=$('editDropsPerMl').value===''?null:AromaCore.number($('editDropsPerMl').value,'每 mL 滴數',Number.MIN_VALUE),quantity=AromaCore.number($('editQuantity').value,'原料用量'),unit=$('editUnit').value;
       const weights={...recipe.concentration?.measuredWeights};delete weights[id];
       if($('editMeasuredWeight').value!==''&&unit!=='g'&&unit!=='kg'&&recipe.concentration?.basis==='g')weights[id]={grams:AromaCore.number($('editMeasuredWeight').value,'實秤重量',Number.MIN_VALUE),quantity,unit,priceId:i.priceId};
-      return {...recipe,concentration:{...recipe.concentration,measuredWeights:weights},items:recipe.items.map(x=>x.materialId===id?{...x,quantity,unit,dropsPerMl:factor}:x)};
+      return {...recipe,concentration:{...recipe.concentration,measuredWeights:weights},items:recipe.items.map(x=>{if(x.materialId!==id)return x;const updated={...x,priceId:i.priceId,quantity,unit,dropsPerMl:factor};delete updated.grams;return updated;})};
     };
     const preview=()=>{
       $('dropOptions').hidden=m.category!=='精油';$('weightOptions').hidden=recipe.concentration?.basis!=='g'||['g','kg'].includes($('editUnit').value);
@@ -389,12 +396,22 @@
     $('editQuantity').oninput=()=>{$('editMeasuredWeight').value='';preview();};$('editDropsPerMl').oninput=$('editMeasuredWeight').oninput=preview;preview();
   }
 
-  function editMaterial(id) {
+  function editMaterial(id, afterSaved=null) {
     const m=data.materials.find(m=>m.id===id)||{id:uid(),revision:0,name:'',category:'其他',note:'',active:true};
     const p=data.prices.filter(p=>p.materialId===m.id).at(-1),requestId=uid();
     openEditor(id?'原料與價格':'新增原料',input('商品名稱','matName',m.name,'text','required maxlength="100"')+'<label>原料類別<select id="matCategory">'+['精油','皂基','蜂蠟','基底油','其他'].map(c=>'<option '+(c===m.category?'selected':'')+'>'+c+'</option>').join('')+'</select></label><div class="fields">'+input('每包／每瓶數量','amount',p?.amount??'','number','required min="0.000001" step="any" inputmode="decimal"')+'<label>單位<select id="priceUnit"><option>mL</option><option>L</option><option>g</option><option>kg</option></select></label></div>'+input('每包／每瓶價格（NT$）','paid',p?.paid??'','number','required min="0" step="any"')+'<details class="advanced"><summary>精油滴數換算（選填）</summary>'+input('自訂每 mL 幾滴（選填；預設 20）','productDrops',p?.dropsPerMl??'','number','min="0.000001" step="any" inputmode="decimal"')+'<small>平常不必填，使用預設 20 滴／mL 估算；有實測值可自訂。</small></details>',()=>task(async()=>{
       await rpc('saveProduct',{requestId,id:m.id,revision:m.revision,name:$('matName').value,category:$('matCategory').value,note:m.note,active:m.active!==false&&m.active!=='FALSE',amount:$('amount').value,unit:$('priceUnit').value,paid:$('paid').value,dropsPerMl:$('productDrops').value||null,density:p?.density??null,gramsPerUnit:p?.gramsPerUnit??null});
-      $('editor').close();await refresh();const selected=recipe.items.find(i=>i.materialId===m.id);if(selected){selected.priceId=data.prices.filter(p=>p.materialId===m.id).at(-1).id;draft();renderRecipe();}notice('商品與價格已儲存，新加入的原料採用此價格。');
+      $('editor').close();await refresh();const nextPrice=data.prices.filter(p=>p.materialId===m.id).at(-1),selected=recipe.items.find(i=>i.materialId===m.id);
+      if(selected){
+        const compatible=AromaCore.availableUnits(nextPrice,$('matCategory').value).includes(selected.unit||'g');
+        if(compatible||Number(selected.unit?selected.quantity:selected.grams)===0){
+          selected.priceId=nextPrice.id;
+          if(!compatible){selected.quantity=0;selected.unit=AromaCore.nativeBasis(nextPrice);delete selected.grams;}
+          draft();renderRecipe();
+        }else notice('採購單位已更新；目前配方保留原用量，請重新填寫新單位的用量。',true);
+      }
+      if(afterSaved){afterSaved(nextPrice);return;}
+      if(!selected||selected.priceId===nextPrice.id)notice('商品與價格已儲存，新加入的原料採用此價格。');
     }));
     if(p?.unit&&!['g','kg','mL','L'].includes(p.unit))$('priceUnit').innerHTML+='<option>'+escape(p.unit)+'</option>';$('priceUnit').value=p?.unit||'mL';
   }
