@@ -425,7 +425,8 @@ label{font-size:14px}
 @media(min-width:1100px){
  header,main{max-width:1680px}
  #viewRecipe[data-mode="share"]{grid-template-columns:minmax(0,1fr) minmax(380px,1fr);grid-template-areas:"guide guide" "quick quick" "work work" "picker workspace";gap:18px}
- #viewRecipe[data-mode="share"] #materialPicker{position:sticky;top:16px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+ #viewRecipe[data-mode="share"] #materialPicker{position:sticky;top:16px}
+ #viewRecipe[data-mode="share"] #materialPicker[open]{max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
  #viewRecipe[data-mode="share"] #materialPicker #materials{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
  #viewRecipe[data-mode="share"] #materialPicker .fields{display:block}
  #viewRecipe[data-mode="share"] #materialPicker .material-card{min-width:0;overflow-wrap:anywhere}
@@ -514,7 +515,10 @@ label{font-size:14px}
  #materialPicker>summary{background:var(--materials-soft);color:var(--materials-ink);border-radius:15px 15px 0 0}
  #materialPicker:not([open])>summary{border-radius:15px}
  #materialPicker h2{color:var(--materials-ink)}
- #recipePanel>.section-head{background:var(--recipe-soft);margin:-16px -16px 16px;padding:18px 16px;border-radius:15px 15px 0 0;border-bottom:1px solid #cfe2d6}
+ #recipePanel{padding:16px}
+ #recipePanel>.section-head{background:var(--recipe-soft);margin:-16px -16px 16px;padding:16px;border-radius:15px 15px 0 0;border-bottom:1px solid #cfe2d6}
+ #recipePanel>.section-head h2{font-size:19px;line-height:1.4}
+ #recipePanel>.section-head #version{display:block;font-size:11px;line-height:1.5;margin:4px 0 0}
  #recipe-title{color:var(--green)}
  #costPanel>summary{background:var(--cost-soft);color:var(--cost-ink)}
  #costPanel h2{color:var(--cost-ink)}
@@ -635,6 +639,7 @@ input[type="date"]::-webkit-date-and-time-value{min-height:1.5em;text-align:left
 #recipePanel>summary>div{grid-column:2;min-width:0}
 #recipePanel>summary .recipe-head-actions{grid-column:2;grid-row:2}
 #recipePanel:not([open]){padding-bottom:0}
+#recipePanel:not([open])>summary.section-head{border-bottom:0}
 #recipePanel:not([open])>summary .recipe-head-actions{display:none}
 @media(max-width:767px){#viewRecipe[data-mode="share"] #recipePanel{margin:0}}
 

@@ -153,3 +153,13 @@ Code.gs、Client、Index、package、產生的index、client／server測試及�
 Firebase資料與規則未改寫；本機及雲端舊g資料需由使用者在入口確認修改。Browser工具無連線，真實視窗操作、手機鍵盤及兩台裝置資料一致性未驗證。Apps Script正式仍v1.3.2，原始碼更新不代表該平台已部署。
 ### Git與發布狀態
 main，Pages Actions38515157174成功，head為8692034；正式HTTP200讀回v1.4.2、修改採購入口及逐字相同的建置內容，保留全部正式資料。完成後請重新整理v1.4.2並用修改採購入口設定實際容量；不要清除本機或雲端資料。
+
+## 最新修正：v1.4.3 收合外觀（2026-10-14）
+### 核心元資料
+Repository：lianghao02/AromaCraft-Studio；Branch：main；基線Commit：32eaf9545a23b39884e414cfb75cb0342128dae2；Skill Version：v1.0.0；Task Type：FIX／RELEASE。
+### 基準與已完成
+開始時Working Tree Clean。使用者截圖顯示第2步收合右側白邊、第2／3步高度不一致。原因是原料區scrollbar-gutter在收合時仍生效，且兩種標題內距與行高不同。Styles將捲動／捲軸預留限制在[open]狀態，保留吸頂；統一配方標題padding、h2及說明行高，panel內距與負邊距一致，收合時移除標題下框線。版本與產生的index更新，沒有修改資料或互動計算。
+### 驗證與邊界
+66項自動化測試、語法、建置及差異檢查通過。Browser無可用連線，真實白邊消失、標題高度、手機展開及收合畫面尚未實測。使用者截圖是修改前視覺證據，不宣稱修改後截圖驗證。
+### Git與發布狀態
+本輪修正待提交及Pages部署核對；Apps Script仍v1.3.2。正式資料、Firebase與歷史配方不變，完成後請重新整理v1.4.3回測收合與展開。

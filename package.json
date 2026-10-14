@@ -1,6 +1,6 @@
 {
   "name": "aromacraft-studio",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
   "description": "手作精油配方與成本管理系統",
   "scripts": {
