@@ -3,52 +3,52 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：71cb8f8737577007a5417eb4557377819eba32d5（功能提交；文件提交以最新Git為準）
+- **Commit SHA**：基準2aecc3decdd531334e64d5e939962eeabf1d824f；本輪待提交
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX / RELEASE
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ## 目前狀態
-v1.5.1修正版完成，待最終驗證及Pages發布。正式v1.5.0已發布，Apps Script仍v1.3.2。
+v1.5.2修訂及69項完整測試通過，待Pages發布核對。Apps Script仍v1.3.2。
 
 ## 本輪目標
-修復手機截圖的「總量基準必須是g或mL」及精油膏全部使用容量卻無法計算濃度；依已授權的發布流程交付。
+修正六項皆填卻殘留整滴提醒；依使用者意圖讓精油製作用量預設滴，更改單位保留數字，不再將1改為20。
 
 ## 基準與已確認事實 (Baseline & Confirmed Facts)
-工作目錄開始Clean。convertInput把mixed傳入只接受g／mL的convert；automaticConcentration又固定採用類別預設basis，即使另一基準可完整換算仍回報不足。原有20滴設定本身有效。
+開始工作目錄Clean。v1.5.1會在切換單位時保留實際體積並換算數字，與這次使用者指定的「改輸入單位」意圖不同。確認只讀pending集合、不重讀欄位；全域錯誤在輸入正確後仍殘留。
 
 ## 已完成 (Completed)
-convertInput在分開計量時改以該原料採購基準換算。濃度在原基準不可用時採可完整換算的另一基準；原基準可用時維持原設定。未設定上限時，基準選單跟隨實際結果；已有上限不偷改。補上核心、8種寬度前端事件及後端保存讀回回歸。
+- 確認時重新讀每項欄位與單位，補足未收到input事件的狀態；正確後立即清除舊提醒，錯誤指出原料與實際原因。
+- 新增可用容量換算的精油預設滴；製作表單及個別換算設定改單位保留數字。1mL改選滴即1滴，內部成本與濃度仍用20滴／mL或個別設定換算。
+- 既有配方、採購單位與歷史快照不自動修改；g價格且無容量換算的精油不強制使用滴。
 
 ## 異動檔案 (Changed Files)
-src/Core.html、src/Client.html、tests/units.test.cjs、tests/client.test.cjs、package.json、src/Index.html、sw.js、產生的index.html、README.md、CHANGELOG.md、HANDOFF.md。
+src/Client.html、tests/client.test.cjs、src/Index.html、package.json、sw.js、產生的index.html、README.md、CHANGELOG.md、HANDOFF.md。
 
 ## 刻意未修改 (Do Not Do / Deliberately Omitted)
-不改雲端原料資料、採購單位、權限或認證；不把g當mL；不改既有成本或濃度快照。個別滴數換算優先於預設20，歷史配方修改後另存新版。
+不改Core計算公式、雲端資料、權限、原料價格或歷史快照；不刪除整滴驗證。1mL約20滴的內部換算關係維持。
 
 ## 尚未完成 (Remaining Work)
-- **P1 (阻斷/必須)**：無已知阻斷問題；69項測試及Pages部署確認已完成。
-- **P2 (重要/當次)**：瀏覽器連線兩次逾時，本輪實際畫面操作尚未驗證；使用者可於發布後實機驗收。
-- **P3 (改善建議/暫緩)**：完整Safari原生鍵盤、真實家庭雙裝置。
+- **P1 (阻斷/必須)**：Pages發布與正式內容核對。
+- **P2 (重要/當次)**：本輪瀏覽器連線逾時；Safari實機及畫面操作未驗證。
+- **P3 (改善建議/暫緩)**：家庭真實雙裝置與完整鍵盤驗收。
 
 ## 驗證結果 (Validation)
 ### 已執行測試與結果
-原目錄與不含.git／node_modules的中文空白路徑副本均通過69項完整測試；語法、引用、敏感差異與git diff --check亦通過。包含2mL→40滴→2mL、30mL＋6滴→約0.99%、全重量1%、g＋滴缺換算不產生百分比、上限基準不同不比較。
+69項完整測試通過；原有8種寬度前端案例增加六項混合配方、三種精油各1滴、未觸發input事件、非整滴修正後清除訊息、改單位保留數字及後端保存讀回每瓶1滴斷言。語法與頁面引用檢查通過。跨路徑副本及敏感差異檢查另執行。
 ### 尚未驗證項目
-本輪瀏覽器真實操作：Chrome連線逾時，不能冒充實測。69項自動測試若通過，仍不代表實機Safari通過。
+瀏覽器連線逾時，不能把DOM替身測試當作Safari或真實畫面實測。
 ### 已知風險 (Known Risks)
-20滴／mL為估算；g＋滴仍需有效密度或實秤重量才能算重量百分比。未超上限不代表適用性。
+精油20滴／mL仍為估算。既有mL配方不自動改量；使用者主動改單位時保留數字，畫面已註記此行為。
 
 ## Git 狀態
-- Commit：71cb8f8737577007a5417eb4557377819eba32d5；文件提交以最新Git為準
-- Push：是
-- Working Tree：文件提交後核對Clean
+- Commit：待提交
+- Push：待推送
+- Working Tree：本輪相關修改
 - Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-請使用者重新開啟v1.5.1實機驗收。不要重啟無關優化或改寫舊原料與快照。
+完成跨路徑與差異檢查，提交並依既有授權發布Pages，核對正式HTML與Service Worker。
 
 ## 發布狀態 (Release Status)
-v1.5.1已發布。Pages Actions 38568336782成功，head為71cb8f8737577007a5417eb4557377819eba32d5；正式HTML與sw.js SHA-256一致。Apps Script本輪未更新。
-
-正式網址：https://lianghao02.github.io/AromaCraft-Studio/ 。部署證據：https://github.com/lianghao02/AromaCraft-Studio/actions/runs/38568336782 。本輪瀏覽器連線逾時，畫面與Safari實機尚未驗證，不以自動測試冒充實測。
+v1.5.2待發布；Apps Script本輪不更新。

@@ -207,7 +207,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   const changeUnit=(id,value)=>node('selectedItems').onchange({target:{closest:q=>q==='[data-quantity-unit]'?{dataset:{quantityUnit:id},value}:null}});
   changeUnit('yl-354876','滴');quantity('demo-oil','30');quantity('yl-354876','0.5');assert.equal(node('quickSave').disabled,true);assert.equal(node('recordProduction').disabled,true);assert.equal(node('panelCost').textContent,'—');assert.match(node('concentrationValue').textContent,/待填/);
   node('confirmQuantities').onclick();assert.equal(node('quantityError').hidden,false);assert.equal(node('materialPicker').open,true);
-  quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);changeUnit('yl-354876','mL');assert.match(node('items').innerHTML,/0.3 mL/);changeUnit('yl-354876','滴');assert.match(node('items').innerHTML,/6 滴/);assert.match(node('concentrationValue').textContent,/0.99%/);
+  quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);changeUnit('yl-354876','mL');assert.match(node('items').innerHTML,/6 mL/);changeUnit('yl-354876','滴');assert.match(node('items').innerHTML,/6 滴/);assert.match(node('concentrationValue').textContent,/0.99%/);
   quantity('yl-354876','');assert.equal(node('quickSave').disabled,true);assert.ok([...storage.values()].some(v=>JSON.parse(v).uiPendingQuantities?.includes('yl-354876')));quantity('yl-354876','6');
   node('selectedItems').onclick({target:{closest:q=>q==='[data-unselect]'?{dataset:{unselect:'demo-oil'}}:null}});assert.doesNotMatch(node('items').innerHTML,/30 mL/);
   node('undoSelection').onclick();assert.match(node('items').innerHTML,/30 mL/);assert.match(node('items').innerHTML,/6 滴/);
@@ -217,6 +217,18 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.doesNotMatch(node('breakdown').innerHTML,/本次總成本|每份成本/);
   node('syncStatusCapsule').onclick();assert.equal(node('manageData').hidden,false);assert.equal(node('cloudSyncPanel').hidden,true);assert.equal(node('backupPanel').scrolled,true);
   node('tabRecipe').onkeydown({key:'ArrowRight',preventDefault(){}});assert.equal(node('tabSaved')['aria-selected'],'true');
+  // 六項皆已填：即使未收到input事件，確認時也讀回畫面；錯誤不得殘留。
+  const next=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await next;
+  const bootstrap=h.call('bootstrap').value,oilIds=bootstrap.materials.filter(m=>m.category==='精油'&&bootstrap.prices.some(p=>p.materialId===m.id&&p.unit==='mL')).slice(0,3).map(m=>m.id);
+  const wax=bootstrap.materials.find(m=>m.category==='蜂蠟').id,ids=[...oilIds,'demo-soap',wax,'demo-oil'];ids.forEach(choose);node('fillQuantities').onclick();
+  assert.equal((node('selectedItems').innerHTML.match(/<option selected>滴<\/option>/g)||[]).length,3);
+  for(const id of ids){node('quantity-'+id).value=oilIds.includes(id)?'1':id==='demo-oil'?'25':'2';node('quantity-unit-'+id).value=oilIds.includes(id)?'滴':id==='demo-oil'?'mL':'g';}
+  node('confirmQuantities').onclick();assert.equal(node('materialPicker').open,false);assert.equal(node('quantityError').hidden,true);assert.equal(node('quickSave').disabled,false);
+  node('fillQuantities').onclick();node('quantity-'+oilIds[0]).value='0.5';node('confirmQuantities').onclick();assert.equal(node('materialPicker').open,true);assert.equal(node('quantityError').hidden,false);assert.match(node('quantityError').textContent,/滴數必須是整數/);
+  quantity(oilIds[0],'1');assert.equal(node('quantityError').hidden,true);
+  changeUnit(oilIds[0],'mL');assert.equal(node('quantity-'+oilIds[0]).value,'1');node('quantity-unit-'+oilIds[0]).value='mL';changeUnit(oilIds[0],'滴');node('quantity-unit-'+oilIds[0]).value='滴';assert.equal(node('quantity-'+oilIds[0]).value,'1');
+  node('confirmQuantities').onclick();assert.equal(node('recipePanel').open,true);assert.equal(node('quantityError').hidden,true);assert.doesNotMatch(node('items').innerHTML,/20 滴/);await node('quickSave').onclick();const savedSix=h.call('bootstrap').value.recipes.at(-1),loadedSix=h.call('loadRecipe',{id:savedSix.id,version:savedSix.version}).value;for(const id of oilIds){const item=loadedSix.items.find(i=>i.materialId===id);assert.equal(item.unit,'滴');assert.equal(Number(item.quantity),1);}
+
 
 });
 
