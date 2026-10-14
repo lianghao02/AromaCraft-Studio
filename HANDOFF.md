@@ -162,4 +162,4 @@ Repository：lianghao02/AromaCraft-Studio；Branch：main；基線Commit：32eaf
 ### 驗證與邊界
 66項自動化測試、語法、建置及差異檢查通過。Browser無可用連線，真實白邊消失、標題高度、手機展開及收合畫面尚未實測。使用者截圖是修改前視覺證據，不宣稱修改後截圖驗證。
 ### Git與發布狀態
-本輪修正待提交及Pages部署核對；Apps Script仍v1.3.2。正式資料、Firebase與歷史配方不變，完成後請重新整理v1.4.3回測收合與展開。
+功能Commit4f4e356056254bb2063aac982a0ffbf5741dcd23已推送；Pages Actions38518397721成功，head相符；正式HTTP200，v1.4.3及建置內容逐字相符；Apps Script仍v1.3.2。正式資料、Firebase與歷史配方不變，完成後請重新整理v1.4.3回測收合與展開。
