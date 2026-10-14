@@ -3,13 +3,13 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：f36633438071610e41d07346c2e63c677f5fe69a（本輪修訂未提交）
+- **Commit SHA**：f523711b78b92b2bfae6aa38daa4f4f4db0a246e（v1.5.0功能提交，文件提交以最新Git為準）
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX / IMPROVE / RELEASE
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ## 目前狀態
-使用者已授權提交與部署，準備發布v1.5.0；正式Pages部署結果待本輪核對，Apps Script仍為v1.3.2。本輪不改正式資料或權限。
+v1.5.0已提交、推送並完成GitHub Pages部署；正式HTML與Service Worker逐位元組核對相同，Apps Script仍為v1.3.2。本輪不改正式資料或權限。
 
 ## 本輪目標
 依已完成的UI／UX審查修復桌機儲存入口、集中填量、確認頁資訊層級、卡片與導航；修訂後再次驗證。另依手機截圖移除重複填寫用量入口。
@@ -35,7 +35,7 @@ src/Index.html、src/Client.html、src/Styles.html、tools/standalone-provider.j
 
 ## 尚未完成 (Remaining Work)
 - **P1 (阻斷/必須)**：本輪範圍無已知阻斷問題。
-- **P2 (重要/當次)**：無已知當次必修問題；完成使用者本機試用後再依指示發布。
+- **P2 (重要/當次)**：無已知當次必修問題；Pages已發布，可進行使用者實機驗收。
 - **P3 (改善建議/暫緩)**：iPhone Safari原生鍵盤、實機觸控、完整螢幕閱讀器與家庭雙裝置驗收。
 
 ## 驗證結果 (Validation)
@@ -47,16 +47,19 @@ Chrome實測：選按摩油、多選、30mL基底油＋6滴精油、確認約0.9
 ### 尚未驗證項目
 iPhone Safari原生鍵盤、所有長文字／配方狀態、完整無障礙檢測與正式Firebase登入／雙裝置同步。
 ### 已知風險 (Known Risks)
-本機Chrome響應式驗證不能代替實機；20滴／mL仍是精油估算，濃度不代表適用性。正式站尚未套用本輪修改。
+本機Chrome響應式驗證不能代替實機；20滴／mL仍是精油估算，濃度不代表適用性。Pages已套用本輪修改，Apps Script維持既有部署。
 
 ## Git 狀態
-- Commit：本輪未提交；基準f36633438071610e41d07346c2e63c677f5fe69a
-- Push：否
-- Working Tree：Modified（上述本輪檔案）
+- Commit：v1.5.0功能提交f523711b78b92b2bfae6aa38daa4f4f4db0a246e；文件提交以最新Git為準
+- Push：是
+- Working Tree：文件提交後核對，預期Clean
 - Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-使用者試用本機修訂；有發布指示時執行版本、提交、Pages部署驗證。不要將本機示範冒充正式發布；Apps Script更新需獨立執行。
+已依使用者授權發布Pages，下一步為實機Safari與家庭雙裝置驗收；不追加非必要修改。Apps Script更新需另行執行，本輪未部署該平台。
 
 ## 發布狀態 (Release Status)
-本輪未發布；程式及本機主要流程已驗證。正式版本仍維持既有部署。
+GitHub Pages v1.5.0已發布。Actions 38565335293成功，head為f523711b78b92b2bfae6aa38daa4f4f4db0a246e。正式index.html與sw.js HTTP200，SHA-256均與本機提交內容一致；fillQuantities僅1份，舊重複入口不存在。Apps Script仍v1.3.2。
+
+### 發布驗證補充
+原目錄與另一磁碟的中文空白路徑副本均通過66項完整測試、語法與引用檢查；副本不含.git或node_modules。新增差異敏感值檢查與git diff --check通過。正式網址：https://lianghao02.github.io/AromaCraft-Studio/ 。部署紀錄：https://github.com/lianghao02/AromaCraft-Studio/actions/runs/38565335293 。
