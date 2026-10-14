@@ -3,7 +3,7 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：基準5d75ec21bcc192a6b1820ebd9d2dae1cbeb68028；本輪修訂待提交
+- **Commit SHA**：71cb8f8737577007a5417eb4557377819eba32d5（功能提交；文件提交以最新Git為準）
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX / RELEASE
 - **Local Path Hint**：18_AromaCraft-Studio
@@ -27,7 +27,7 @@ src/Core.html、src/Client.html、tests/units.test.cjs、tests/client.test.cjs�
 不改雲端原料資料、採購單位、權限或認證；不把g當mL；不改既有成本或濃度快照。個別滴數換算優先於預設20，歷史配方修改後另存新版。
 
 ## 尚未完成 (Remaining Work)
-- **P1 (阻斷/必須)**：待最終測試與Pages部署確認。
+- **P1 (阻斷/必須)**：無已知阻斷問題；69項測試及Pages部署確認已完成。
 - **P2 (重要/當次)**：瀏覽器連線兩次逾時，本輪實際畫面操作尚未驗證；使用者可於發布後實機驗收。
 - **P3 (改善建議/暫緩)**：完整Safari原生鍵盤、真實家庭雙裝置。
 
@@ -40,13 +40,15 @@ src/Core.html、src/Client.html、tests/units.test.cjs、tests/client.test.cjs�
 20滴／mL為估算；g＋滴仍需有效密度或實秤重量才能算重量百分比。未超上限不代表適用性。
 
 ## Git 狀態
-- Commit：待提交
-- Push：待推送
-- Working Tree：本輪相關修改
+- Commit：71cb8f8737577007a5417eb4557377819eba32d5；文件提交以最新Git為準
+- Push：是
+- Working Tree：文件提交後核對Clean
 - Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-完成既有完整測試、語法與差異檢查，提交推送並確認Pages對應版本。
+請使用者重新開啟v1.5.1實機驗收。不要重啟無關優化或改寫舊原料與快照。
 
 ## 發布狀態 (Release Status)
-v1.5.1待發布；Apps Script本輪不更新。
+v1.5.1已發布。Pages Actions 38568336782成功，head為71cb8f8737577007a5417eb4557377819eba32d5；正式HTML與sw.js SHA-256一致。Apps Script本輪未更新。
+
+正式網址：https://lianghao02.github.io/AromaCraft-Studio/ 。部署證據：https://github.com/lianghao02/AromaCraft-Studio/actions/runs/38568336782 。本輪瀏覽器連線逾時，畫面與Safari實機尚未驗證，不以自動測試冒充實測。
