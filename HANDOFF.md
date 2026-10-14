@@ -141,7 +141,7 @@ Index加入內嵌SVG圖示；Styles移除原料強制展開及入口隱藏，桌
 ### 核心元資料
 - Repository：lianghao02/AromaCraft-Studio
 - Branch：main
-- Commit SHA：基線846f96fdea335f1f3ca79a666a196427cd224823；基底油修正尚未提交
+- Commit SHA：基線846f96fdea335f1f3ca79a666a196427cd224823；基底油功能Commit8692034bb9cf385205a3ccaa9e9ebecc2738b0e5已推送
 - Skill Version：v1.0.0
 - Task Type：FIX／RELEASE
 ### 基準、目標與已完成
@@ -152,4 +152,4 @@ Code.gs、Client、Index、package、產生的index、client／server測試及�
 ### 邊界與待驗證
 Firebase資料與規則未改寫；本機及雲端舊g資料需由使用者在入口確認修改。Browser工具無連線，真實視窗操作、手機鍵盤及兩台裝置資料一致性未驗證。Apps Script正式仍v1.3.2，原始碼更新不代表該平台已部署。
 ### Git與發布狀態
-main，相關修改待提交與Pages部署核對，保留全部正式資料。完成後請重新整理v1.4.2並用修改採購入口設定實際容量；不要清除本機或雲端資料。
+main，Pages Actions38515157174成功，head為8692034；正式HTTP200讀回v1.4.2、修改採購入口及逐字相同的建置內容，保留全部正式資料。完成後請重新整理v1.4.2並用修改採購入口設定實際容量；不要清除本機或雲端資料。
