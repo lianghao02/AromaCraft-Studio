@@ -112,3 +112,7 @@ Repository：lianghao02/AromaCraft-Studio；Branch：main；基線 Commit：390e
 使用者選定 Google 帳號登入。正式 Firebase auth 部署已成功，API 讀回 googleEnabled=true、Google OAuth 已設定、emailPassword=true；在現有清單追加 lianghao02.github.io，保留三個原網域。沒有改 Firestore 規則、名單或資料；沒有搬移 Apps Script 試算表。
 網頁新增 Google 選帳號入口、取消／阻擋視窗／網路／網域等具體錯誤，保留舊密碼入口。測試驗證無雲端快照時登入不顯示已同步、非授權帳號登出且不寫資料、取消不改本機表格；既有移轉失敗與交易防覆蓋測試保留。
 累積前輪 UI 修訂一併整理為 v1.4.0；Pages 發布狀態待下方完成證據。Browser 工具仍無可用連線，真實登入、跨裝置同步、手機排版及 Safari 原生鍵盤未驗證，不將自動化替身視為實機測試。Apps Script 本輪尚未更新。
+
+### v1.4.0 發布完成證據
+功能 Commit：9f7ed19046b29eb5f80e0041eecbc859c8e84f65，已正常推送 origin/main。GitHub Pages Actions 38499178506 成功，head 與功能 Commit 相符；公開網站 HTTP 200，讀回 v1.4.0、btnGoogleLogin、多選填用量與原有密碼入口。61項完整測試通過，最後缺價補填入口調整後再跑5項前端相關測試、語法、建置與差異檢查通過；新增敏感字串檢核無警訊。
+已請使用者於正式網站只登入，回報已同步／待移轉／登入失敗；尚未收到實機結果。Google 選帳號視窗與真實跨裝置資料同步仍未驗證；Apps Script 本輪未更新，仍為 v1.3.2。後續依實機狀態處理，禁止在未確認資料來源時覆蓋家庭快照或清除本機資料。
