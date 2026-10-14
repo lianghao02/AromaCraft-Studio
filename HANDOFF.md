@@ -121,7 +121,7 @@ Repository：lianghao02/AromaCraft-Studio；Branch：main；基線 Commit：390e
 ### 核心元資料
 - Repository：lianghao02/AromaCraft-Studio
 - Branch：main
-- Commit SHA：基線0483fa12f81cf622d3c54287d13185b45ed4ddc7；本輪功能尚未提交
+- Commit SHA：基線0483fa12f81cf622d3c54287d13185b45ed4ddc7；本輪功能0406f82a39630a08e4b330342354c8d531382871，已推送origin/main
 - Skill Version：v1.0.0
 - Task Type：FIX／RELEASE
 ### 目前狀態與本輪目標
@@ -135,4 +135,4 @@ Index加入內嵌SVG圖示；Styles移除原料強制展開及入口隱藏，桌
 ### 驗證結果與尚未完成
 65項完整自動化測試、語法、建置、引用與差異檢查通過。涵蓋多選、依序填用量、管理只編輯、不改配方、切頁保留收合、八種寬度與Firebase說明保留。Browser工具無可用連線，真實CSS版面、原生收合點擊、圖示網路請求與Safari鍵盤未實測；替身和CSS契約不冒充實機驗證。
 ### Git與發布狀態
-本次修改僅相關檔案；Pages待提交與部署驗證。Apps Script仍v1.3.2，未宣稱已更新。完成發布後請使用者重新整理v1.4.1回測第2步標題、多選填用量與設定頁外框；不要清空原資料。
+本次修改僅相關檔案；Pages Actions 38501703129成功，head為0406f82；公開HTTP200，v1.4.1及內嵌圖示存在，網頁逐字與建置內容相同。Apps Script仍v1.3.2，未宣稱已更新。完成發布後請使用者重新整理v1.4.1回測第2步標題、多選填用量與設定頁外框；不要清空原資料。
