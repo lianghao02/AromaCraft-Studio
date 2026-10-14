@@ -177,6 +177,7 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
 
 .picker-top-bar{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:12px;border-bottom:1px dashed var(--line);gap:8px}
 .return-btn{font-size:12px;min-height:40px;padding:8px 14px;white-space:nowrap}
+@media(min-width:1100px){#materialPicker:not([data-manage="true"]) .picker-top-bar{position:sticky;top:0;z-index:2;background:white;padding-top:8px}}
 
 /* === 頂部通知：浮動膠囊 Toast === */
 #notice{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:auto;min-width:280px;max-width:min(90vw,480px);max-height:40dvh;overflow:auto;z-index:200;box-shadow:0 8px 30px rgba(32,55,46,.22);padding:10px 18px;border-radius:100px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#253c30;border:1px solid #3d5849;color:#fff;backdrop-filter:blur(6px);animation:slideDown .2s cubic-bezier(.16,1,.3,1)}
@@ -271,8 +272,6 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
     overflow-y:auto;
     box-shadow:0 4px 20px rgba(32,55,46,.05);
   }
-  #viewRecipe[data-mode="formulate"] #materialPicker[class*="fold"]>.fold-body{display:block!important}
-  #viewRecipe[data-mode="formulate"] #materialPicker>summary{cursor:default;pointer-events:none}
   #viewRecipe[data-mode="formulate"] #materialPicker>summary small{display:none}
 
   /* 模式二：成本利潤模式（左欄配方摘要，右欄成本試算） */
@@ -427,9 +426,6 @@ label{font-size:14px}
  header,main{max-width:1680px}
  #viewRecipe[data-mode="share"]{grid-template-columns:minmax(0,1fr) minmax(380px,1fr);grid-template-areas:"guide guide" "quick quick" "work work" "picker workspace";gap:18px}
  #viewRecipe[data-mode="share"] #materialPicker{position:sticky;top:16px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
- #viewRecipe[data-mode="share"] #materialPicker>.fold-body{display:block!important}
- #viewRecipe[data-mode="share"] #materialPicker>summary{pointer-events:none}
- #viewRecipe[data-mode="share"] #materialPicker .picker-top-bar{display:none}
  #viewRecipe[data-mode="share"] #materialPicker #materials{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
  #viewRecipe[data-mode="share"] #materialPicker .fields{display:block}
  #viewRecipe[data-mode="share"] #materialPicker .material-card{min-width:0;overflow-wrap:anywhere}
@@ -459,8 +455,6 @@ label{font-size:14px}
 #manageBasics{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
 #manageMaterialSlot{min-width:0}
 #manageMaterialSlot #materialPicker{margin:0}
-#materialPicker[data-manage="true"]>.fold-body{display:block!important}
-#materialPicker[data-manage="true"]>summary{pointer-events:none;cursor:default}
 #materialPicker[data-manage="true"] .picker-top-bar,#materialPicker[data-manage="true"] .mat-card-status{display:none}
 #manageMaterialSlot #materials{grid-template-columns:repeat(2,minmax(0,1fr))}
 #packagingPanel{margin:0}

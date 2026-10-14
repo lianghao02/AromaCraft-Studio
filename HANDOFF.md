@@ -116,3 +116,23 @@ Repository：lianghao02/AromaCraft-Studio；Branch：main；基線 Commit：390e
 ### v1.4.0 發布完成證據
 功能 Commit：9f7ed19046b29eb5f80e0041eecbc859c8e84f65，已正常推送 origin/main。GitHub Pages Actions 38499178506 成功，head 與功能 Commit 相符；公開網站 HTTP 200，讀回 v1.4.0、btnGoogleLogin、多選填用量與原有密碼入口。61項完整測試通過，最後缺價補填入口調整後再跑5項前端相關測試、語法、建置與差異檢查通過；新增敏感字串檢核無警訊。
 已請使用者於正式網站只登入，回報已同步／待移轉／登入失敗；尚未收到實機結果。Google 選帳號視窗與真實跨裝置資料同步仍未驗證；Apps Script 本輪未更新，仍為 v1.3.2。後續依實機狀態處理，禁止在未確認資料來源時覆蓋家庭快照或清除本機資料。
+
+## 最新修正：v1.4.1 原料操作（2026-10-14）
+### 核心元資料
+- Repository：lianghao02/AromaCraft-Studio
+- Branch：main
+- Commit SHA：基線0483fa12f81cf622d3c54287d13185b45ed4ddc7；本輪功能尚未提交
+- Skill Version：v1.0.0
+- Task Type：FIX／RELEASE
+### 目前狀態與本輪目標
+修正正式桌機第2步不能收合、填用量按鈕隱藏、設定頁選取狀態混淆及圖示404，檢查同類入口與狀態覆蓋。
+### 基準與已確認事實
+開始時main與origin/main一致，Working Tree Clean，61項基線測試通過。桌機CSS停用原料summary並隱藏picker-top-bar；原料管理直接沿用inRecipe外框。使用者已回報v1.4.0手機登入顯示已同步，兩台裝置資料一致性仍未驗證。cssInjection使用者回報不再出現，未取得content.js完整來源。
+### 已完成與異動檔案
+Index加入內嵌SVG圖示；Styles移除原料強制展開及入口隱藏，桌機用量入口在原料區內吸頂。Client保留收合狀態、管理頁不呈現配方勾選／aria-pressed，刷新不覆蓋Firebase連線說明。原有openEditor重設按鈕文字正常，保留且回歸驗證。client.test新增768、1024、1920px與CSS契約檢查。版本、CHANGELOG、README及產生的index同步更新。
+### 刻意未修改
+原料、採購價格、成本快照、已存配方、FireStore權限及Google Apps Script正式部署；未清除瀏覽器或雲端資料，未調整使用者擴充功能。
+### 驗證結果與尚未完成
+65項完整自動化測試、語法、建置、引用與差異檢查通過。涵蓋多選、依序填用量、管理只編輯、不改配方、切頁保留收合、八種寬度與Firebase說明保留。Browser工具無可用連線，真實CSS版面、原生收合點擊、圖示網路請求與Safari鍵盤未實測；替身和CSS契約不冒充實機驗證。
+### Git與發布狀態
+本次修改僅相關檔案；Pages待提交與部署驗證。Apps Script仍v1.3.2，未宣稱已更新。完成發布後請使用者重新整理v1.4.1回測第2步標題、多選填用量與設定頁外框；不要清空原資料。

@@ -61,7 +61,7 @@
     const picker=$('materialPicker'), owner=$(target==='tabManage'?'manageMaterialSlot':'viewRecipe');
     const fromManage=picker?.dataset?.manage==='true';
     if(target==='tabManage'&&!fromManage)recipePickerOpen=picker.open;
-    if(target==='tabRecipe'&&(fromManage||window.innerWidth>=1100))picker.open=window.innerWidth>=1100||recipePickerOpen;
+    if(target==='tabRecipe'&&fromManage)picker.open=recipePickerOpen;
     if(picker&&target!=='tabSaved'){if(target==='tabRecipe'&&owner?.insertBefore&&$('recipeWorkspace'))owner.insertBefore(picker,$('recipeWorkspace'));else if(owner?.append)owner.append(picker);}
     if(target!=='tabSaved'){
       if(picker?.dataset)picker.dataset.manage=String(target==='tabManage');
@@ -296,13 +296,14 @@
     if($('materialCount'))$('materialCount').textContent='找到 '+list.length+' 筆，顯示 '+Math.min(materialLimit,list.length)+' 筆';
     if($('materialsMore')){$('materialsMore').hidden=materialLimit>=list.length;$('materialsMore').textContent='再顯示 '+materialPageSize()+' 筆原料';}
     $('materials').innerHTML = list.slice(0,materialLimit).map(m => {
-      const inRecipe = recipe?.items.some(i => i.materialId === m.id);
+      const managing = $('materialPicker').dataset?.manage==='true';
+      const inRecipe = !managing && recipe?.items.some(i => i.materialId === m.id);
       const item = recipe?.items.find(i => i.materialId === m.id);
       const latestPrice = data.prices.filter(p => p.materialId === m.id).at(-1);
       const info=describe(m,latestPrice);
       const bottleMoney=latestPrice?new Intl.NumberFormat('zh-TW',{style:'currency',currency:'TWD',minimumFractionDigits:0,maximumFractionDigits:2}).format(info.paid):'';
       const priceText=latestPrice?fmt(info.amount)+' '+(info.unit==='mL'?'mL':escape(info.unit))+' · '+info.priceLabel+' '+bottleMoney:'尚未設定採購價格';
-      return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" aria-pressed="${inRecipe}" aria-label="${escape(info.name)}，${$('materialPicker').dataset?.manage==='true'?'編輯名稱、容量與價格':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
+      return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯名稱、容量與價格':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
         <div class="mat-card-header">
           <span class="badge">${escape(info.kind)}</span>
           ${info.image?`<span class="mat-picture has-image" aria-hidden="true"><img class="material-thumbnail" src="${escape(info.image)}" width="44" height="54" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""></span>`:''}
@@ -337,7 +338,7 @@
   async function refresh(preserve = true) {
     const next = await rpc('bootstrap');
     data = next; draftKey = 'aromacraft-draft-v1:' + data.email;
-    $('connection').textContent = (window.AROMA_LOCAL ? '瀏覽器本機模式 · 換裝置前請匯出備份 · ' : window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
+    if(!window.AROMA_LOCAL)$('connection').textContent = (window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
     if (!recipe || !preserve) recipe = blank('其他');
     renderMaterials(); renderSaved(); renderRecipe();
   }
@@ -634,7 +635,7 @@
   if ($('costPanel')) $('costPanel').open = window.innerWidth >= 768;
   if(window.innerWidth>=1100)$('materialPicker').open=true;
   if(window.innerWidth<768)$('workPanel').open=true;
-  if(window.matchMedia){const desktop=window.matchMedia('(min-width:1100px)');desktop.addEventListener('change',()=>{if($('materialPicker').dataset.manage!=='true')$('materialPicker').open=desktop.matches;});}
+  if(window.matchMedia){const desktop=window.matchMedia('(min-width:1100px)');desktop.addEventListener('change',()=>{materialLimit=materialPageSize();if(data)renderMaterials();});}
   if ($('btnPrintRecipe')) {
     $('btnPrintRecipe').onclick = () => {
       if (!recipe?.items.length) { notice('請先加入原料才能列印配方工作單。'); return; }

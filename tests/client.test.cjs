@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createHarness}=require('../tools/gas-mock.cjs');
-for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收納操作保留草稿；空白防誤存與失敗重試`,async()=>{
+for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewportWidth}px 收納操作保留草稿；空白防誤存與失敗重試`,async()=>{
   const h=createHarness();h.setup();h.call('importCatalog');
   const catalogCtx=vm.createContext({Intl,Date,Map});
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/Catalog.html'),'utf8').replace(/^\s*<script>/,'').replace(/<\/script>\s*$/,''),catalogCtx);
@@ -70,7 +70,7 @@ for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收�
   assert.equal(node('materialPicker').open,true);
   assert.equal(node('name').value,'收納流程驗證');
   desktop.matches=false;desktop.change();
-  assert.equal(node('materialPicker').open,false);
+  assert.equal(node('materialPicker').open,true);
   assert.equal(node('name').value,'收納流程驗證');
   desktop.matches=true;desktop.change();
   assert.equal(node('materialPicker').open,true);
@@ -136,16 +136,25 @@ for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收�
   node('concentrationTotal').value='30';node('concentrationLimit').value='2';node('concentrationLimit').oninput();
   assert.match(node('concentrationDetailsMessage').textContent,/基準不同|資料不足/);assert.equal(node('quickSave').disabled,true);assert.equal(node('concentrationTotal').value,'30');assert.equal(node('totalOptions').hidden,true);
   node('concentrationTotal').value='';node('concentrationLimit').value='';node('concentrationLimit').oninput();
+  node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:'demo-soap'}}:null}});
+  assert.match(node('materials').innerHTML,/已在配方/);
   const unchangedRecipe=node('items').innerHTML;
+  node('materialPicker').open=false;
   node('tabManage').onclick();
   assert.equal(node('materialPicker').parentId,'manageMaterialSlot');assert.equal(node('materialPicker').open,true);
   assert.equal(node('manageBasics').hidden,false);assert.equal(node('manageRecords').hidden,true);assert.equal(node('manageData').hidden,true);
   node('manageDataBtn').onclick();assert.equal(node('manageBasics').hidden,true);assert.equal(node('manageData').hidden,false);
   node('manageRecordsBtn').onclick();assert.equal(node('manageRecords').hidden,false);assert.equal(node('manageData').hidden,true);
+  ctx.AROMA_LOCAL=true;node('connection').textContent='已連接 Firebase 家庭雲端';await node('refresh').onclick();assert.equal(node('connection').textContent,'已連接 Firebase 家庭雲端');ctx.AROMA_LOCAL=false;
   node('manageBasicsBtn').onclick();
+  assert.doesNotMatch(node('materials').innerHTML,/class="material-card [^"]*in-recipe|已在配方|aria-pressed="true"/);
   node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:'demo-soap'}}:null}});
-  assert.equal(node('editorTitle').textContent,'原料與價格');assert.equal(node('items').innerHTML,unchangedRecipe);
+  assert.equal(node('editorTitle').textContent,'原料與價格');assert.equal(node('items').innerHTML,unchangedRecipe);assert.equal(node('applyEditor').textContent,'套用');
   node('tabRecipe').onclick();assert.equal(node('materialPicker').parentId,'viewRecipe');assert.equal(node('materialPicker').dataset.manage,'false');
+  assert.equal(node('materialPicker').open,false);assert.match(node('materials').innerHTML,/已在配方/);
+  node('tabSaved').onclick();node('tabRecipe').onclick();assert.equal(node('materialPicker').open,false);
+  desktop.matches=false;desktop.change();assert.equal(node('materialPicker').open,false);
+  desktop.matches=true;desktop.change();assert.equal(node('materialPicker').open,false);
 
   node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/密度|批次/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
   node('matName').value='表單合成商品';node('matCategory').value='其他';node('amount').value=15;node('priceUnit').value='mL';node('paid').value=100;
@@ -178,4 +187,16 @@ for(const viewportWidth of [320,375,390,430,1366])test(`${viewportWidth}px 收�
   assert.match(node('editorTitle').textContent,/3／3/);node('editQuantity').value='2.5';node('editorForm').onsubmit({preventDefault(){}});
   assert.equal(node('editor').open,false);assert.equal(node('materialPicker').open,false);assert.equal(node('recipePanel').open,true);
   assert.match(node('items').innerHTML,/0.5 g/);assert.match(node('items').innerHTML,/10 滴/);assert.match(node('items').innerHTML,/2.5 g/);
+});
+
+test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內嵌',()=>{
+ const styles=fs.readFileSync(path.join(__dirname,'../src/Styles.html'),'utf8');
+ const rules=[...styles.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+ for(const [,selector,body] of rules){
+   if(selector.includes('#materialPicker')&&selector.includes('summary'))assert.doesNotMatch(body,/pointer-events\s*:\s*none/,'原料標題不能停用點擊：'+selector);
+   if(selector.includes('#materialPicker')&&selector.includes('.fold-body'))assert.doesNotMatch(body,/display\s*:\s*block\s*!important/,'原料內容不能強制展開：'+selector);
+   if(selector.includes('#viewRecipe')&&selector.includes('.picker-top-bar'))assert.doesNotMatch(body,/display\s*:\s*none/,'填用量入口不能隱藏：'+selector);
+ }
+ const html=fs.readFileSync(path.join(__dirname,'../src/Index.html'),'utf8');
+ assert.match(html,/<link\b[^>]*rel="icon"[^>]*href="data:image\/svg\+xml,/);
 });
