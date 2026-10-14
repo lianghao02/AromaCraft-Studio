@@ -73,6 +73,8 @@ __AROMA_SERVER__
      capsule.className = 'sync-capsule ' + status;
      statusText.textContent = text;
    }
+   const stamp=document.getElementById('syncLastSuccess');
+   if(stamp){if(status==='synced')stamp.textContent='本裝置最後成功同步：'+new Intl.DateTimeFormat('zh-TW',{dateStyle:'short',timeStyle:'medium'}).format(new Date());else if(status==='offline')stamp.textContent='目前僅保存在此裝置，登入後才會與家庭雲端同步。';}
    const conn = document.getElementById('connection');
    if(conn){
      if(status==='synced') conn.textContent = '已連接 Firebase 家庭雲端：資料與太太即時共用中。';

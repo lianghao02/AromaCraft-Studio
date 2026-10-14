@@ -24,7 +24,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(node('oilKinds').hidden,false);
   assert.match(node('oilKinds').innerHTML,/單方|複方/);
   assert.match(node('materialCount').textContent,new RegExp('顯示 '+(viewportWidth<768?8:24)+' 筆'));
-  assert.equal(node('mobileReviewRecipe').disabled,true);
+  assert.equal(node('fillQuantities').disabled,true);
   node('oilKinds').onclick({target:{closest:()=>({dataset:{oilKind:'單方'}})}});
   assert.doesNotMatch(node('materials').innerHTML,/>複方<|官網批發估算|\/mL|T\d\d:/);
   assert.match(node('materials').innerHTML,/mL · 批發價/);
@@ -46,8 +46,8 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.doesNotMatch(node('oilPercentBadge').className, /safe/);
 
   assert.equal(node('workPanel').open,false);
-  assert.equal(node('materialPicker').open,viewportWidth>=1100||viewportWidth<768);
-  assert.equal(node(viewportWidth<768?'materialPicker':'recipePanel').scrolled,true);
+  assert.equal(node('materialPicker').open,true);
+  assert.equal(node('materialPicker').scrolled,true);
   assert.equal(node('quickSave').disabled,true);
   assert.equal(node('draftState').textContent,'未加入原料');
   assert.equal(node('name').value,'精油皂新配方');
@@ -59,8 +59,8 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.match(node('oilPercentBadge').title,/安全來源/);
   assert.equal(node('quickSave').disabled,false);
   assert.doesNotMatch(node('editorBody').innerHTML,/採購批次|密度/);
-  assert.equal(node('mobileReviewRecipe').disabled,false);
-  node('mobileReviewRecipe').onclick();assert.equal(node('editor').open,true);
+  assert.equal(node('fillQuantities').disabled,false);
+  node('returnToRecipe').onclick();assert.equal(node('editor').open,true);
   node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('materialPicker').open,false);assert.equal(node('recipePanel').scrolled,true);
   assert.match(node('items').innerHTML,/100 g/);
   node('name').value='收納流程驗證';
@@ -198,6 +198,26 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(node('editor').open,true);assert.equal(node('editUnit').value,'mL');assert.equal(node('editQuantity').value,'');assert.match(node('items').innerHTML,/12 g/);
   node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('editorError').hidden,false);assert.match(node('items').innerHTML,/12 g/);
   node('editQuantity').value='10';node('editQuantity').oninput();assert.match(node('unitPreview').textContent,/NT\$30\.00/);node('editorForm').onsubmit({preventDefault(){}});assert.match(node('items').innerHTML,/10 mL/);assert.doesNotMatch(node('items').innerHTML,/12 g/);
+  // 主要集中填量路徑：不開視窗、空白阻擋、整滴、復原與管理隔離。
+  const fresh=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  choose('demo-oil');choose('yl-354876');node('fillQuantities').onclick();
+  assert.equal(node('editor').open,false);assert.equal(node('quantityStage').hidden,false);assert.equal(node('materialBrowse').hidden,true);assert.equal(node('summaryBar').hidden,true);
+  assert.match(node('selectedItems').innerHTML,/data-quantity="demo-oil"/);assert.match(node('selectedItems').innerHTML,/data-quantity="yl-354876"/);
+  const quantity=(id,value)=>{node('quantity-'+id).value=value;node('selectedItems').oninput({target:{closest:q=>q==='[data-quantity]'?{dataset:{quantity:id},value}:null}});};
+  const changeUnit=(id,value)=>node('selectedItems').onchange({target:{closest:q=>q==='[data-quantity-unit]'?{dataset:{quantityUnit:id},value}:null}});
+  changeUnit('yl-354876','滴');quantity('demo-oil','30');quantity('yl-354876','0.5');assert.equal(node('quickSave').disabled,true);assert.equal(node('recordProduction').disabled,true);assert.equal(node('panelCost').textContent,'—');assert.match(node('concentrationValue').textContent,/待填/);
+  node('confirmQuantities').onclick();assert.equal(node('quantityError').hidden,false);assert.equal(node('materialPicker').open,true);
+  quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);
+  quantity('yl-354876','');assert.equal(node('quickSave').disabled,true);assert.ok([...storage.values()].some(v=>JSON.parse(v).uiPendingQuantities?.includes('yl-354876')));quantity('yl-354876','6');
+  node('selectedItems').onclick({target:{closest:q=>q==='[data-unselect]'?{dataset:{unselect:'demo-oil'}}:null}});assert.doesNotMatch(node('items').innerHTML,/30 mL/);
+  node('undoSelection').onclick();assert.match(node('items').innerHTML,/30 mL/);assert.match(node('items').innerHTML,/6 滴/);
+  node('tabManage').onclick();assert.equal(node('materialBrowse').hidden,false);assert.doesNotMatch(node('materials').innerHTML,/已在配方/);
+  node('tabRecipe').onclick();assert.equal(node('materialBrowse').hidden,true);assert.match(node('selectedItems').innerHTML,/value="30"/);
+  node('confirmQuantities').onclick();assert.equal(node('recipePanel').open,true);assert.equal(node('materialPicker').open,false);
+  assert.doesNotMatch(node('breakdown').innerHTML,/本次總成本|每份成本/);
+  node('syncStatusCapsule').onclick();assert.equal(node('manageData').hidden,false);assert.equal(node('cloudSyncPanel').hidden,true);assert.equal(node('backupPanel').scrolled,true);
+  node('tabRecipe').onkeydown({key:'ArrowRight',preventDefault(){}});assert.equal(node('tabSaved')['aria-selected'],'true');
+
 });
 
 test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內嵌',()=>{
@@ -209,5 +229,7 @@ test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內�
    if(selector.includes('#viewRecipe')&&selector.includes('.picker-top-bar'))assert.doesNotMatch(body,/display\s*:\s*none/,'填用量入口不能隱藏：'+selector);
  }
  const html=fs.readFileSync(path.join(__dirname,'../src/Index.html'),'utf8');
+ assert.doesNotMatch(html,/id="mobileReviewRecipe"/);
+ assert.equal((html.match(/id="fillQuantities"/g)||[]).length,1);
  assert.match(html,/<link\b[^>]*rel="icon"[^>]*href="data:image\/svg\+xml,/);
 });
