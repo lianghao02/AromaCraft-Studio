@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23285548'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='28' fill='%23fff8ec'%3EAC%3C/text%3E%3C/svg%3E"><?!= include_('Styles'); ?></head>
+<head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#20372e"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="AromaCraft"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23285548'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='28' fill='%23fff8ec'%3EAC%3C/text%3E%3C/svg%3E"><?!= include_('Styles'); ?></head>
 <body>
 <header>
   <h1 class="brand">AC <span>AromaCraft <small>家庭精油分享會 · 配方與成本</small></span></h1>
@@ -252,4 +252,11 @@
 <?!= include_('Core'); ?>
 <?!= include_('Catalog'); ?>
 <?!= include_('Client'); ?>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
 </body></html>

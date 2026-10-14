@@ -1,0 +1,31 @@
+{
+  "name": "AromaCraft Studio 手作精油配方工作室",
+  "short_name": "AromaCraft",
+  "description": "家庭精油分享會專用配方計算、原料成本管理與即時雲端同步工具",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f6f8f5",
+  "theme_color": "#20372e",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
