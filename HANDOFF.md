@@ -3,13 +3,13 @@
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：基準88d732a596325088338f413b560749304d0fe4b0；本輪準備提交發布
+- **Commit SHA**：d3eec5634d19150ee100bc74a7fd413b0259e8a7（v1.6.0功能發布提交）
 - **Skill Version**：lianghao-development v1.0.0
 - **Task Type**：RELEASE / HANDOFF
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ## 目前狀態
-v1.6.0問答規格完整整合完成，原目錄與跨路徑副本各通過76項測試與語法檢查。內建瀏覽器功能實測通過；已依使用者授權準備提交與部署；正式GitHub Pages更新結果待核對，Apps Script仍v1.3.2。本機完整預覽：http://127.0.0.1:18861/ （示範資料只在記憶體，不是家庭資料）。
+v1.6.0問答規格完整整合完成，原目錄與跨路徑副本各通過76項測試與語法檢查。內建瀏覽器功能實測通過。v1.6.0已提交、推送並部署至GitHub Pages，正式HTML與Service Worker核對一致；Apps Script仍v1.3.2。本機完整預覽：http://127.0.0.1:18861/ （示範資料只在記憶體，不是家庭資料）。
 
 ## 本輪目標
 使用者已明確授權提交與部署v1.6.0。依逐項問答決策完成全部功能後一併驗收，規格單一來源為IMPLEMENTATION_PLAN.md的v1.6.0區段。
@@ -18,6 +18,7 @@ v1.6.0問答規格完整整合完成，原目錄與跨路徑副本各通過76項
 開始為main、88d732a、Clean；原有69項測試。使用者明確選擇雙模式、自行分配滴數、超標仍可存、更新同一配方、製作紀錄獨立、最新價格、草稿僅本機、整批與每份並存、單種整套包材、永久移除、最後雲端儲存者為準、離線可存與實際用量可調整。舊專案邊界依當次明確需求更新，不保留與新規格矛盾的資料庫／刪除限制。
 
 ## 已完成 (Completed)
+- 依使用者此次明確授權，提交d3eec56並推送origin/main；Pages工作流程38747137639成功。正式index.html與sw.js均HTTP200且SHA-256與本機一致。
 - 自由填量／依目標調配、目標總量含精油、選擇基底補足、手動整滴與分配進度；超標提醒不擋保存。切回自由模式保留已補足的實量；自訂滴數換算不誤用20滴目標。
 - 整批分裝／每份放大，計算副本只放大一次，保存輸入基準。密度、來源、估算標記與精油滴數集中管理；不捏造密度。
 - 包材清單、每份單一整套包材或不用；配方與列表以最新原料／包材價格試算。缺價格顯示已知成本，0元有效。
@@ -48,13 +49,13 @@ AGENTS.md、IMPLEMENTATION_PLAN.md、HANDOFF.md、README.md、CHANGELOG.md、pac
 密度與20滴／mL可能為估算，缺資料不顯示百分比。相同配方最後成功雲端寫入者覆蓋較早修改，這是使用者選定規則。永久刪除後無介面還原，既有不可變雲端備份未做資料清除服務。
 
 ## Git 狀態
-- Commit：本輪未提交；基準88d732a
-- Push：未推送；origin/main仍88d732a
-- Working Tree：本輪18份相關檔案（含新增tests/planning.test.cjs）
+- Commit：d3eec5634d19150ee100bc74a7fd413b0259e8a7
+- Push：已推送origin/main
+- Working Tree：功能提交後Clean；本檔發布結果另以文件提交保存
 - Branch：main
 
 ## 下一步建議動作 (Next Recommended Action)
-先用本機v1.6.0一併驗收。使用者要求提交／部署後，保留本輪修改、確認remote與分支，提交並發布GitHub Pages；發布後核對HTML及Service Worker與本機一致。Google獨立部署需另更新src、升級追加欄位，不可宣稱已同步更新。
+手機重新整理正式網站，確認頁尾v1.6.0；不要清除瀏覽器資料。驗收雙模式調配、實際製作與家庭雙裝置同步。Google獨立部署若需更新，另更新src及追加欄位，本輪不宣稱已更新Apps Script。
 
 ## 發布狀態 (Release Status)
-v1.6.0準備發布至GitHub Pages，完成後核對正式HTML與Service Worker；Apps Script v1.3.2。本輪無正式資料寫入。
+v1.6.0已發布：https://lianghao02.github.io/AromaCraft-Studio/ 。Pages工作流程38747137639成功；正式HTML及Service Worker逐位元組一致。Apps Script仍v1.3.2；本輪未以測試操作寫入真實家庭資料。
