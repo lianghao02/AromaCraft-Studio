@@ -80,8 +80,8 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(node('quickSave').textContent,'處理中…');
   await saving;
   assert.equal(node('quickSave').disabled,true);
-  assert.equal(node('draftState').textContent,'已儲存 · v1');
-  await node('recordProduction').onclick();assert.equal(h.sheets.get('製作紀錄').values.length,2);assert.match(node('items').innerHTML,/100 g/);
+  assert.equal(node('draftState').textContent,'已儲存');
+  await node('recordProduction').onclick();assert.equal(h.sheets.get('製作紀錄').values.length,1);await node('recordProduction').onclick();assert.equal(h.sheets.get('製作紀錄').values.length,2);assert.match(node('items').innerHTML,/100 g/);
   node('name').value='修改後的配方';node('name').oninput();
   h.state.failWrite='配方資料';await node('quickSave').onclick();
   assert.equal(node('quickSave').disabled,false);
@@ -89,10 +89,11 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(storage.size,1);
   await node('quickSave').onclick();
   assert.equal(h.sheets.get('配方資料').values.length,3);
-  assert.equal(node('draftState').textContent,'已儲存 · v2');
+  assert.equal(node('draftState').textContent,'已儲存');
   assert.doesNotMatch(node('saved').innerHTML,/待驗證|編輯 v\d|T\d{2}:\d{2}/);
   assert.match(node('saved').innerHTML,/建立日期：\d{4}\/\d{2}\/\d{2}/);
   assert.match(node('saved').innerHTML,/未加入精油/);
+  await node('newPackage').onclick();node('packageName').value='測試瓶器整套';node('packagePrice').value='5';node('editorForm').onsubmit({preventDefault(){}});await tick();await tick();await tick();node('recipePackaging').value=h.call('bootstrap').value.packages[0].id;node('recipePackaging').onchange();
   node('cost-packaging').value='5';await node('saveCost').onclick();
   assert.match(node('panelCost').textContent,/NT\$5\.00/);
   assert.equal(node('draftState').textContent,'尚有未儲存變更');
@@ -100,8 +101,8 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(h.call('loadRecipe',{id:historicalId,version:2}).value.snapshot.packaging,0);
   node('recipePanel').open=false;node('returnToRecipe').onclick();node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('recipePanel').open,true);
   assert.equal(node('savedCount').textContent,'1 份配方');
-  assert.match(node('saved').innerHTML,/歷史版本（1）/);
-  assert.match(node('saved').innerHTML,/data-version="1"/);
+  assert.doesNotMatch(node('saved').innerHTML,/歷史版本/);
+  assert.match(node('saved').innerHTML,/data-produce=/);
   // 舊版本沒有 basis；只在載入草稿補基準，不改原資料或快照。
   const oldRows=h.sheets.get('配方資料').values;oldRows[1][oldRows[0].indexOf('concentrationJson')]=JSON.stringify({auto:true});
   const loadOldVersion=node('saved').onclick({target:{closest:q=>q==='[data-load]'?{dataset:{load:h.sheets.get('配方資料').values[1][0],version:'1'}}:null}});
@@ -126,13 +127,11 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.equal(node('quickSave').disabled,true);
   assert.equal(node('draftState').textContent,'未加入原料');
   const archiveId=h.sheets.get('配方資料').values[1][0];
-  const remove=node('saved').onclick({target:{closest:q=>q==='[data-archive]'?{dataset:{archive:archiveId,version:'2',restore:'false'}}:null}});
+  const remove=node('saved').onclick({target:{closest:q=>q==='[data-delete]'?{dataset:{delete:archiveId}}:null}});
   node('confirmProceed').onclick();await remove;
   assert.equal(node('savedCount').textContent,'0 份配方');
-  node('showArchived').checked=true;node('showArchived').onchange();
-  assert.equal(node('savedCount').textContent,'1 份配方');assert.match(node('saved').innerHTML,/恢復/);
-  await node('saved').onclick({target:{closest:q=>q==='[data-archive]'?{dataset:{archive:archiveId,version:'2',restore:'true'}}:null}});
-  node('showArchived').checked=false;node('showArchived').onchange();assert.equal(node('savedCount').textContent,'1 份配方');
+  assert.equal(h.sheets.get('製作紀錄').values.length,2);
+  assert.equal(h.call('loadRecipe',{id:archiveId}).ok,false);
   node('concentrationTotal').value='30';node('concentrationLimit').value='2';node('concentrationLimit').oninput();
   assert.match(node('concentrationDetailsMessage').textContent,/基準不同|資料不足/);assert.equal(node('quickSave').disabled,true);assert.equal(node('concentrationTotal').value,'30');assert.equal(node('totalOptions').hidden,true);
   node('concentrationTotal').value='';node('concentrationLimit').value='';node('concentrationLimit').oninput();
@@ -156,7 +155,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   desktop.matches=false;desktop.change();assert.equal(node('materialPicker').open,false);
   desktop.matches=true;desktop.change();assert.equal(node('materialPicker').open,false);
 
-  node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/密度|批次/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
+  node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/採購批次/);assert.match(node('editorBody').innerHTML,/密度來源/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
   node('matName').value='表單合成商品';node('matCategory').value='其他';node('amount').value=15;node('priceUnit').value='mL';node('paid').value=100;
   node('editorForm').onsubmit({preventDefault(){}});await tick();await tick();await tick();await tick();
   assert.equal(h.call('bootstrap').value.materials.filter(m=>m.name==='表單合成商品').length,1);
@@ -228,8 +227,20 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   quantity(oilIds[0],'1');assert.equal(node('quantityError').hidden,true);
   changeUnit(oilIds[0],'mL');assert.equal(node('quantity-'+oilIds[0]).value,'1');node('quantity-unit-'+oilIds[0]).value='mL';changeUnit(oilIds[0],'滴');node('quantity-unit-'+oilIds[0]).value='滴';assert.equal(node('quantity-'+oilIds[0]).value,'1');
   node('confirmQuantities').onclick();assert.equal(node('recipePanel').open,true);assert.equal(node('quantityError').hidden,true);assert.doesNotMatch(node('items').innerHTML,/20 滴/);await node('quickSave').onclick();const savedSix=h.call('bootstrap').value.recipes.at(-1),loadedSix=h.call('loadRecipe',{id:savedSix.id,version:savedSix.version}).value;for(const id of oilIds){const item=loadedSix.items.find(i=>i.materialId===id);assert.equal(item.unit,'滴');assert.equal(Number(item.quantity),1);}
+  {
+  // 完整問答流程：目標調配、每份放大、儲存，再以實際七滴完成製作，原配方仍六滴。
+  const fresh=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  choose(oilIds[0]);choose('demo-oil');node('planningMode').value='target';node('planningBasis').value='mL';node('planningTotal').value='30';node('planningPercent').value='1';node('planningBase').value='demo-oil';node('planningMode').onchange();node('fillQuantities').onclick();
+  node('quantity-'+oilIds[0]).value='6';node('quantity-unit-'+oilIds[0]).value='滴';quantity(oilIds[0],'6');
+  assert.match(node('targetProgress').textContent,/6／約 6 滴/);assert.equal(node('quantity-demo-oil').disabled,true);assert.equal(Number(node('quantity-demo-oil').value),29.7);
+  node('planningMode').value='free';node('planningMode').onchange();assert.match(node('selectedItems').innerHTML,/value="29.7"/);node('planningMode').value='target';node('planningMode').onchange();
+  node('units').value='2';node('sizingMode').value='perUnit';node('sizingMode').onchange();node('confirmQuantities').onclick();assert.match(node('panelWeight').textContent,/60 mL/);await node('quickSave').onclick();
+  const latest=h.call('bootstrap').value.recipes.at(-1),planned=h.call('loadRecipe',{id:latest.id}).value;assert.equal(planned.items.find(i=>i.materialId===oilIds[0]).quantity,6);assert.equal(planned.snapshot.items.find(i=>i.materialId===oilIds[0]).quantity,12);
+  await node('recordProduction').onclick();assert.equal(node('planningMode').value,'free');assert.equal(node('sizingMode').value,'batch');assert.equal(node('draftState').textContent,'實際製作中');
+  node('quantity-'+oilIds[0]).value='7';node('quantity-unit-'+oilIds[0]).value='滴';quantity(oilIds[0],'7');node('confirmQuantities').onclick();await node('recordProduction').onclick();
+  const finished=h.call('bootstrap').value.logs.at(-1);assert.equal(finished.snapshot.items.find(i=>i.materialId===oilIds[0]).quantity,7);assert.equal(h.call('loadRecipe',{id:latest.id}).value.items.find(i=>i.materialId===oilIds[0]).quantity,6);
 
-
+  }
 });
 
 test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內嵌',()=>{

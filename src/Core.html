@@ -49,7 +49,7 @@ var AromaCore = (() => {
   function basisOf(recipe){const unit=empty(recipe.quantityUnit)?'g':recipe.quantityUnit;if(![...BASIS,'mixed'].includes(unit))throw Error('總量基準必須是 g 或 mL');return unit;}
   function itemPrice(i,prices){const p=prices.find(p=>p.id===i.priceId&&p.materialId===i.materialId)||(!i.priceId?{id:'',materialId:i.materialId,unit:['mL','L','滴'].includes(i.unit)?'mL':'g',amount:null,paid:null,label:'未設定價格'}:null);if(!p)throw Error('原料尚未設定價格');return empty(i.dropsPerMl)?p:{...p,dropsPerMl:number(i.dropsPerMl,'每 mL 滴數',Number.MIN_VALUE,1e6)};}
   const nativeBasis=p=>['mL','L'].includes(p.unit)?'mL':'g';
-  function availableUnits(p,category){const base=nativeBasis(p),m=metadata(p);return [...(base==='g'?['g','kg']:['mL','L']),...(m.density!==null?(base==='g'?['mL','L']:['g','kg']):[]),...(category==='精油'&&base==='mL'?['滴']:[])];}
+  function availableUnits(p,category){const base=nativeBasis(p),m=metadata(p);return [...(base==='g'?['g','kg']:['mL','L']),...(m.density!==null?(base==='g'?['mL','L']:['g','kg']):[]),...(category==='精油'&&(base==='mL'||m.density!==null)?['滴']:[])];}
   function targetOf(recipe){return empty(recipe.targetQuantity)?null:number(recipe.targetQuantity,'固定總量',Number.MIN_VALUE,1e9);}
   function itemAmount(item,recipe,prices){if(item.unit&&item.grams!==undefined)throw Error('同一原料只能提供一種用量，不能同時填 grams 與 quantity');const p=itemPrice(item,prices),basis=basisOf(recipe)==='mixed'?nativeBasis(p):basisOf(recipe);if(basisOf(recipe)==='mixed'&&(item.unit==='%'||targetOf(recipe)!==null||recipe.baseId))throw Error('分開計量不計濃度；請先選 g 或 mL 總量再用 %');return convert(item.unit?item.quantity:item.grams,item.unit||'g',basis,p,targetOf(recipe),basis);}
   function releaseTarget(recipe,prices){return {...recipe,targetQuantity:null,baseId:'',items:recipe.items.map(i=>i.unit==='%'?({materialId:i.materialId,priceId:i.priceId,unit:basisOf(recipe),quantity:itemAmount(i,recipe,prices)}):({...i}))};}
@@ -130,6 +130,7 @@ var AromaCore = (() => {
       message:noOil?(limit!==null&&!comparable?'未加入精油；參考上限基準不同或資料不足，未比較。':'未加入精油。'):over?'超過自訂參考上限，請核對配方。':limit!==null&&!comparable?'參考上限基準不同或資料不足，未比較。':percent!==null?((recipe.items||[]).some(i=>i.unit==='滴')?'依配方投入量計算；滴數換算的容量與材料費為估算。':'依配方投入量計算。'):problems.length?problems.map(x=>x.name+'：'+x.action+'。').join(' '):ratio!==null?'滴數添加比例，不是濃度百分比。':'請先填寫原料用量。'};
   }
   function concentration(recipe,materials,prices,selectedId){
+    recipe=prepare(recipe,materials,prices,recipe.packages||[]);
     recipe=applyDropDefaults(recipe,materials,prices);
     if(recipe.concentration?.auto)return automaticConcentration(recipe,materials,prices,selectedId);
     const cfg=recipe.concentration||{},limit=empty(cfg.maxPercent)?null:number(cfg.maxPercent,'目標濃度上限',0,100);
@@ -170,7 +171,49 @@ var AromaCore = (() => {
       sale: s.sale === '' || s.sale === null || s.sale === undefined ? null : number(s.sale, '自訂售價')
     };
   }
+
+  // v1.6：輸入用量維持使用者基準；計算副本才放大及補足。
+  function prepare(recipe,materials,prices,packages=[]){
+    if(recipe.planningApplied||!recipe.planning)return recipe;
+    const plan=recipe.planning;
+    if(!['free','target'].includes(plan.mode)||!['batch','perUnit'].includes(plan.sizing))throw Error('調配方式不正確');
+    let next=applyDropDefaults({...recipe,items:recipe.items.map(i=>{const p=prices.filter(p=>p.materialId===i.materialId).at(-1);return {...i,priceId:p?.id||'',...(materials.find(m=>m.id===i.materialId)?.category==='精油'?{dropsPerMl:empty(p?.dropsPerMl)?i.dropsPerMl||DEFAULT_DROPS_PER_ML:Number(p.dropsPerMl)}:{})};}),cost:{...recipe.cost},planningApplied:true},materials,prices);
+    const pack=packages.find(p=>p.id===plan.packagingId);
+    next.cost.packaging=plan.packagingId?(pack?number(pack.price,'包材單價'):number(recipe.cost.packaging,'原包材單價')):0;
+    if(plan.mode==='target'){
+      const target=number(plan.total,'目標總量',Number.MIN_VALUE,1e9),basis=plan.basis;
+      if(!['g','mL'].includes(basis))throw Error('目標總量單位不正確');
+      number(plan.percent,'目標濃度',0,100);
+      const base=next.items.find(i=>i.materialId===plan.baseId);
+      if(base&&materials.find(m=>m.id===base.materialId)?.category==='精油')throw Error('補足原料不能選精油');
+      if(base){
+        try{const others=next.items.filter(i=>i!==base).reduce((sum,i)=>sum+convert(i.unit?i.quantity:i.grams,i.unit||'g',basis,itemPrice(i,prices)),0);base.quantity=Math.max(0,target-others);base.unit=basis;delete base.grams;}
+        catch(e){if(!/缺少/.test(e.message))throw e;}
+      }
+      next.concentration={...next.concentration,auto:true,basis,limitBasis:basis,maxPercent:Number(plan.percent)};
+    }
+    if(plan.sizing==='perUnit'){
+      const count=number(next.units,'製作份數',1,100000);
+      next.items=next.items.map(i=>{const n={...i,quantity:number(i.unit?i.quantity:i.grams,'每份用量')*count,unit:i.unit||'g'};delete n.grams;return n;});
+      if(next.concentration?.measuredWeights)next.concentration={...next.concentration,measuredWeights:Object.fromEntries(Object.entries(next.concentration.measuredWeights).map(([id,w])=>[id,{...w,grams:w.grams*count,quantity:w.quantity*count}]))};
+    }
+    return next;
+  }
+  function targetProgress(recipe,materials,prices){
+    if(recipe.planning?.mode!=='target')return null;
+    const p=recipe.planning,total=number(p.total,'目標總量',Number.MIN_VALUE),percent=number(p.percent,'目標濃度',0,100),basis=p.basis;
+    const r=prepare({...recipe,units:1,planning:{...p,sizing:'batch'}},materials,prices);
+    let allocated=0,drops=0;const issues=[],factors=[];
+    for(const i of r.items.filter(i=>materials.find(m=>m.id===i.materialId)?.category==='精油')){
+      try{const price=itemPrice(i,prices);factors.push(metadata(price).dropsPerMl);allocated+=convert(i.quantity,i.unit,basis,price);drops+=convert(i.quantity,i.unit,'mL',price)*metadata(price).dropsPerMl;}catch(e){issues.push(i.materialId);}
+    }
+    for(const i of r.items.filter(i=>i.materialId!==p.baseId)){try{convert(i.unit?i.quantity:i.grams,i.unit||'g',basis,itemPrice(i,prices));}catch(e){if(!issues.includes(i.materialId))issues.push(i.materialId);}}
+    const budget=total*percent/100;
+    return {allocated:issues.length?null:allocated,budget,basis,drops,targetDrops:basis==='mL'&&factors.every(n=>n===factors[0])?budget*(factors[0]||DEFAULT_DROPS_PER_ML):null,over:!issues.length&&allocated>budget&&!sameTotal(allocated,budget),issues,missingBase:!r.items.some(i=>i.materialId===p.baseId)};
+  }
+
   function calculate(recipe, materials, prices, rules) {
+    recipe=prepare(recipe,materials,prices,recipe.packages||[]);
     recipe=applyDropDefaults(recipe,materials,prices);
     if (!TYPES.includes(recipe.type)) throw Error('不支援的製作類別');
     text(recipe.name, '配方名稱', 100);
@@ -191,7 +234,7 @@ var AromaCore = (() => {
       const missingPrice=empty(p.paid)||empty(p.amount)||empty(p.unit);
       const actual = price({...p,amount:empty(p.amount)?1:p.amount,unit:empty(p.unit)?itemBasis:p.unit,paid:empty(p.paid)?0:p.paid},itemBasis);
       return { materialId: m.id, name: m.name, category: m.category, priceId: p.id,
-        priceLabel:p.label,quantity:i.unit?number(i.quantity,'原料用量'):number(i.grams,'原料重量'),unit:i.unit||'g',amount,amountUnit:itemBasis,density:actual.density,dropsPerMl:actual.dropsPerMl,perUnit:actual.perUnit,perGram:actual.perGram,grams:itemBasis==='g'?amount:null,missingPrice,conversionIssue,cost:missingPrice||amount===null?null:amount*actual.perUnit };
+        priceLabel:p.label,quantity:i.unit?number(i.quantity,'原料用量'):number(i.grams,'原料重量'),unit:i.unit||'g',amount,amountUnit:itemBasis,density:actual.density,densitySource:p.densitySource||'',densityEstimated:p.densityEstimated===true||p.densityEstimated==='TRUE',dropsPerMl:actual.dropsPerMl,perUnit:actual.perUnit,perGram:actual.perGram,grams:itemBasis==='g'?amount:null,missingPrice,conversionIssue,cost:missingPrice||amount===null?null:amount*actual.perUnit };
     });
     const total = items.reduce((s, i) => s + i.amount, 0);
     if (total <= 0 && !(recipe.concentration?.auto&&items.some(i=>i.quantity>0))) throw Error('配方總量必須大於 0');
@@ -229,7 +272,7 @@ var AromaCore = (() => {
     const missingPrices=items.filter(i=>i.cost===null).map(i=>({materialId:i.materialId,name:i.name,reason:i.missingPrice?'價格待補':i.conversionIssue}));
     const totals=items.reduce((out,i)=>{if(i.amount!==null)out[i.amountUnit]=(out[i.amountUnit]||0)+i.amount;return out;},{});
     return { total:basis==='mixed'?null:total,totals,quantityUnit:basis,targetQuantity:target,quantityPerUnit:basis==='mixed'?null:total/units, units, gramsPerUnit:basis==='g'?total/units:null, items, cost: s, material, lossCost, packaging, labor,
-      other: s.other, batch:missingPrices.length?null:batch, perUnit:missingPrices.length?null:perUnit, suggested:missingPrices.length?null:suggested, grossMargin, oilPercent,missingPrices,costComplete:missingPrices.length===0,knownMaterial:material, concentration:concentration(recipe,materials,prices), safety: exceeded ? '超出限制' : '待驗證', messages };
+      other: s.other, batch:missingPrices.length?null:batch, perUnit:missingPrices.length?null:perUnit, suggested:missingPrices.length?null:suggested, grossMargin, oilPercent,missingPrices,costComplete:missingPrices.length===0,knownMaterial:material,knownBatch:batch,knownPerUnit:perUnit, concentration:concentration(recipe,materials,prices), safety: exceeded ? '超出限制' : '待驗證', messages };
   }
   function adjust(items, materialId, grams, baseId) {
     const next = items.map(i => ({ ...i }));
@@ -252,7 +295,7 @@ var AromaCore = (() => {
     if (!old) throw Error('請先設定原料重量');
     return items.map(i => ({ ...i, grams: i.grams * target / old }));
   }
-  return { TYPES, CATEGORIES, categoryOf, number, text, price, settings, calculate, adjust, scale, metadata,convert,convertInput,basisOf,targetOf,itemAmount,sameTotal,balance,editQuantity,scaleRecipe,releaseTarget,itemPrice,nativeBasis,concentration,validateConcentration,automaticConcentration,productBasis,applyDropDefaults,DEFAULT_DROPS_PER_ML,availableUnits };
+  return { prepare,targetProgress,TYPES, CATEGORIES, categoryOf, number, text, price, settings, calculate, adjust, scale, metadata,convert,convertInput,basisOf,targetOf,itemAmount,sameTotal,balance,editQuantity,scaleRecipe,releaseTarget,itemPrice,nativeBasis,concentration,validateConcentration,automaticConcentration,productBasis,applyDropDefaults,DEFAULT_DROPS_PER_ML,availableUnits };
 })();
 if (typeof module !== 'undefined') module.exports = AromaCore;
 </script>

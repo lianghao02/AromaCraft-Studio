@@ -4,14 +4,14 @@ const {createHarness}=require('../tools/gas-mock.cjs');
 function start(){const h=createHarness();h.setup();return h;}
 function ok(h,action,d){const r=h.call(action,d);assert.equal(r.ok,true,r.error);return r.value;}
 function recipe(){return {id:'',version:0,requestId:'request-1',name:'家庭測試皂',type:'融製精油皂',units:2,notes:'',baseId:'demo-soap',cost:{packaging:2,minutes:0,hourly:0,other:0,loss:0,margin:20,sale:null},items:[{materialId:'demo-soap',priceId:'demo-soap-price',grams:100}]};}
-test('配方庫精油摘要與比例讀取已存快照，不隨原料名稱改動',()=>{
+test('配方庫依最新原料試算摘要，已存快照不隨原料名稱改動',()=>{
   const h=start();ok(h,'importCatalog');const data=ok(h,'bootstrap');
   const oil=data.materials.find(m=>m.id==='yl-354876'),price=data.prices.find(p=>p.materialId===oil.id);
   const saved=ok(h,'saveRecipe',{...recipe(),type:'按摩油',baseId:'',quantityUnit:'mixed',concentration:{auto:true,basis:'mL'},items:[{materialId:oil.id,priceId:price.id,quantity:1,unit:'mL'}]});
   ok(h,'saveMaterial',{...oil,name:'變更後名稱'});
   const summary=ok(h,'bootstrap').recipes.find(r=>r.id===saved.id);
-  assert.equal(summary.oils[0].name,oil.name);
-  assert.deepEqual(summary.concentration,saved.snapshot.concentration);
+  assert.equal(summary.oils[0].name,'變更後名稱');
+  assert.equal(summary.concentration.percent,saved.snapshot.concentration.percent);
   assert.deepEqual(ok(h,'loadRecipe',{id:saved.id,version:1}).snapshot,saved.snapshot);
 });
 test('自製配方類別可保存，舊類型分組不改歷史內容或計算基準',()=>{

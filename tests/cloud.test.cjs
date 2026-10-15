@@ -19,3 +19,32 @@ test('實際移轉入口寫入失敗不得顯示成功，bootstrap 不回寫雲�
  popupError=null;googleEmail='outsider@example.test';await assert.rejects(ctx.window.AromaSync.loginGoogle(),/未授權/);assert.equal(m.docs.size,0);assert.equal(storage.get('aromacraft_standalone_tables_v2'),before);
  await ctx.window.AromaSync.login('tpc0941101090@gmail.com','合成測試密碼');m.fail=true;await assert.rejects(ctx.window.AromaSync.migrateToCloud());assert.equal(alerts.some(s=>s.includes('成功')),false);assert.equal(node('syncStatusCapsule').className,'sync-capsule error');assert(storage.has('aromacraft_standalone_tables_v2_pre_firebase_backup'));let response;ctx.window.google.script.run.withSuccessHandler(r=>response=r).api({action:'bootstrap'});assert.equal(response.ok,true);assert.equal(m.docs.size,0);
 });
+
+function device(m,storage=new Map()){
+ const events={},nodes=new Map();let authCallback,offline=false;
+ const node=id=>{if(!nodes.has(id))nodes.set(id,{hidden:false,textContent:'',className:''});return nodes.get(id);};
+ const network=fn=>async(...args)=>{if(offline)throw Object.assign(Error('離線'),{code:'unavailable'});return fn(...args);};
+ const modules={app:{initializeApp:()=>({})},auth:{getAuth:()=>({}),onAuthStateChanged:(a,fn)=>authCallback=fn,signOut:async()=>authCallback(null),signInWithEmailAndPassword:async(a,email)=>authCallback({uid:'test',email})},firestore:{...m.sdk,getDoc:network(m.sdk.getDoc),runTransaction:network(m.sdk.runTransaction),getFirestore:()=>({})}};
+ const provider=[...build().matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('const KEY='));
+ const code=provider.replace(/import\('https:\/\/www.gstatic.com\/firebasejs\/10.14.1\/firebase-(app|auth|firestore).js'\)/g,(_,n)=>'Promise.resolve(testModules.'+n+')');
+ const ctx=vm.createContext({console:{warn(){},error(){}},crypto,TextEncoder,structuredClone,testModules:modules,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},setTimeout:fn=>fn(),confirm:()=>true,alert(){},Event:class{constructor(type){this.type=type;}},window:{AromaDraftPending:()=>true,addEventListener:(name,fn)=>events[name]=fn,dispatchEvent(){}},document:{getElementById:node,querySelector:()=>null}});
+ vm.runInContext(code,ctx);events.DOMContentLoaded();
+ return {storage,node,events,ctx,set offline(v){offline=v;},async login(){await new Promise(setImmediate);await ctx.window.AromaSync.login('tpc0941101090@gmail.com','測試密碼');},api(action,data={}){let out;ctx.window.google.script.run.withSuccessHandler(r=>out=r).withFailureHandler(e=>{throw e;}).api({action,data});assert(out.ok,out.error);return out.value;}};
+}
+async function settled(){for(let n=0;n<20;n++)await new Promise(setImmediate);}
+test('離線操作重啟保留、連線合併不同配方、同配方最後寫入為準且草稿不阻擋同步',async()=>{
+ const m=mock(),a=device(m);await a.login();await a.ctx.window.AromaSync.migrateToCloud();const b=device(m);await b.login();
+ const r=(id,name)=>({id,version:0,policyVersion:2,name,type:'精油皂',units:1,cost:{packaging:0,minutes:0,hourly:0,other:0,loss:0,margin:0,sale:null},quantityUnit:'mixed',concentration:{auto:true,useDefaultDrops:true},planning:{mode:'free',sizing:'batch',packagingId:''},items:[{materialId:'demo-soap',priceId:'demo-soap-price',quantity:10,unit:'g'}],requestId:id+'-first'});
+ a.api('saveRecipe',r('same','初始配方'));await settled();assert.equal(b.api('bootstrap').recipes.length,1);
+ a.offline=true;const local=a.api('loadRecipe',{id:'same'});a.api('saveRecipe',{...local,name:'離線最後修改',requestId:'offline-edit',policyVersion:2});await settled();assert.match(a.node('syncStatusText').textContent,/待同步/);
+ b.api('saveRecipe',r('other','另一台新增'));const shared=b.api('loadRecipe',{id:'same'});b.api('saveRecipe',{...shared,name:'另一台先儲存',requestId:'b-update',policyVersion:2});await settled();
+ const reopened=device(m,a.storage);await reopened.login();await settled();const data=reopened.api('bootstrap');assert.equal(new Set(data.recipes.map(r=>r.id)).size,2);assert.equal(data.recipes.filter(r=>r.id==='same').sort((a,b)=>b.version-a.version)[0].name,'離線最後修改');assert.equal(JSON.parse(a.storage.get('aromacraft_standalone_tables_v2_outbox_v1')).length,0);assert.equal(reopened.node('syncStatusText').textContent,'已同步');
+ const count=m.docs.size;reopened.api('bootstrap');await settled();assert.equal(m.docs.size,count);
+});
+test('離線製作快照不按同步時價格重算，永久刪除保留紀錄且不被舊編輯復活',async()=>{
+ const m=mock(),a=device(m);await a.login();await a.ctx.window.AromaSync.migrateToCloud();
+ const r=a.api('saveRecipe',{id:'frozen',version:0,policyVersion:2,requestId:'first',name:'實作紀錄',type:'精油皂',units:1,quantityUnit:'mixed',concentration:{auto:true},planning:{mode:'free',sizing:'batch',packagingId:''},cost:{packaging:0,minutes:0,hourly:0,other:0,loss:0,margin:0,sale:null},items:[{materialId:'demo-soap',priceId:'demo-soap-price',quantity:10,unit:'g'}]});await settled();const b=device(m);await b.login();
+ a.offline=true;const log=a.api('saveLog',{policyVersion:2,requestId:'offline-log',recipeId:r.id,version:r.version,date:'2026-10-15',units:1,actualRecipe:r});a.api('saveRecipe',{...r,policyVersion:2,name:'舊編輯',requestId:'stale'});await settled();
+ b.api('savePrice',{materialId:'demo-soap',requestId:'price-changed',label:'新價',amount:100,unit:'g',paid:500});b.api('deleteRecipe',{id:r.id,requestId:'deleted'});await settled();
+ a.offline=false;a.events.online();await settled();const result=a.api('bootstrap');assert.equal(result.recipes.length,0);assert.equal(result.logs.length,1);assert.deepEqual(JSON.parse(JSON.stringify(result.logs[0].snapshot)),JSON.parse(JSON.stringify(log.snapshot)));assert.equal(result.logs[0].snapshot.material,0);assert.equal(JSON.parse(a.storage.get('aromacraft_standalone_tables_v2_outbox_v1')).length,0);
+});

@@ -50,11 +50,13 @@ __AROMA_SERVER__
  const ALLOWED_EMAILS = ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
  const FAMILY_DOC = 'home_sharing';
  let fbAuth = null, fbDb = null, currentFbUser = null, fbModules = null;
+ const OUTBOX=KEY+'_outbox_v1';let outbox=JSON.parse(localStorage.getItem(OUTBOX)||'[]');if(!Array.isArray(outbox))throw Error('待同步資料格式異常，請先匯出備份');let flushing=null;
  const PENDING=KEY+'_pending_cloud';let cloud=null,cloudRevision=0,cloudConflict=false,stopCloud=null,ownSnapshotId=null,writeCount=0,writeQueue=Promise.resolve();
  if(raw&&localStorage.getItem(PENDING)===null&&(values['配方資料']?.length>1||values['製作紀錄']?.length>1))localStorage.setItem(PENDING,'true');
  const tables=()=>Object.fromEntries([...sheets].map(([n,s])=>[n,s.values]));
- const hasPending=()=>localStorage.getItem(PENDING)==='true'||writeCount>0||Boolean(window.AromaDraftPending?.());
+ const hasPending=()=>localStorage.getItem(PENDING)==='true'||writeCount>0||outbox.length>0;
  function applyRemote(remote,force=false){
+   if(outbox.length&&!force){pushToFirestore().catch(()=>{});return;}
    if(!remote.tables){cloudRevision=remote.revision;updateSyncStatus('offline','本機待移轉');return;}
    if(!force&&remote.snapshotId===ownSnapshotId)return;
    if(hasPending()&&!force&&JSON.stringify(remote.tables)!==JSON.stringify(tables())){cloudConflict=true;updateSyncStatus('error','有未同步修改，請先備份');return;}
@@ -62,7 +64,7 @@ __AROMA_SERVER__
    for(const [n,rows] of Object.entries(remote.tables))if(sheets.has(n))sheets.get(n).values=rows;
    const upgraded=call({action:'migrateUnits'});if(!upgraded.ok)throw Error(upgraded.error);persist();cloudRevision=remote.revision;cloudConflict=false;localStorage.setItem(PENDING,'false');updateSyncStatus('synced','已同步');window.dispatchEvent?.(new Event('aroma-cloud-update'));
  }
- function cloudError(e){if(e.code==='sync/conflict')cloudConflict=true;localStorage.setItem(PENDING,'true');updateSyncStatus('error',e.code==='sync/conflict'?'版本衝突':'同步失敗');}
+ function cloudError(e){if(e.code==='sync/conflict')cloudConflict=true;localStorage.setItem(PENDING,'true');updateSyncStatus(e.code==='permission-denied'?'error':'offline',e.code==='permission-denied'?'同步權限不足':'待同步');}
 
 
  function updateSyncStatus(status, text){
@@ -136,10 +138,48 @@ __AROMA_SERVER__
  }
 
  async function pullFromFirestore(force=false){if(!cloud||!currentFbUser)throw Error('請先登入家庭雲端');const remote=await cloud.read();applyRemote(remote,force);if(cloudConflict)throw Error('本機有未同步修改，已保留原資料，請先匯出備份');return Boolean(remote.tables);}
+ function installTables(value){for(const [name,rows]of Object.entries(value))if(sheets.has(name))sheets.get(name).values=JSON.parse(JSON.stringify(rows));}
+ function replay(base,ops){
+  const original=JSON.parse(JSON.stringify(tables()));
+  try{
+   installTables(base);const upgrade=call({action:'migrateUnits'});if(!upgrade.ok)throw Error(upgrade.error);
+   for(const op of ops){
+    if(op.action==='saveLog'){
+     const name='製作紀錄',keys=sheets.get(name).values[0];
+     if(!sheets.get(name).values.slice(1).some(row=>row[keys.indexOf('requestId')]===op.data.requestId))sheets.get(name).values.push(keys.map(k=>k==='snapshotJson'?JSON.stringify(op.result.snapshot):op.result[k]??''));
+     continue;
+    }
+    const data={...op.data};
+    if(op.action==='saveRecipe')data.policyVersion=2;
+    if(['saveMaterial','saveProduct'].includes(op.action)){const b=call({action:'bootstrap'});data.revision=b.value.materials.find(m=>m.id===data.id)?.revision||0;}
+    if(op.action==='saveCost')data.revision=call({action:'bootstrap'}).value.costRevision;
+    const result=call({action:op.action,data});
+    // 另一台已永久刪除時，不讓較舊的離線編輯復活配方。
+    if(!result.ok&&op.action==='saveRecipe'&&result.error.includes('永久移除'))continue;
+    if(!result.ok)throw Error(result.error);
+   }
+   return JSON.parse(JSON.stringify(tables()));
+  }finally{installTables(original);}
+ }
  function pushToFirestore(){
   if(!cloud||!currentFbUser)return Promise.reject(Error('請先登入家庭雲端'));
-  const payload=JSON.parse(JSON.stringify(tables()));writeCount++;localStorage.setItem(PENDING,'true');
-  const work=writeQueue.catch(()=>{}).then(async()=>{if(cloudConflict){const e=Error('雲端版本衝突，請先匯出本機備份並讀回雲端');e.code='sync/conflict';throw e;}updateSyncStatus('syncing','同步中');ownSnapshotId='r'+(cloudRevision+1)+'_'+crypto.randomUUID();const result=await cloud.write(payload,cloudRevision,ownSnapshotId);cloudRevision=result.revision;writeCount--;if(writeCount===0)localStorage.setItem(PENDING,'false');updateSyncStatus('synced','已同步');return result;}).catch(e=>{writeCount--;cloudError(e);throw e;});writeQueue=work;return work;
+  if(flushing)return flushing;
+  flushing=(async()=>{
+   let attempts=0;
+   do{
+    const remote=await cloud.read(),ops=outbox.slice();
+    if(!ops.length&&cloudConflict){const e=Error('舊版本機資料尚未移轉，請先備份並確認移轉');e.code='sync/conflict';throw e;}
+    const payload=ops.length?replay(remote.tables||JSON.parse(JSON.stringify(seed)),ops):JSON.parse(JSON.stringify(tables()));
+    updateSyncStatus('syncing','同步中');ownSnapshotId='r'+(remote.revision+1)+'_'+crypto.randomUUID();
+    try{
+     const result=await cloud.write(payload,remote.revision,ownSnapshotId);cloudRevision=result.revision;cloudConflict=false;
+     const sent=new Set(ops.map(op=>op.key));outbox=outbox.filter(op=>!sent.has(op.key));localStorage.setItem(OUTBOX,JSON.stringify(outbox));
+     const merged=outbox.length?replay(payload,outbox):payload;installTables(merged);persist();
+     localStorage.setItem(PENDING,outbox.length?'true':'false');updateSyncStatus(outbox.length?'syncing':'synced',outbox.length?'待同步':'已同步');window.dispatchEvent?.(new Event('aroma-cloud-update'));
+     attempts=0;
+    }catch(e){if(e.code==='sync/conflict'&&++attempts<5)continue;throw e;}
+   }while(outbox.length);
+  })().catch(e=>{cloudError(e);throw e;}).finally(()=>{flushing=null;});return flushing;
  }
 
  window.AromaSync = {
@@ -165,6 +205,7 @@ __AROMA_SERVER__
      return await fbModules.authMod.signOut(fbAuth);
    },
    forceSync: async () => {
+     if(outbox.length){await pushToFirestore();return;}
      if(hasPending()&&!confirm('讀回雲端會取代本機表格；將保留本機備份，是否繼續？'))return;const ok = await pullFromFirestore(true);
      if(ok) window.location.reload();
    },
@@ -177,11 +218,24 @@ __AROMA_SERVER__
    }
  };
 
- window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(async ()=>{const before=JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values])));try{const result=call(request);if(result.ok){persist();if(['saveRecipe','archiveRecipe','saveMaterial','saveProduct','savePrice','saveLog','saveCost','migrateUnits','importCatalog'].includes(request.action)){localStorage.setItem(PENDING,'true');if(currentFbUser){pushToFirestore().catch(()=>{});}else updateSyncStatus('offline','本機已保存');}}success?.(result);}catch(e){const original=JSON.parse(before);for(const [n,s]of sheets)s.values=original[n]||[];failure?.(Error('本機儲存失敗，請匯出備份並確認瀏覽器儲存空間。'));}},0);return runner;}};return runner;}}};
+ const mutations=['saveRecipe','deleteRecipe','archiveRecipe','saveMaterial','saveProduct','savePrice','saveLog','savePackage','saveCost','migrateUnits','importCatalog'];
+ window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(()=>{
+  const before=JSON.parse(JSON.stringify(tables())),previous=outbox.slice();
+  try{
+   const result=call(request);
+   if(result.ok&&mutations.includes(request.action)){
+    const data=JSON.parse(JSON.stringify(request.data||{}));if(request.action==='saveRecipe')data.id=result.value.id;
+    outbox.push({key:crypto.randomUUID(),action:request.action,data,result:result.value});
+    localStorage.setItem(OUTBOX,JSON.stringify(outbox));persist();localStorage.setItem(PENDING,'true');
+    if(currentFbUser)pushToFirestore().catch(()=>{});else updateSyncStatus('offline','待同步');
+   }
+   success?.(result);
+  }catch(e){outbox=previous;installTables(before);try{localStorage.setItem(OUTBOX,JSON.stringify(previous));persist();}catch(ignore){}failure?.(Error('本機儲存失敗，資料已保留；請確認儲存空間並匯出備份。'));}
+ },0);return runner;}};return runner;}}};
 
  if(typeof window !== 'undefined' && typeof document !== 'undefined'){
    window.addEventListener('DOMContentLoaded',()=>{
-     initFirebase();window.addEventListener('online',()=>{if(currentFbUser&&hasPending()&&!cloudConflict)pushToFirestore().catch(()=>{});});
+     initFirebase();window.addEventListener('offline',()=>{if(outbox.length)updateSyncStatus('offline','待同步');});window.addEventListener('online',()=>{if(!fbAuth)initFirebase();else if(currentFbUser&&outbox.length)pushToFirestore().catch(()=>{});});
 
      const btnLogin = document.getElementById('btnLogin');
      const btnGoogleLogin = document.getElementById('btnGoogleLogin');

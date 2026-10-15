@@ -1,8 +1,8 @@
 # 專案長期邊界
 
-- 純 HTML／CSS／原生 JavaScript 與 Google Apps Script，不引入前端框架、外部資料庫或 CDN。
+- 純 HTML／CSS／原生 JavaScript 與 Google Apps Script，不引入前端框架；GitHub Pages 沿用使用者已授權的 Firebase Auth／Firestore 家庭同步及官方 SDK，Google 部署保留八表相容。
 - Google Sheets 固定八張繁體中文工作表；欄位變動必須提供相容或遷移方案。
-- 價格批次、配方版本與製作成本快照不可經由應用程式覆寫。
+- 價格批次、配方版本與製作成本快照不可覆寫；更新配方內部追加版本、介面只顯示目前內容。使用者明確確認永久移除時可刪除該配方及明細，製作快照保留。
 - 安全限制必須有來源；不足時「待驗證」，不得捏造通用濃度或顯示完整安全通過。
 - 每個 Google 資料入口均須在伺服器驗證存取者；無法確認身分時拒絕。
 - 前後端計算共用 `src/Core.html`，後端必須重新計算並驗證資料。
