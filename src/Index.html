@@ -90,7 +90,7 @@
         <label>配方名稱<input id="name" maxlength="100" placeholder="例如：薰衣草舒緩修護皂"></label>
         <label><span id="unitsLabel">本次分成幾份</span><input id="units" inputmode="numeric" type="number" min="1" step="1" value="1"></label>
       </div>
-      <div id="productionBanner" class="planner" hidden><strong>正在記錄實際製作用量</strong><p>修改僅影響當次紀錄，原配方不變。</p><button id="cancelProduction" type="button">返回原配方</button></div><label>每份包材（整套費用）<select id="recipePackaging"><option value="">不使用包材</option></select></label><div class="concentration-panel"><h3 id="concentrationTitle">精油濃度</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><small>精油比例僅供參考，使用前請確認成分與用途是否適合。</small><details class="advanced"><summary>濃度設定與換算說明（選填）</summary><p id="concentrationDetailsMessage"></p><div id="pickerConcentrationIssues" class="toolbar"></div><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；g 與 mL 透過原料密度換算；精油滴數預設20滴／mL，缺資料會指出原料。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div>
+      <div id="productionBanner" class="planner" hidden><strong>正在記錄實際製作用量</strong><p>修改僅影響當次紀錄，原配方不變。</p><button id="cancelProduction" type="button">返回原配方</button></div><label>每份包材（整套費用）<select id="recipePackaging"><option value="">不使用包材</option></select></label><div class="concentration-panel"><h3 id="concentrationTitle">精油濃度</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><div id="pickerConcentrationIssues" class="toolbar"></div><small>精油比例僅供參考，使用前請確認成分與用途是否適合。</small><details class="advanced"><summary>濃度設定與換算說明（選填）</summary><p id="concentrationDetailsMessage"></p><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；g 與 mL 透過原料密度換算；精油滴數預設20滴／mL，缺資料會指出原料。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div>
     <section id="costPanel" class="fold" aria-label="成本摘要"><h3>成本</h3><div class="fold-body"><div class="panel-save-card"><div><small>總成本／每份成本</small><strong id="panelCost" class="panel-cost-val">—</strong><span id="panelWeight" class="panel-weight-val"></span></div></div></div></section>
       <input id="concentrationTotal" type="hidden"><select id="quantityUnit" hidden><option value="mixed">分開計量</option><option value="g">g</option><option value="mL">mL</option></select>
       <div id="formulaBar" class="formula-bar" aria-label="配方成份分佈" title="配方成份比例分佈"></div>
@@ -173,10 +173,10 @@
             <details class="fold"><summary>原有密碼登入</summary>
             <form id="authForm" onsubmit="event.preventDefault(); document.getElementById('btnLogin').click();">
               <div class="auth-fields">
-                <label>家庭成員 Email<input id="authEmail" type="email" placeholder="例如：tpc0941101090@gmail.com" autocomplete="username" required></label>
+                <label>家庭成員 Email<input id="authEmail" type="email" placeholder="請輸入已授權的家庭成員 Email" autocomplete="username" required></label>
                 <label>登入密碼<input id="authPassword" type="password" placeholder="請輸入密碼" autocomplete="current-password" required></label>
               </div>
-              <p class="muted" style="margin-top:0"><small>限定家庭白名單：<code>tpc0941101090@gmail.com</code>、<code>amethyst72@gmail.com</code></small></p>
+              <p class="muted" style="margin-top:0"><small>僅限已列入家庭授權白名單之 Google 帳號登入同步</small></p>
               <div class="toolbar">
                 <button id="btnLogin" type="submit" class="primary">登入家庭雲端</button>
               </div>
@@ -213,7 +213,7 @@
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br><span id="storageDescription">本機草稿保存在此瀏覽器；已儲存資料由 Firebase 家庭雲端同步；草稿僅留此裝置。</span></p>
   </footer>
 </main>
-<footer id="summaryBar" class="summary"><div><small>總成本／每份成本</small><strong id="summaryCost">— / —</strong><span id="summaryWeight">尚未加入原料</span></div><div><span id="summarySafety" class="badge">待驗證</span><button id="quickSave" class="primary">儲存版本</button></div></footer>
+<footer id="summaryBar" class="summary"><div><small>總成本／每份成本</small><strong id="summaryCost">— / —</strong><span id="summaryWeight">尚未加入原料</span></div><div><span id="summarySafety" class="badge">待驗證</span><button id="quickSave" class="primary">儲存配方</button></div></footer>
 <dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage"><h2 id="confirmTitle"></h2><p id="confirmMessage"></p><div class="actions"><button id="confirmKeep" type="button" class="primary">返回繼續編輯</button><button id="confirmProceed" type="button" class="danger">放棄修改並切換</button></div></dialog>
 <dialog id="editor" aria-labelledby="editorTitle"><form id="editorForm"><div class="section-head"><h2 id="editorTitle">編輯</h2><button id="closeEditor" type="button" aria-label="關閉編輯面板">✕</button></div><p id="editorError" role="alert" class="danger" hidden></p><div id="editorBody"></div><div class="actions"><button id="applyEditor" type="submit" class="primary">套用</button><button id="removeItem" type="button" class="danger" hidden>移除此原料</button></div></form></dialog>
 <dialog id="helpDialog" aria-labelledby="helpTitle" class="help-dialog">
