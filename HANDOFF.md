@@ -1,5 +1,22 @@
 # HANDOFF
 
+## 2026-10-20 2D Q 版收尾（Claude）
+- 前一輪（其他 Agent，已結束）未提交的 Q 版樣式本輪已驗收並一併提交。範圍：`src/Styles.html` 與重建的 `index.html`，差異約 +127／−109 行。
+- 確認 `npm run build` 重建結果與手改版本一致，只有種子資料的時間戳與 UUID 不同。
+- 本輪修正：
+  - `--line` 改為 `#a8834f`，外框對比達 3:1 以上。
+  - `--line-strong`／`--wood-border` 改為 `#a0773f`，`--wood-shadow` 改為 `#7a5a2e`，`--muted` 改為 `#4c5d51`。
+  - `.works .work`、`.summary`、`.panel-save-card`、`#workPanel` 的外框改用 `var(--line)`。
+  - 以上修改後已重建 `index.html`。
+- 驗證：
+  - `npm test` 76/76 通過，`npm run check` 通過。
+  - 以 `tools/preview.cjs`（本機示範資料）實測電腦與手機兩種尺寸：
+    - 選擇製作類別、加入原料都正常。
+    - 三個分頁的文字對比掃描零項不合格。
+- 未做：
+  - 沒有部署 GitHub Pages／Google Apps Script、沒有推送。
+  - 家庭同步與 Google 部署未驗收（本機驗證不能冒充真實部署）。
+
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
