@@ -18,14 +18,17 @@ function migrateUnitSchema_(){
   Object.keys(UNIT_COLUMNS_).forEach(name=>{const sheet=table_(name),keys=[...SCHEMA_[name],...UNIT_COLUMNS_[name]];if(typeof sheet.getMaxColumns==='function'&&sheet.getMaxColumns()<keys.length)sheet.insertColumnsAfter(sheet.getMaxColumns(),keys.length-sheet.getMaxColumns());sheet.getRange(1,SCHEMA_[name].length+1,1,UNIT_COLUMNS_[name].length).setValues([UNIT_COLUMNS_[name]]);});return {version:2};
 }
 function migrateUnitSchema(){identity_(true);return lock_(migrateUnitSchema_);}
-function importCatalog_(email){
+function catalogPlan_(email){
   if(!columns_('配方明細').includes('unit'))throw Error('SCHEMA：請先在設定頁升級單位欄位');
   const all=JSON.parse(HtmlService.createHtmlOutputFromFile('CatalogData').getContent());const materials=rows_('原料資料'),prices=rows_('原料價格');let added=0;const newMaterials=[],newPrices=[];
   for(const r of all){const carrier=/^V-6/.test(r.name||'');if(!((r.categories||[]).some(c=>['單方精油','配方精油'].includes(c))||carrier)||(r.categories||[]).includes('精油套裝')||!(r.ml>0)||r.wholesale===null)continue;
     const id='yl-'+r.id,pid=id+'-catalog-'+Date.parse(r.at);if(!materials.some(m=>m.id===id)){const m={id,name:r.name,category:carrier?'基底油':'精油',active:true,note:'官網批發價估算；含稅未含運費。'+r.url,revision:1};newMaterials.push(m);materials.push(m);}
     if(!prices.some(p=>p.id===pid)){const p=core_().price({id:pid,materialId:id,label:'官網批發估算／'+r.at,amount:r.ml,unit:'mL',paid:r.wholesale,density:'',dropsPerMl:'',gramsPerUnit:'',createdAt:stamp_(),createdBy:email},'mL');newPrices.push(p);prices.push(p);added++;}
-  }append_('原料資料',newMaterials);append_('原料價格',newPrices);return {added};
+  }return {added,newMaterials,newPrices};
 }
+function importCatalog_(email){const plan=catalogPlan_(email);append_('原料資料',plan.newMaterials);append_('原料價格',plan.newPrices);return {added:plan.added};}
+// 唯讀：內建官網價格快照有多少項目尚未進原料庫（供開啟網頁時自動套用）；單位欄位未升級時回報 schemaReady:false。
+function catalogStatus_(){try{const plan=catalogPlan_('');return {missing:plan.added+plan.newMaterials.length,schemaReady:true};}catch(e){if(/^SCHEMA/.test(e.message))return {missing:0,schemaReady:false};throw e;}}
 function core_() {
   // 只評估本專案固定檔案，絕不評估使用者輸入。
   const source = HtmlService.createHtmlOutputFromFile('Core').getContent().replace(/^\s*<script>/, '').replace(/<\/script>\s*$/, '');
@@ -283,6 +286,7 @@ function api(request) {
         case 'bootstrap': return { ...bootstrap_(), email, admin: email === PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL').trim().toLowerCase() };
         case 'migrateUnits': identity_(true);return migrateUnitSchema_();
         case 'importCatalog': identity_(true);return importCatalog_(email);
+        case 'catalogStatus': return catalogStatus_();
         case 'loadRecipe': return d.current?currentRecipe_(d.id,d.version):loadRecipe_(d.id, d.version);
         case 'saveRecipe': return saveRecipe_(d, email);
         case 'deleteRecipe': return deleteRecipe_(d);

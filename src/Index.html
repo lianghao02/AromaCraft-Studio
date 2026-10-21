@@ -211,18 +211,43 @@
       </section>
 
       <section id="backupPanel" class="panel-card"><h2>資料與備份</h2><div class="fold-body"><div id="connection" role="status">正在讀取家庭資料…</div><div class="toolbar"><button id="refresh">重新讀取資料</button><button id="export">匯出備份</button><button id="recover">恢復本機草稿</button></div></div></section>
-      <details id="setupPanel" class="fold"><summary><h2>首次安裝與資料更新</h2><small>平常製作不用操作；需要更新時才展開</small></summary><div class="fold-body"><p class="muted">更新原始碼後，先升級單位欄位，再按需要載入內建官網價格。開啟網頁時會自動補入缺少的項目；此按鈕不會連線官網，價格以內建快照日期為準，舊配方與已保存成本不會重算。</p><div class="toolbar"><button id="migrateUnits" type="button">升級單位欄位（保留舊資料）</button><button id="importCatalog" type="button">載入內建官網價格</button></div></div></details>
+      <details id="setupPanel" class="fold"><summary><h2>首次安裝與資料更新</h2><small>平常製作不用操作；需要更新時才展開</small></summary><div class="fold-body"><p class="muted">更新原始碼後，先升級單位欄位，再按需要載入內建官網價格。開啟網頁時會自動補入缺少的項目；此按鈕不會連線官網，價格以內建快照日期為準，舊配方與已保存成本不會重算。</p><div class="toolbar"><button id="migrateUnits" type="button">升級單位欄位（保留舊資料）</button><button id="importCatalog" type="button">載入內建官網價格</button><button id="showRefreshPrompt" type="button">更新官網價格：複製提示詞給 AI</button></div><p id="catalogSnapshotInfo" class="muted"></p><script type="text/plain" id="catalogRefreshPrompt">你是 AromaCraft Studio 專案的維護 Agent。請在專案根目錄（有 package.json 且 name 為 aromacraft-studio）完成「更新內建官網價格並部署」。我已授權你完成下列全部步驟，包含提交、推送 main 與部署 GitHub Pages，不需要再問我。全程使用台灣繁體中文回報。
+
+【先讀與檢查】
+依序讀 AGENTS.md（專案規則）與 HANDOFF.md。執行 git status 與 git fetch，確認在 main 分支、工作目錄乾淨、與 origin/main 同步。若不乾淨或不同步，立刻停止並回報，不要覆蓋任何未知的修改。
+
+【步驟】
+1. 預覽（只讀，約 1 分鐘，逐筆查官網公開介面）：node tools/refresh-catalog.cjs
+2. 依結果判斷：
+   - 最後一行 SUMMARY 的 changed 為 0：回報「官網價格沒有變動，不需要更新」後結束，不要提交任何東西。
+   - 結束碼 2（失敗過多）：等一分鐘重跑一次；仍失敗就停止並回報，不要寫入。
+   - 結束碼 3（有異常變動）：停止，把異常清單回報給我並等我確認；不要自行加 --accept-anomalies。
+3. 寫入：node tools/refresh-catalog.cjs --write
+4. 重建並驗證，依序執行並確認全部通過：npm run build:catalog、npm run build、npm test、npm run check。失敗就先修到全過；無法修復就還原 data/ 與 src/ 的變更並回報。
+5. 升版：node tools/bump-version.cjs（patch +1）。接著在 CHANGELOG.md 最上方新增該版本區塊（台灣繁體中文，寫「更新內建官網價格，共 N 筆變動」與變動摘要），再執行 npm run build。
+6. 在 HANDOFF.md 最上方記錄本次更新：變動清單、版本、驗證結果、部署結果。
+7. 提交並推送：只 git add 本次修改的檔案；commit 訊息格式「chore: 更新內建官網價格快照（YYYY-MM-DD），升版 vX.Y.Z」；git push origin main。不要 force push，不要略過任何檢查。
+8. 確認部署：推送會自動觸發 GitHub Pages 工作流程。用 gh run list 與 gh run watch 確認成功，再下載正式站的 index.html 與 sw.js，核對內容與 HEAD 一致。若環境沒有 gh，回報「已推送，請我確認 Pages 狀態」。
+
+【規則】
+- 只更新價格資料與版本；不要修改 UI、計算規則或其他功能。價格一律由腳本寫入，不要手動編輯 data/young-living-tw.json，不要編造任何價格；沒有公開價格的品項維持「待補」。
+- 不要碰 Apps Script、Firestore 規則、帳號或任何金鑰；不要把私人路徑或帳號寫進檔案。
+- 價格是內建快照：使用者之後開啟網頁時，管理者會自動新增新的價格批次；舊價格批次與已儲存配方的成本快照不會改變。
+
+【最後用繁體中文回報】
+變動清單（品項、舊價→新價、百分比）、異常、新版本、commit、Pages 工作流程結果、正式站核對結果、仍需我處理的事。</script></div></details>
       <div id="manageCatalogSlot"></div>
       <div id="demoToolsSlot" class="toolbar"></div>
     </div>
   </div>
 
   <footer class="app-footer print-hide">
-    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.6.3</div>
+    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.6.4</div>
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br><span id="storageDescription">本機草稿保存在此瀏覽器；已儲存資料由 Firebase 家庭雲端同步；草稿僅留此裝置。</span></p>
   </footer>
 </main>
 <footer id="summaryBar" class="summary"><div><small>總成本／每份成本</small><strong id="summaryCost">— / —</strong><span id="summaryWeight">尚未加入原料</span></div><div><span id="summarySafety" class="badge">待驗證</span><button id="quickSave" class="primary">儲存配方</button></div></footer>
+<dialog id="promptDialog" aria-labelledby="promptTitle"><h2 id="promptTitle">更新官網價格：給 AI 的提示詞</h2><p class="muted">按「複製提示詞」，貼到 Codex、Antigravity 或 Claude Code（需開在這個專案資料夾）。AI 會自己查官網、更新、測試、升版並部署，完成後回報變動清單。</p><textarea id="promptText" readonly rows="12" aria-label="提示詞內容"></textarea><div class="actions"><button id="copyPrompt" type="button" class="primary">複製提示詞</button><button id="closePrompt" type="button">關閉</button></div></dialog>
 <dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage"><h2 id="confirmTitle"></h2><p id="confirmMessage"></p><div class="actions"><button id="confirmKeep" type="button" class="primary">返回繼續編輯</button><button id="confirmProceed" type="button" class="danger">放棄修改並切換</button></div></dialog>
 <dialog id="editor" aria-labelledby="editorTitle"><form id="editorForm"><div class="section-head"><h2 id="editorTitle">編輯</h2><button id="closeEditor" type="button" aria-label="關閉編輯面板">✕</button></div><p id="editorError" role="alert" class="danger" hidden></p><div id="editorBody"></div><div class="actions"><button id="applyEditor" type="submit" class="primary">套用</button><button id="removeItem" type="button" class="danger" hidden>移除此原料</button></div></form></dialog>
 <dialog id="helpDialog" aria-labelledby="helpTitle" class="help-dialog">

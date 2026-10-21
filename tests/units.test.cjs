@@ -253,3 +253,12 @@ test('按摩膏：滴數＋mL＋g 混合時，缺密度只點名蜂蠟，補密�
  const ok=c.concentration({...r,concentration:{...r.concentration,measuredWeights:{}}},ms,ps.map(p=>({...p,density:p.materialId==='bo'?0.92:p.materialId==='wax'?null:0.9})));
  assert.equal(ok.available,true);assert.equal(ok.densityEstimated,false);near(ok.percent,.54/(.54+25*.92+5)*100);
 });
+
+test('內建價格快照狀態：匯入前有缺項、匯入後為 0；未授權者被拒絕；匯入具冪等性',()=>{
+ const h=createHarness();h.setup();
+ const before=ok(h,'catalogStatus');assert.equal(before.schemaReady,true);assert.ok(before.missing>0);
+ const first=ok(h,'importCatalog');assert.ok(first.added>0);
+ assert.equal(ok(h,'catalogStatus').missing,0);assert.equal(ok(h,'importCatalog').added,0);
+ h.state.active=h.state.effective='other@example.test';assert.equal(h.call('catalogStatus').ok,true,'家庭成員可讀狀態');assert.equal(h.call('importCatalog').ok,false,'家庭成員不可匯入');
+ h.state.active=h.state.effective='stranger@example.test';assert.equal(h.call('catalogStatus').ok,false,'名單外帳號被拒絕');
+});

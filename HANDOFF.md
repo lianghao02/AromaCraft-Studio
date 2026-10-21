@@ -1,5 +1,16 @@
 # HANDOFF
 
+## 2026-10-21 一鍵複製提示詞更新官網價格（Claude，未提交、未部署）
+- 使用者需求：有需要時，在專案頁面按按鈕跳出提示詞，複製後交給 AI 完成更新，自己不必再手動做事。
+- 新增：`tools/refresh-catalog.cjs`（逐筆查官網公開介面 `api`，預設 dry run；`--write` 寫入；結束碼 2 失敗過多、3 有異常；只在批發價或容量改變時換 `at`）、`tools/bump-version.cjs`（package.json、sw.js 快取、`src/Index.html` 頁尾、README 標題）；`package.json` 新增 `refresh:catalog`、`bump` 指令。
+- 設定頁：按鈕 `#showRefreshPrompt`、對話框 `#promptDialog`（`#promptText` 唯讀、`#copyPrompt` 用 `navigator.clipboard`，失敗退回 `execCommand('copy')`）；提示詞內嵌 `#catalogRefreshPrompt`（`<script type="text/plain">`）；`#catalogSnapshotInfo` 顯示快照日期。
+- 自動套用：`Code.gs` 新增唯讀 `catalogStatus`（`api()` 開頭已驗證身分；家庭成員可讀、名單外拒絕）與 `catalogPlan_` 重構；`Client.html` 的 `autoApplyCatalog()` 在管理者載入資料後若有缺項就呼叫 `importCatalog`（寫入 outbox → 家庭雲端），每次載入只做一次，失敗靜默。**注意**：不可加 `busy` 條件，首次載入就在忙碌狀態內，會被擋掉。
+- 實測：真實官網 dry run 112 筆全部成功、0 筆變動、0 異常、0 失敗（內建快照與官網現價一致，目前不需要更新）；另有 42 筆無官網介面，原樣保留。
+- 測試：新增 `refresh-catalog`（10）、`bump-version`（3）、`catalog-auto`（2）、`prompt`（2）與 `units` 的 `catalogStatus` 測試；`npm test` 95/95、`npm run check` 通過；預覽實測按鈕→對話框→複製（寫入 1431 字、提示顯示）。`tests/prompt.test.cjs` 會檢查提示詞提到的指令、檔案、結束碼確實存在。
+- 文件：`docs/官網價格更新.md`；`AGENTS.md` 新增邊界（快照只能用腳本更新）。
+- 未驗證：真實 AI（Codex、Antigravity）照提示詞完整跑一次；自動匯入在真實家庭雲端的雙裝置行為；Apps Script 獨立部署需另更新 `Code.gs`。
+- 未提交、未部署；版本號未動。
+
 ## 2026-10-21 v1.6.3 發布：官網價格匯入說明修正（Claude）
 - **發布結果**：使用者明確授權後，提交 78505d1 並推送 origin/main；Pages 工作流程 39603832933 成功。正式站 `index.html`、`sw.js` HTTP 200，與 HEAD 逐位元組一致（SHA-256 前綴 112c2dcf／fa3f9f28），快取名稱 `aromacraft-v1.6.3`，頁尾 v1.6.3；舊字樣「載入官網精油至原料庫」已不存在，`snapshotDate`、「不會連線官網」皆在正式站。
 - **另一工作階段的提交**：`e74fa43`（README 版本標示 v1.6.2）非本輪所做，內容無害；本輪已再更新為 v1.6.3。

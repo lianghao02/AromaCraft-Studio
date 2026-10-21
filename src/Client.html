@@ -374,6 +374,22 @@
     if(!window.AROMA_LOCAL)$('connection').textContent = (window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
     if (!recipe || !preserve) {recipe = blank('其他');pendingQuantities.clear();removedSelections.clear();quantityMode=false;$('workPanel').open=true;$('materialPicker').open=false;$('recipePanel').open=false;}
     renderMaterials(); renderSaved(); renderRecipe();
+    if($('catalogSnapshotInfo')&&typeof AromaCatalog!=='undefined')$('catalogSnapshotInfo').textContent='目前內建官網價格快照：'+(AromaCatalog.snapshotDate||'未知')+'（要更新價格時，按「更新官網價格」複製提示詞給 AI 即可）。';
+    autoApplyCatalog();
+  }
+  // 開啟網頁時，若內建官網價格快照有尚未進原料庫的項目，管理者自動套用一次（會寫入家庭雲端）；失敗不打擾，仍可在設定頁手動載入。
+  let catalogAutoTried = false;
+  async function autoApplyCatalog() {
+    if (catalogAutoTried || !data || !data.admin || !data.unitSchema) return;
+    catalogAutoTried = true;
+    try {
+      const st = await rpc('catalogStatus');
+      if (!st || !st.missing) return;
+      const r = await rpc('importCatalog');
+      await refresh();
+      const snap = typeof AromaCatalog !== 'undefined' && AromaCatalog.snapshotDate ? '（內建價格快照 ' + AromaCatalog.snapshotDate + '）' : '';
+      if (r && r.added > 0) notice('已自動載入 ' + r.added + ' 筆內建官網價格' + snap + '；成本會以最新價格試算。');
+    } catch (e) { /* 靜默：手動載入入口仍在設定頁 */ }
   }
   function openEditor(title, html, action, remove) {
     $('editorError').hidden = true; $('editorError').textContent = '';
@@ -652,6 +668,9 @@
   $('base').onchange=()=>{try{const next={...recipe,baseId:$('base').value};if(next.baseId&&!next.targetQuantity)throw Error('請先設定固定總量，再指定補足原料');recipe=AromaCore.balance(next,data.materials,data.prices);draft();renderRecipe();}catch(e){fail(e);renderRecipe();}};
   if($('quantityUnit'))$('quantityUnit').onchange=()=>{try{const unit=$('quantityUnit').value;if(!['g','mL','mixed'].includes(unit))throw Error('計量方式不正確');let next=AromaCore.releaseTarget(recipe,data.prices);next={...next,quantityUnit:unit};if(next.items.length)AromaCore.calculate(next,data.materials,data.prices,data.rules);recipe=next;draft();renderRecipe();}catch(e){notice('這些原料的重量與容量不能直接合計，請使用「分開計量」。',true);renderRecipe();}};
   if($('migrateUnits'))$('migrateUnits').onclick=()=>task(async()=>{await rpc('migrateUnits');await refresh();notice('單位欄位已追加，舊資料保持不變。');});
+  if($('showRefreshPrompt'))$('showRefreshPrompt').onclick=()=>{$('promptText').value=$('catalogRefreshPrompt').textContent.trim();$('promptDialog').showModal();$('promptText').scrollTop=0;};
+  if($('closePrompt'))$('closePrompt').onclick=()=>$('promptDialog').close();
+  if($('copyPrompt'))$('copyPrompt').onclick=async()=>{const box=$('promptText');let copied=false;try{await navigator.clipboard.writeText(box.value);copied=true;}catch(e){try{box.focus();box.select();copied=document.execCommand('copy');}catch(_){}}notice(copied?'已複製提示詞，貼給 Codex、Antigravity 或 Claude Code 即可。':'無法自動複製，請在提示詞框內全選後手動複製。',!copied);};
   if($('importCatalog'))$('importCatalog').onclick=()=>task(async()=>{const r=await rpc('importCatalog');await refresh();const snap=typeof AromaCatalog!=='undefined'&&AromaCatalog.snapshotDate?'（內建價格快照 '+AromaCatalog.snapshotDate+'）':'';notice(r.added>0?'已新增 '+r.added+' 筆內建官網價格批次'+snap+'；缺密度與滴數設定仍保持空白。':'沒有新項目：原料庫已包含內建官網價格'+snap+'。此功能不會連線官網更新價格。');});
   $('categories').onclick = e => { const b=e.target.closest('[data-category]'); if(b){category=b.dataset.category;oilKind='全部';materialLimit=materialPageSize();renderMaterials();} };
   if($('oilKinds'))$('oilKinds').onclick=e=>{const b=e.target.closest('[data-oil-kind]');if(b){oilKind=b.dataset.oilKind;materialLimit=materialPageSize();renderMaterials();}};
