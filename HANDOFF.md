@@ -1,6 +1,12 @@
 # HANDOFF
 
-## 2026-10-21 一鍵複製提示詞更新官網價格（Claude，未提交、未部署）
+## 2026-10-21 v1.6.4 發布：一鍵複製提示詞更新官網價格（Claude）
+- **發布結果**：使用者明確授權後，提交 affb648 並推送 origin/main；Pages 工作流程 39609999325 成功（GitHub 佇列排隊約 4 分多鐘，非程式問題）。正式站 `index.html`、`sw.js` HTTP 200，與 HEAD 逐位元組一致（SHA-256 前綴 7840f8fd／4f0595e8），快取名稱 `aromacraft-v1.6.4`，頁尾 v1.6.4；`#showRefreshPrompt`、`#promptDialog`、`#catalogRefreshPrompt`、`autoApplyCatalog`、`catalogStatus` 皆在正式站。
+- **升版使用新工具**：本次以 `node tools/bump-version.cjs` 升版（package.json、sw.js、src/Index.html、README 標題一次更新），實測正常；CHANGELOG 另手寫。
+- **未驗證**：真實 AI（Codex、Antigravity）照提示詞完整跑一次；自動匯入在真實家庭雲端的雙裝置行為；真實 iPhone 觸控手感。Apps Script 仍 v1.3.2，若要同步獨立部署需另更新 `Code.gs`（含 `catalogStatus`）。
+- 以下為本次功能說明，原標「未提交、未部署」已隨本次發布提交部署。
+
+### 功能說明（原記錄）
 - 使用者需求：有需要時，在專案頁面按按鈕跳出提示詞，複製後交給 AI 完成更新，自己不必再手動做事。
 - 新增：`tools/refresh-catalog.cjs`（逐筆查官網公開介面 `api`，預設 dry run；`--write` 寫入；結束碼 2 失敗過多、3 有異常；只在批發價或容量改變時換 `at`）、`tools/bump-version.cjs`（package.json、sw.js 快取、`src/Index.html` 頁尾、README 標題）；`package.json` 新增 `refresh:catalog`、`bump` 指令。
 - 設定頁：按鈕 `#showRefreshPrompt`、對話框 `#promptDialog`（`#promptText` 唯讀、`#copyPrompt` 用 `navigator.clipboard`，失敗退回 `execCommand('copy')`）；提示詞內嵌 `#catalogRefreshPrompt`（`<script type="text/plain">`）；`#catalogSnapshotInfo` 顯示快照日期。
