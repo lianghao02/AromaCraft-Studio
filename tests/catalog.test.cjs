@@ -3,7 +3,7 @@ test('精油目錄分類分批、搜尋、缺價阻擋及 mL 試算',()=>{
  const elements=Object.fromEntries(['ylCards','ylSearch','ylPending','ylCategories','ylCount','ylMore','ylChosen','ylTotal','ylClear'].map(id=>[id,{value:'',checked:false,innerHTML:'',textContent:'',hidden:false}]));
  const ctx=vm.createContext({Intl,Date,Map,document:{getElementById:id=>elements[id]}});
  const source=fs.readFileSync(path.join(__dirname,'../src/Catalog.html'),'utf8').replace(/^\s*<script>/,'').replace(/<\/script>\s*$/,'');vm.runInContext(source,ctx);
- const c=ctx.AromaCatalog;assert.equal(c.data.length,154);assert.equal(c.find('全部').length,102);
+ const c=ctx.AromaCatalog;assert.equal(c.data.length,154);assert.equal(c.snapshotDate,"2026-10-13","內建價格快照日期（台灣時間）");assert.equal(c.find('全部').length,102);
  assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,24);
  elements.ylMore.onclick();assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,48);
  elements.ylSearch.value='354876';elements.ylSearch.oninput();assert.equal((elements.ylCards.innerHTML.match(/<article/g)||[]).length,1);

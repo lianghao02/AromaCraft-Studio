@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aromacraft-v1.6.2';
+const CACHE_NAME = 'aromacraft-v1.6.3';
 const STATIC_ASSETS = [
   './',
   './index.html',

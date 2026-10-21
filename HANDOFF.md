@@ -1,5 +1,12 @@
 # HANDOFF
 
+## 2026-10-21 官網價格匯入說明修正（Claude，未提交、未部署）
+- 起因：使用者在手機按「載入官網精油至原料庫」看到「已新增 0 筆官網 mL 價格批次」，詢問是否真的連線官網。查證：**不連線**。匯入來源是打包的 `CatalogData` 快照（`data/young-living-tw.json`，154 筆，查價時間 UTC 2026-10-12 22:35，台灣時間 **2026-10-13**）；`standalone-provider.js` 第 37 行每次開網頁就自動執行一次 `importCatalog`，按鈕只補缺漏，故常回報 0 筆。只有精油圖片由瀏覽器向官網圖片網址載入。
+- 更正前述發布紀錄：V-6 在靜態網頁版開啟時會自動補入本機資料，**不必**管理者手動按匯入（先前寫「需再按一次」不精確）。尚未查證的是：這次自動匯入的項目是否會同步到家庭雲端（`pushToFirestore` 以 outbox 重放寫入，匯入是否進 outbox 未確認）；若太太的裝置看不到 V-6，再查此處。
+- 修改：`src/Catalog.html` 新增 `AromaCatalog.snapshotDate`（台灣時間，失敗退回字串日期）；`src/Client.html` 提示分兩種（0 筆／N 筆）並帶快照日期；`src/Index.html` 按鈕改「載入內建官網價格」與說明、目錄區標示內建快照；文件同步。
+- 測試：`catalog.test.cjs` 斷言快照日期 2026-10-13，`client.test.cjs` 靜態檢查按鈕文字與說明；`npm test` 77/77、`npm run check` 通過；預覽實按確認提示。
+- 價格更新方式（待辦）：目前只能重新產生快照再部署（`npm run build:catalog`），沒有手機端更新價格的功能。
+
 ## 2026-10-21 v1.6.2 發布：原料卡精簡、手感與操作邏輯（Claude）
 - **發布結果**：使用者明確授權後，提交 5cb6d8d 並推送 origin/main；Pages 工作流程 39600471580 成功。正式站 `index.html`、`sw.js` HTTP 200，與 HEAD 逐位元組一致（SHA-256 前綴 0809174d／7f5a3e99），快取名稱 `aromacraft-v1.6.2`，頁尾 v1.6.2；新功能標記（`#recipeTypeSelect`、`#saveHint`、`data-create`、`@media(hover:hover)`、`kb-open`、`touch-action:manipulation`、`.mat-drop`、`enterkeyhint`）皆在正式站。
 - **內容**：原料卡精簡（平均高度約 182→97px，點選不跳動）、價格統一為每 mL／每 g、手感（hover、觸控、全選、Enter 跳欄、長按連加、鍵盤收列、44px 觸控區）、操作邏輯（搜尋空狀態新增並加入、排序、術語、單一主按鈕、類型與整批／每份移到步驟 3、儲存說明）。細節見下方「發布後追加」與「手感與操作邏輯第三批」。

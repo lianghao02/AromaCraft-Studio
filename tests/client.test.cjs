@@ -258,6 +258,7 @@ test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內�
  }
  const html=fs.readFileSync(path.join(__dirname,'../src/Index.html'),'utf8');
  for(const id of ['blank','plannerAdvanced','plannerSummary','toggleWork'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'真實頁面必須有 #'+id);
+ assert.match(html,/id="importCatalog"[^>]*>載入內建官網價格</);assert.doesNotMatch(html,/載入官網精油至原料庫/,"按鈕不可暗示即時連線官網");assert.match(html,/不會連線官網/);
  assert.match(html,/<div class="recipe-settings">[\s\S]*id="recipeTypeSelect"[\s\S]*id="sizingMode"/,"類型與用量基準需在步驟 3 設定區");assert.doesNotMatch(html.match(/<details id="plannerAdvanced"[\s\S]*?<\/details>/)[0],/id="sizingMode"/,"用量基準不再藏在進階");assert.match(html,/id="saveHint"/);assert.doesNotMatch(html,/目前精油比例|精油比例僅供參考/,"統一稱為精油濃度");
  assert.match(styles,/@media\(max-width:767px\)\{[\s\S]*?#materialPicker \.material-card,[^{]*\{[^}]*min-height:0/,"手機原料卡需維持精簡高度");assert.match(styles,/\.mat-drop\{display:block/);
  assert.doesNotMatch(html,/id="mobileReviewRecipe"/);
