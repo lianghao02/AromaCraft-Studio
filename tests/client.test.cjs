@@ -110,17 +110,18 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   await tick();await tick();
   assert.equal(node('name').value,'收納流程驗證');
   assert.match(node('workBasis').textContent,/重量配方/);
+  assert.match(node('plannerSummary').textContent,/進階：自由填量・整批用量/);
   assert.equal(node('quickSave').disabled,true);
   node('copy').onclick();
   assert.equal(node('quickSave').disabled,false);
   assert.match(node('name').value,/（複製）/);
   const before=node('name').value;
-  const cancelSwitch=works[1].onclick();
-  assert.equal(node('confirmDialog').open,true);
-  assert.match(node('confirmMessage').textContent,/精油膏/);
-  node('confirmKeep').onclick();await cancelSwitch;
+  await works[1].onclick();
+  assert.ok(node('items').innerHTML.length>0);assert.match(node('draftState').textContent,/.+/);assert.notEqual(node('draftState').textContent,'未加入原料');
+  assert.equal(node('confirmDialog').open,false);
   assert.equal(node('name').value,before);
-  const confirmSwitch=works[1].onclick();node('confirmProceed').onclick();await confirmSwitch;
+  assert.equal(node('quickSave').disabled,false);
+  const confirmSwitch=node('blank').onclick();assert.equal(node('confirmDialog').open,true);node('confirmProceed').onclick();await confirmSwitch;
   assert.equal(node('name').value,'精油膏新配方');
   assert.match(node('costFields').innerHTML,/NT\$／份/);
   assert.doesNotMatch(node('costFields').innerHTML,/時薪|毛利|售價/);
@@ -170,7 +171,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.match(node('saved').innerHTML,/舊清潔液/);assert.match(node('saved').innerHTML,/舊除垢配方/);
   assert.doesNotMatch(node('saved').innerHTML,/<h2>精油皂/);
   assert.deepEqual(h.call('bootstrap').value.recipes.filter(r=>r.name.startsWith('舊')).map(r=>r.type),['日常清潔液','水垢清潔']);
-  const newSelection=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await newSelection;
+  const newSelection=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await newSelection;
   const choose=id=>node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:id}}:null}});
   choose('demo-soap');choose('demo-oil');choose('yl-354876');
   assert.equal(node('editor').open,false);assert.match(node('returnToRecipe').textContent,/3 項/);
@@ -198,12 +199,16 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('editorError').hidden,false);assert.match(node('items').innerHTML,/12 g/);
   node('editQuantity').value='10';node('editQuantity').oninput();assert.match(node('unitPreview').textContent,/NT\$30\.00/);node('editorForm').onsubmit({preventDefault(){}});assert.match(node('items').innerHTML,/10 mL/);assert.doesNotMatch(node('items').innerHTML,/12 g/);
   // 主要集中填量路徑：不開視窗、空白阻擋、整滴、復原與管理隔離。
-  const fresh=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
   choose('demo-oil');choose('yl-354876');node('fillQuantities').onclick();
   assert.equal(node('editor').open,false);assert.equal(node('quantityStage').hidden,false);assert.equal(node('materialBrowse').hidden,true);assert.equal(node('summaryBar').hidden,true);
   assert.match(node('selectedItems').innerHTML,/data-quantity="demo-oil"/);assert.match(node('selectedItems').innerHTML,/data-quantity="yl-354876"/);
   const quantity=(id,value)=>{node('quantity-'+id).value=value;node('selectedItems').oninput({target:{closest:q=>q==='[data-quantity]'?{dataset:{quantity:id},value}:null}});};
   const changeUnit=(id,value)=>node('selectedItems').onchange({target:{closest:q=>q==='[data-quantity-unit]'?{dataset:{quantityUnit:id},value}:null}});
+  assert.match(node('selectedItems').innerHTML,/data-step="-1"[^>]*aria-label="減少[^"]*用量"/);assert.match(node('selectedItems').innerHTML,/data-step="1"[^>]*aria-label="增加[^"]*用量"/);
+  ctx.Event=function Event(type){this.type=type;};const stepInput=node('quantity-demo-oil');stepInput.value='3';stepInput.dispatchEvent=()=>true;
+  const stepBy=n=>node('selectedItems').onclick({target:{closest:q=>q==='[data-step]'?{dataset:{step:String(n),for:'demo-oil'}}:null}});
+  stepBy(1);assert.equal(String(stepInput.value),'4');for(let i=0;i<6;i++)stepBy(-1);assert.equal(String(stepInput.value),'0');
   changeUnit('yl-354876','滴');quantity('demo-oil','30');quantity('yl-354876','0.5');assert.equal(node('quickSave').disabled,true);assert.equal(node('recordProduction').disabled,true);assert.equal(node('panelCost').textContent,'—');assert.match(node('concentrationValue').textContent,/待填/);
   node('confirmQuantities').onclick();assert.equal(node('quantityError').hidden,false);assert.equal(node('materialPicker').open,true);
   quantity('yl-354876','6');assert.equal(node('quickSave').disabled,false);changeUnit('yl-354876','mL');assert.match(node('items').innerHTML,/6 mL/);changeUnit('yl-354876','滴');assert.match(node('items').innerHTML,/6 滴/);assert.match(node('concentrationValue').textContent,/0.99%/);
@@ -217,7 +222,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('syncStatusCapsule').onclick();assert.equal(node('manageData').hidden,false);assert.equal(node('cloudSyncPanel').hidden,true);assert.equal(node('backupPanel').scrolled,true);
   node('tabRecipe').onkeydown({key:'ArrowRight',preventDefault(){}});assert.equal(node('tabSaved')['aria-selected'],'true');
   // 六項皆已填：即使未收到input事件，確認時也讀回畫面；錯誤不得殘留。
-  const next=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await next;
+  const next=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await next;
   const bootstrap=h.call('bootstrap').value,oilIds=bootstrap.materials.filter(m=>m.category==='精油'&&bootstrap.prices.some(p=>p.materialId===m.id&&p.unit==='mL')).slice(0,3).map(m=>m.id);
   const wax=bootstrap.materials.find(m=>m.category==='蜂蠟').id,ids=[...oilIds,'demo-soap',wax,'demo-oil'];ids.forEach(choose);node('fillQuantities').onclick();
   assert.equal((node('selectedItems').innerHTML.match(/<option selected>滴<\/option>/g)||[]).length,3);
@@ -229,7 +234,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('confirmQuantities').onclick();assert.equal(node('recipePanel').open,true);assert.equal(node('quantityError').hidden,true);assert.doesNotMatch(node('items').innerHTML,/20 滴/);await node('quickSave').onclick();const savedSix=h.call('bootstrap').value.recipes.at(-1),loadedSix=h.call('loadRecipe',{id:savedSix.id,version:savedSix.version}).value;for(const id of oilIds){const item=loadedSix.items.find(i=>i.materialId===id);assert.equal(item.unit,'滴');assert.equal(Number(item.quantity),1);}
   {
   // 完整問答流程：目標調配、每份放大、儲存，再以實際七滴完成製作，原配方仍六滴。
-  const fresh=works[0].onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
   choose(oilIds[0]);choose('demo-oil');node('planningMode').value='target';node('planningBasis').value='mL';node('planningTotal').value='30';node('planningPercent').value='1';node('planningBase').value='demo-oil';node('planningMode').onchange();node('fillQuantities').onclick();
   node('quantity-'+oilIds[0]).value='6';node('quantity-unit-'+oilIds[0]).value='滴';quantity(oilIds[0],'6');
   assert.match(node('targetProgress').textContent,/6／約 6 滴/);assert.equal(node('quantity-demo-oil').disabled,true);assert.equal(Number(node('quantity-demo-oil').value),29.7);
@@ -252,6 +257,7 @@ test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內�
    if(selector.includes('#viewRecipe')&&selector.includes('.picker-top-bar'))assert.doesNotMatch(body,/display\s*:\s*none/,'填用量入口不能隱藏：'+selector);
  }
  const html=fs.readFileSync(path.join(__dirname,'../src/Index.html'),'utf8');
+ for(const id of ['blank','plannerAdvanced','plannerSummary','toggleWork'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'真實頁面必須有 #'+id);
  assert.doesNotMatch(html,/id="mobileReviewRecipe"/);
  assert.equal((html.match(/id="fillQuantities"/g)||[]).length,1);
  assert.match(html,/<link\b[^>]*rel="icon"[^>]*href="data:image\/svg\+xml,/);

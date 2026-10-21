@@ -21,8 +21,8 @@ function migrateUnitSchema(){identity_(true);return lock_(migrateUnitSchema_);}
 function importCatalog_(email){
   if(!columns_('配方明細').includes('unit'))throw Error('SCHEMA：請先在設定頁升級單位欄位');
   const all=JSON.parse(HtmlService.createHtmlOutputFromFile('CatalogData').getContent());const materials=rows_('原料資料'),prices=rows_('原料價格');let added=0;const newMaterials=[],newPrices=[];
-  for(const r of all){if(!(r.categories||[]).some(c=>['單方精油','配方精油'].includes(c))||(r.categories||[]).includes('精油套裝')||!(r.ml>0)||r.wholesale===null)continue;
-    const id='yl-'+r.id,pid=id+'-catalog-'+Date.parse(r.at);if(!materials.some(m=>m.id===id)){const m={id,name:r.name,category:'精油',active:true,note:'官網批發價估算；含稅未含運費。'+r.url,revision:1};newMaterials.push(m);materials.push(m);}
+  for(const r of all){const carrier=/^V-6/.test(r.name||'');if(!((r.categories||[]).some(c=>['單方精油','配方精油'].includes(c))||carrier)||(r.categories||[]).includes('精油套裝')||!(r.ml>0)||r.wholesale===null)continue;
+    const id='yl-'+r.id,pid=id+'-catalog-'+Date.parse(r.at);if(!materials.some(m=>m.id===id)){const m={id,name:r.name,category:carrier?'基底油':'精油',active:true,note:'官網批發價估算；含稅未含運費。'+r.url,revision:1};newMaterials.push(m);materials.push(m);}
     if(!prices.some(p=>p.id===pid)){const p=core_().price({id:pid,materialId:id,label:'官網批發估算／'+r.at,amount:r.ml,unit:'mL',paid:r.wholesale,density:'',dropsPerMl:'',gramsPerUnit:'',createdAt:stamp_(),createdBy:email},'mL');newPrices.push(p);prices.push(p);added++;}
   }append_('原料資料',newMaterials);append_('原料價格',newPrices);return {added};
 }
