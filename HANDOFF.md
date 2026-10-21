@@ -5,6 +5,16 @@
 - **未部署**：Apps Script 仍 v1.3.2；V-6 需管理者在正式站「設定與資料」再按一次「載入官網精油至原料庫」才會出現；真實 iPhone Safari 與家庭雙裝置同步未驗收。
 - 前一輪 2D Q 版收尾（110ac65）其實已部署（工作流程 39531531407 成功），下方「沒有推送」的舊記載已過期。
 
+### 發布後追加（v1.6.1 之後，未提交、未部署）
+- 使用者以實機截圖回報原料卡太大，並指出「點擊勾選」是贅字、價格標示不一致。已改：手機原料卡精簡（平均高度約 182→97px，390px 寬量測；`src/Styles.html` 末段 `@media(max-width:767px)` 區塊）；未選取時隱藏狀態列並以右下角 20px 圓形「＋」提示（`aria-label` 仍保留「點擊勾選原料」）；卡片價格統一為每 mL／每 g 單價（`AromaCore.price(...).perUnit`，原生基準），精油另列每滴約價，整瓶價放 `title`，管理模式（`data-manage`）仍顯示整瓶資料；價格標籤與金額以 `.nw` 不拆行。
+- 手感與操作邏輯第三批（使用者要求「體感操作」與「操作邏輯」都要改，未提交、未部署）：
+  - 手感（`src/Styles.html`、`src/Client.html`）：`:hover` 規則全部包進 `@media(hover:hover)`（16 條，含 `:focus` 者不動）；`touch-action:manipulation`、關閉預設點擊底色；原料卡右下角圓形提示（未選「＋」、已選實心「✓」），不再加狀態列，點選時卡片高度不變（實測 89→89px，下方位移 33→1px）；數字欄聚焦全選、Enter 跳下一欄（最後一欄觸發確認）、`enterkeyhint=next`；「＋／－」長按 450ms 後每 90ms 連加，放開後的 click 不重複；鍵盤彈出時 `body.kb-open` 收起 `#summaryBar`、`#primaryNav`；通知 ✕ 以 `::before` 擴大到 44px、`#toggleWork`／`#blank` 最小 44px。
+  - 邏輯：搜尋空狀態 `[data-create]` 按鈕（`editMaterial(undefined, cb, {prefillName})`，儲存後 `addSelection` 自動加入；抽出共用函式 `addSelection`）；排序 `rank`（自己新增 0、`yl-` 目錄 1、「（試算）」範例 2）；「目前精油比例」統一為「精油濃度」；`#fillQuantities` 在填量模式去掉 `primary`；`#recipeTypeSelect`（未儲存配方可改類型並保留原料，已儲存者停用）與 `#sizingMode` 移到 `.recipe-settings`，進階摘要只剩調配方式；`#saveHint` 說明更新會取代、未儲存時隱藏 `#saveAsNew`。
+  - 測試：更新 3 處舊斷言（進階摘要、兩處「已在配方」改為先搜尋，因範例品被排到最後），新增靜態檢查（設定區元素、術語、`#saveHint`）；`npm test` 77/77、`npm run check` 通過；預覽 390px 實測空狀態新增→自動加入、長按連加（0.9 秒→5）、Enter 跳欄、鍵盤收列、類型切換保留 3 項、儲存後說明與另存按鈕切換皆正常。
+  - 限制：長按、鍵盤收列、hover 黏住是在桌機瀏覽器模擬（合成事件），**真實 iPhone 觸控手感未驗**。
+- 量測注意：卡片有 `transition: all .12s`，預覽面板在背景時動畫不前進，量測要先把 transition 關掉，否則量到動畫中途值。
+- 驗證：`npm test` 77/77、`npm run check` 通過；預覽 320／390／430px 實測兩欄、無橫向溢出。尚未在實機再驗。
+
 ### 本輪修改明細（原「未提交」記錄）
 - 起因：使用者覺得操作與邏輯怪。以「按摩膏（馬鬱蘭／薰衣草／薄荷／迷迭香滴數＋蜂蠟 g＋基底油 mL）」實測，濃度顯示「資料不足」，且提示叫使用者補四種精油資料，真因是蜂蠟缺密度（蜂蠟只有 g／kg 單位，無法改 mL）。
 - 本輪修改（`src/Core.html`、`src/Client.html`、`tests/units.test.cjs`，已重建 `index.html`）：
