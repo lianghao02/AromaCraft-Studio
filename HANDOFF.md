@@ -1,5 +1,12 @@
 # HANDOFF
 
+## 2026-10-21 v1.6.2 發布：原料卡精簡、手感與操作邏輯（Claude）
+- **發布結果**：使用者明確授權後，提交 5cb6d8d 並推送 origin/main；Pages 工作流程 39600471580 成功。正式站 `index.html`、`sw.js` HTTP 200，與 HEAD 逐位元組一致（SHA-256 前綴 0809174d／7f5a3e99），快取名稱 `aromacraft-v1.6.2`，頁尾 v1.6.2；新功能標記（`#recipeTypeSelect`、`#saveHint`、`data-create`、`@media(hover:hover)`、`kb-open`、`touch-action:manipulation`、`.mat-drop`、`enterkeyhint`）皆在正式站。
+- **內容**：原料卡精簡（平均高度約 182→97px，點選不跳動）、價格統一為每 mL／每 g、手感（hover、觸控、全選、Enter 跳欄、長按連加、鍵盤收列、44px 觸控區）、操作邏輯（搜尋空狀態新增並加入、排序、術語、單一主按鈕、類型與整批／每份移到步驟 3、儲存說明）。細節見下方「發布後追加」與「手感與操作邏輯第三批」。
+- **未驗證／未部署**：真實 iPhone Safari 觸控手感（長按、鍵盤收列、hover 黏住只在桌機模擬測過）與家庭雙裝置同步未驗收；Apps Script 仍 v1.3.2；V-6 需管理者在正式站再按一次「載入官網精油至原料庫」。
+- **待辦候選**：十聖套組與缺目錄品項（安息香、岩薔薇、桂皮）；46／154 筆價格待核對。
+- 以下「發布後追加」「手感與操作邏輯第三批」原標「未提交、未部署」，已隨本次發布提交部署。
+
 ## 2026-10-21 v1.6.1 發布：濃度估算與調配體感（Claude）
 - **發布結果**：使用者明確授權後，提交 e9b0d93 並推送 origin/main；Pages 工作流程 39595163793 成功。正式站 `index.html`、`sw.js` HTTP 200，內容與 HEAD 逐位元組一致（SHA-256 前綴 7849589e／4eb746d8），快取名稱 `aromacraft-v1.6.1`，頁尾 v1.6.1；新功能標記（`#blank`、`#plannerAdvanced`、`.qty-stepper`、`.recipe-settings`、重量估算）皆在正式站。
 - **未部署**：Apps Script 仍 v1.3.2；V-6 需管理者在正式站「設定與資料」再按一次「載入官網精油至原料庫」才會出現；真實 iPhone Safari 與家庭雙裝置同步未驗收。
