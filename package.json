@@ -4,7 +4,7 @@
   "private": true,
   "description": "手作精油配方與成本管理系統",
   "scripts": {
-    "test": "node --test tests/core.test.cjs tests/server.test.cjs tests/client.test.cjs tests/catalog.test.cjs tests/units.test.cjs tests/standalone.test.cjs tests/cloud.test.cjs tests/planning.test.cjs tests/catalog-auto.test.cjs tests/refresh-catalog.test.cjs tests/bump-version.test.cjs tests/prompt.test.cjs tests/dom-contract.test.cjs tests/service-worker.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/server.test.cjs tests/client.test.cjs tests/catalog.test.cjs tests/units.test.cjs tests/standalone.test.cjs tests/cloud.test.cjs tests/planning.test.cjs tests/catalog-auto.test.cjs tests/refresh-catalog.test.cjs tests/bump-version.test.cjs tests/prompt.test.cjs tests/dom-contract.test.cjs tests/service-worker.test.cjs tests/stepper.test.cjs",
     "check": "node tools/check.cjs",
     "preview": "node tools/preview.cjs",
     "build:catalog": "node tools/build-catalog.cjs",

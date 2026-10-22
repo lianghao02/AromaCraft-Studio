@@ -119,8 +119,9 @@
       if(b.setAttribute)b.setAttribute('aria-current',n===step?'step':'false');
       if(b.dataset)b.dataset.state=n===step?'active':n<step?'done':'todo';
     }
-    if($('stepTitle'))$('stepTitle').textContent=STEP_COPY[step-1][0];
-    if($('stepHint'))$('stepHint').textContent=STEP_COPY[step-1][1];
+    const producing=!!productionSource&&step>1;
+    if($('stepTitle'))$('stepTitle').textContent=producing?(step===2?'記錄實際用量':'確認並完成製作'):STEP_COPY[step-1][0];
+    if($('stepHint'))$('stepHint').textContent=producing?'正在記錄實際製作用量，修改只影響這次紀錄，原配方不變。':STEP_COPY[step-1][1];
   }
   stepPanels().forEach(p=>{if(p&&p.addEventListener)p.addEventListener('toggle',()=>stepperSync(p));});
   [1,2,3].forEach(n=>{const b=$('stepBtn'+n);if(b)b.onclick=()=>{const p=stepPanels()[n-1];if(!p||b.disabled)return;p.open=true;stepperSync(p);if(window.scrollTo)window.scrollTo({top:0,behavior:'instant'});};});
