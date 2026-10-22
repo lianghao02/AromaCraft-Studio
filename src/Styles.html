@@ -889,4 +889,22 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 @media(min-width:1024px){#viewSaved #savedPanel,#viewSaved .panel-card{max-width:none}}
 #viewRecipe.stepflow #recipeWorkspace{border:0;box-shadow:none;background:none;border-radius:0}
 #viewRecipe.stepflow #recipePanel>summary::before,#viewRecipe.stepflow #recipePanel>summary::after{content:none;display:none}
+/* --- 設定頁與配方庫的製作紀錄：同一種卡片、清楚的分區按鈕 --- */
+#viewManage .manage-intro{margin:4px 0 12px}
+#viewManage .manage-intro h2{margin:0 0 4px;font-size:22px}
+#viewManage .manage-nav{display:flex;gap:6px;margin:0 0 14px;padding:4px;background:var(--wood-bg);border:2px solid var(--wood-border);border-radius:14px}
+#viewManage .manage-nav button{flex:1 1 0;min-height:44px;padding:6px 8px;border:0;border-radius:10px;background:transparent;box-shadow:none;font-size:15px;color:var(--muted)}
+#viewManage .manage-nav button[aria-pressed="true"]{background:#fff;color:var(--green);border:2px solid var(--wood-border);box-shadow:0 2px 0 var(--wood-shadow)}
+#viewManage .manage-group>.panel-card,#viewManage .manage-group>section,#viewManage .manage-group>details{margin:0 0 14px}
+#viewManage #manageMaterialSlot #materialPicker>summary{display:none}
+#viewManage #materialPicker .fold-body{padding:0}
+#viewManage #materialBrowse>.fields{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+#viewManage #materialBrowse>.fields label{margin:0}
+#viewManage #materialBrowse>.fields button{min-height:44px;white-space:nowrap}
+#viewSaved #logPanel{margin-top:18px}
+#viewSaved #logPanel h2{margin:0 0 6px;font-size:18px}
+#viewSaved #log{margin:8px 0}
+#viewSaved .log-row{padding:12px 0;border-top:1px solid #e4dccb}
+#viewSaved .log-row:first-child{border-top:0}
+@media(min-width:1024px){#viewManage .manage-group{display:block}#viewManage #manageMaterialSlot #materials{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>

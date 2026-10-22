@@ -167,14 +167,17 @@
       <div class="fields"><label>搜尋名稱<input id="recipeSearch" type="search" placeholder="輸入名稱或備註"></label><label>製作類別<select id="recipeType"><option value="">全部類別</option><option>精油膏</option><option>清潔劑</option><option>精油皂</option><option>按摩油</option><option>其他</option></select></label></div>
       <label class="check" hidden><input id="showArchived" type="checkbox">舊版封存資料</label><div id="saved"></div>
     </section>
+      <section id="logPanel" class="panel-card"><h2>製作紀錄</h2><div class="fold-body"><p class="muted">在上方配方按「開始製作」，核對實際用量後按「完成製作」。紀錄會留在這裡。</p>
+      <div class="fields" hidden><label>製作日期<input id="logDate" type="date"></label><label>實際合格產量<input id="logUnits" type="number" min="1" step="1"></label></div><label hidden>製作備註<textarea id="logNotes" rows="2" maxlength="3000"></textarea></label><button id="log" hidden>回到製作中的配方</button><div id="logs"></div>
+    </div></section>
   </div>
 
   <!-- 設定依用途切換，平常設定不與維護工具混排。 -->
   <div id="viewManage" class="tab-view" hidden>
-    <div class="manage-intro"><h2>設定與資料</h2><p class="muted">先準備原料價格與包材，再回「調配方」製作。紀錄與維護工具另外查看。</p></div>
+    <div class="manage-intro"><h2>設定與資料</h2><p class="muted">先準備原料價格與包材，再回「調配方」製作。製作紀錄在「配方庫」。</p></div>
     <nav class="manage-nav" aria-label="設定用途">
       <button id="manageBasicsBtn" type="button" aria-pressed="true" aria-controls="manageBasics">原料與包材</button>
-      <button id="manageRecordsBtn" type="button" aria-pressed="false" aria-controls="manageRecords">製作紀錄</button>
+      <button id="manageRecordsBtn" type="button" aria-pressed="false" aria-controls="manageRecords">安全資訊</button>
       <button id="manageDataBtn" type="button" aria-pressed="false" aria-controls="manageData">資料與維護</button>
     </nav>
     <div id="manageBasics" class="manage-group">
@@ -183,9 +186,6 @@
     </div>
     <div id="manageRecords" class="manage-group" hidden>
       <p class="manage-context muted">配方庫按「開始製作」後，可調整實際用量；完成時保存日期、份數、註記與成本。</p>
-      <section id="logPanel" class="panel-card"><h2>製作紀錄</h2><div class="fold-body"><p class="muted">在配方庫按「開始製作」，核對實際用量後按「完成製作」。</p>
-      <div class="fields" hidden><label>製作日期<input id="logDate" type="date"></label><label>實際合格產量<input id="logUnits" type="number" min="1" step="1"></label></div><label hidden>製作備註<textarea id="logNotes" rows="2" maxlength="3000"></textarea></label><button id="log">前往製作</button><div id="logs"></div>
-    </div></section>
       <details id="safetyPanel" class="fold"><summary><h2>安全資訊</h2><small>須核對用途與來源</small></summary><div class="fold-body"><div id="safety"></div><p class="muted">安全規則由管理員於「安全規則」工作表登錄用途、原料、限制與來源。未超出個別規則仍不代表完整安全審查。</p></div></details>
     </div>
     <div id="manageData" class="manage-group" hidden>

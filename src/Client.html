@@ -157,7 +157,7 @@
     if (!recipe) return;
     if(data){if($('migrateUnits'))$('migrateUnits').hidden=!data.admin;if($('importCatalog')){$('importCatalog').hidden=!data.admin;$('importCatalog').disabled=busy||!data.unitSchema;}}
     const empty = !recipe.items.length;
-    $('recordProduction').textContent=productionSource?'完成製作':'開始製作';$('productionBanner').hidden=!productionSource;if($('productionFold'))$('productionFold').hidden=!productionSource;
+    $('recordProduction').textContent=productionSource?'完成製作':'開始製作';$('productionBanner').hidden=!productionSource;if($('productionFold'))$('productionFold').hidden=!productionSource;if($('log'))$('log').hidden=!productionSource;
     $('recordProduction').disabled=busy||empty||pendingQuantities.size>0||!!validationError;
     $('name').readOnly=!!productionSource;$('saveAsNew').disabled=busy||!!productionSource;
     if($('saveHint'))$('saveHint').textContent=productionSource?'':recipe.id?'「更新配方」會取代目前保存的內容；想保留原本的做法，請按「另存新配方」。':empty?'':'儲存後會出現在「配方庫」，之後可更新或另存。';
