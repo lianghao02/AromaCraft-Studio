@@ -4,7 +4,7 @@ const client=fs.readFileSync(path.join(src,'Client.html'),'utf8'),index=fs.readF
 // 為什麼需要這個測試：client.test.cjs 的假 DOM 會自動造出任何 id，Client 引用了真實頁面沒有的元素時，測試完全看不出來
 // （曾發生：`#blank` 只在測試裡存在，真實頁面沒有按鈕，使用者無法清空重來）。拆檔或搬移程式碼後也靠它確認元素沒漏。
 // 遺留的選用元素：Client 以 `if ($('id'))` 保護，頁面沒有這些元素時會直接略過。新增項目前請先確認真的需要，優先把元素加進 Index.html。
-const LEGACY_OPTIONAL=['modeFormulate','modeCost','gotoSaved','manageMaterialsBtn','quickNewMaterial','btnReturnFormulate','backToSelection','save'];
+const LEGACY_OPTIONAL=['modeFormulate','modeCost','gotoSaved','manageMaterialsBtn','quickNewMaterial','btnReturnFormulate','save'];
 const inIndex=new Set([...index.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
 const generated=new Set([...client.matchAll(/\bid="([A-Za-z0-9_-]+)"/g)].map(m=>m[1]));
 for(const m of client.matchAll(/input\('[^']*','([A-Za-z0-9_-]+)'/g))generated.add(m[1]);
