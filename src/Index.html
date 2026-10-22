@@ -50,7 +50,7 @@
         </li>
         <li class="guide-step" data-step="2" tabindex="0" role="button" aria-label="第 2 步：調原料與比例">
           <span class="step-num">2</span>
-          <div class="step-content"><strong>調原料與比例</strong><p>先多選原料，再集中填寫用量；可返回調整並復原移除。</p></div>
+          <div class="step-content"><strong>調原料與比例</strong><p>點原料加入，直接在已選列填用量；可復原移除。</p></div>
         </li>
         <li class="guide-step" data-step="3" tabindex="0" role="button" aria-label="第 3 步：看成本並儲存">
           <span class="step-num">3</span>
@@ -74,7 +74,7 @@
       
     </div></details>
 
-    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">可多選，選好後集中填用量</small></summary><div class="fold-body">
+    <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">點原料加入，直接在已選列填用量</small></summary><div class="fold-body">
       <div id="pickSide" class="pick-side"><h3 id="selectedItemsTitle">已選原料</h3><div id="selectedItems" class="recipe-list"></div><div id="selectionUndo" hidden><span id="selectionUndoText"></span><button type="button" id="undoSelection">復原移除</button></div><p id="quantityError" role="alert" hidden></p>
       <details id="ylCatalog" class="yl-catalog"><summary>悠樂芳精油目錄與成本試算</summary><p class="muted">官網批發價估算（內建快照，不會即時連線官網），含稅未含運費。每 mL 計算；此區只算精油，不含基底與包材，也不併入目前 g 重量配方。試算清單重新整理會重設。</p><label>搜尋精油或商品編號<input id="ylSearch" type="search" placeholder="例如：薰衣草、乳香"></label><div id="ylCategories" class="chips" aria-label="悠樂芳分類"></div><label class="check"><input id="ylPending" type="checkbox">顯示容量或價格待補品項</label><p id="ylCount" role="status"></p><div id="ylCards" class="yl-grid"></div><button id="ylMore" type="button">再顯示 24 筆</button><div class="yl-estimate"><h3>本次精油用量</h3><div id="ylChosen"></div><strong id="ylTotal" role="status" aria-live="polite"></strong><button id="ylClear" type="button">清空精油試算</button></div></details>
       <section id="planner" class="planner" aria-label="調配方式"><details id="plannerAdvanced" class="advanced"><summary id="plannerSummary">進階：調配方式（點此更改）</summary><div class="fields"><label>調配方式<select id="planningMode"><option value="free">自由填量</option><option value="target">依目標調配</option></select></label></div></details><div id="targetFields" hidden><div class="fields"><label>目標總量<input id="planningTotal" type="number" min="0.000001" step="any" inputmode="decimal"></label><label>總量單位<select id="planningBasis"><option value="mL">mL（容量）</option><option value="g">g（重量）</option></select></label><label>目標精油濃度（%）<input id="planningPercent" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>自動補足原料<select id="planningBase"><option value="">選擇補足原料</option></select></label></div><p id="targetProgress" role="status"></p><small>自行分配各瓶精油滴數；超過目標會提醒，仍可儲存。目標是包含精油的成品總量。</small></div></section>
@@ -281,9 +281,9 @@
     <section class="help-block">
       <h3>🌿 三步驟完成配方試算</h3>
       <ol class="help-list">
-        <li><strong>選製作類別</strong>：先選預計製作的類別，儲存後可在配方庫依類別查找。</li>
-        <li><strong>選原料與填用量</strong>：可一次勾選多種原料，再按「填寫用量」集中輸入。確認時顯示可計算的精油濃度；換算不足時會提示補資料。</li>
-        <li><strong>看成本並儲存</strong>：先在設定頁準備材料價格與包材費，現場只調用量、看大約成本、儲存。請核對材料、用量與做法。</li>
+        <li><strong>選製作類別</strong>：點一個類別，會直接進入下一步；儲存後可在配方庫依類別查找。</li>
+        <li><strong>選原料與填用量</strong>：點原料加入，直接在「已選原料」那一列填用量與單位。底部會顯示已選項數與精油濃度，填完按「下一步」；換算不足時會提示補資料。</li>
+        <li><strong>看成本並儲存</strong>：先在設定頁準備材料價格與包材費，現場只調用量、看成本、儲存。請核對材料、用量與做法。製作紀錄在配方庫下方。</li>
       </ol>
     </section>
 

@@ -69,7 +69,7 @@
       if(picker?.dataset)picker.dataset.manage=String(target==='tabManage');
       if(target==='tabManage'){picker.open=true;switchManage('manageBasics');}
       if($('materialPickerTitle'))$('materialPickerTitle').textContent=target==='tabManage'?'原料與價格':'2 選原料與調整用量';
-      if($('materialPickerHint'))$('materialPickerHint').textContent=target==='tabManage'?'點卡片編輯名稱、容量與價格':'可多選，選好後集中填用量';
+      if($('materialPickerHint'))$('materialPickerHint').textContent=target==='tabManage'?'點卡片編輯名稱、容量與價格':'點原料加入，直接在已選列填用量';
     }
     const tabMap = [
       ['tabRecipe', 'viewRecipe'],
@@ -165,7 +165,7 @@
     if($('recipeTypeSelect')){$('recipeTypeSelect').value=AromaCore.categoryOf(recipe.type);$('recipeTypeSelect').disabled=!!recipe.id||!!productionSource;$('recipeTypeSelect').title=recipe.id?'已儲存的配方不能改類型；要換類型請另存新配方':'';}
     $('draftState').textContent = productionSource?'實際製作中':empty ? '未加入原料' : dirty ? '尚有未儲存變更' : recipe.id ? '已儲存' : '尚未儲存';
     const saveTxt = busy ? '處理中…' : recipe.id ? '更新配方' : '儲存配方';
-    if(pendingQuantities.size){$('concentrationValue').textContent='尚有 '+pendingQuantities.size+' 項用量待填';$('concentrationMessage').textContent='請返回第 2 步完成用量後再確認濃度。';$('panelCost').textContent='—';$('summaryCost').textContent='—';$('panelWeight').textContent='用量尚未完整，暫不顯示總成本。';}
+    if(pendingQuantities.size){$('concentrationValue').textContent='尚有 '+pendingQuantities.size+' 項用量待填';$('concentrationMessage').textContent='請先在步驟 2 填完用量，再確認濃度。';$('panelCost').textContent='—';$('summaryCost').textContent='—';$('panelWeight').textContent='用量尚未完整，暫不顯示總成本。';}
     const saveDis = !!productionSource || busy || !data || empty || pendingQuantities.size>0 || !!validationError || (!!recipe.id && !dirty);
     $('quickSave').textContent = saveTxt;
     $('quickSave').disabled = saveDis;
