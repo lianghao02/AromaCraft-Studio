@@ -825,4 +825,68 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
   #viewRecipe.stepflow[data-step="2"] .step-bar{position:static;order:99;margin:10px 0 0;padding:10px 0 0;background:none;border:0;border-top:2px solid var(--line);border-radius:0;box-shadow:none}
   #viewRecipe.stepflow #materials{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+/* --- 步驟 3：成本與濃度在上、基本資料與原料明細在下、儲存固定可見 --- */
+#viewRecipe.stepflow #recipeWorkspace{max-width:none;width:100%;margin:0;padding:0;display:block}
+#viewRecipe.stepflow #recipePanel{border:0;box-shadow:none;background:transparent;padding:0;margin:0;max-width:none}
+#viewRecipe.stepflow #recipePanel>summary{display:flex;justify-content:flex-end;list-style:none;padding:0 0 8px;min-height:0;background:none;border:0}
+#viewRecipe.stepflow #recipePanel>summary>div:first-child{display:none}
+#viewRecipe.stepflow #recipePanel>summary #draftState{font-size:13px;color:var(--muted)}
+#recipePanel .confirm-grid{display:flex;flex-direction:column;gap:14px}
+#recipePanel .confirm-side{display:contents}
+#recipePanel .confirm-cost{order:1}
+#recipePanel .confirm-conc{order:2}
+#recipePanel #formulaBar{order:3}
+#recipePanel #costPill{display:none}
+#recipePanel .confirm-main{order:4;min-width:0}
+#recipePanel .confirm-actions{order:5}
+#recipePanel .confirm-cost #costPanel{margin:0;padding:14px 16px;border:2px solid var(--green);border-radius:16px;background:var(--green-soft);box-shadow:none}
+#recipePanel .confirm-cost #costPanel h3{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--muted)}
+#recipePanel .confirm-cost #costPanel .fold-body{padding:0}
+#recipePanel .confirm-cost #costPanel .panel-save-card{padding:0;margin:0;border:0;background:none;box-shadow:none}
+#recipePanel #panelCost{display:block;font-size:clamp(20px,6vw,28px);line-height:1.2;color:var(--green)}
+#recipePanel #panelWeight{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+#recipePanel .confirm-conc .concentration-panel{margin:0;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;box-shadow:none}
+#recipePanel .confirm-conc .concentration-panel h3{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--muted)}
+#recipePanel #concentrationValue{font-size:18px}
+#recipePanel .confirm-main .recipe-settings{margin:0 0 14px;padding:0;border:0}
+#recipePanel .confirm-main .settings-title,#recipePanel .items-title{margin:0 0 8px;font-size:17px}
+#recipePanel .items-title{margin-top:6px}
+#recipePanel .confirm-main .recipe-actions-bar{margin:10px 0 14px}
+#recipePanel #addMaterials{width:100%;min-height:44px;border-style:solid}
+#recipePanel #moreSettings>summary{min-height:48px;display:flex;align-items:center;font-size:15px;font-weight:700;color:var(--green)}
+#recipePanel #moreSettings .more-block{margin:0 0 14px}
+#recipePanel #moreSettings .more-block h3,#recipePanel #costDetails h3{margin:0 0 8px;font-size:15px}
+#recipePanel #moreSettings .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+#recipePanel .danger-text{color:var(--red);border-color:#d88981}
+#recipePanel .confirm-actions .panel-save-actions{display:flex;gap:10px;align-items:stretch;margin:0}
+#recipePanel .confirm-actions .panel-save-actions button{flex:1 1 0;min-height:52px;font-size:16px}
+#recipePanel #saveHint{margin:6px 0 0;font-size:13px}
+@media(min-width:1024px){
+  #recipePanel .confirm-grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+  #recipePanel .confirm-main{grid-column:1;grid-row:1;order:0}
+  #recipePanel .confirm-side{display:flex;flex-direction:column;gap:14px;grid-column:2;grid-row:1;position:sticky;top:12px}
+  #recipePanel .confirm-side>*{order:0}
+}
+#recipePanel #moreSettings>summary::before{content:"▸ ";color:var(--green)}
+#recipePanel #moreSettings[open]>summary::before{content:"▾ "}
+@media(max-width:767px){#recipePanel #panelQuickSave{display:none}}
+#viewRecipe.stepflow #recipeWorkspace #recipePanel{border:0;box-shadow:none;background:transparent;padding:0;margin:0}
+#viewRecipe.stepflow #recipePanel>summary{padding:0 0 6px;min-height:0;margin:0}
+#viewRecipe.stepflow #recipePanel>summary::marker,#viewRecipe.stepflow #recipePanel>summary::-webkit-details-marker{content:"";display:none}
+#viewRecipe.stepflow #recipePanel>summary .recipe-head-actions{margin:0}
+#viewRecipe.stepflow #recipePanel>summary.section-head{display:flex;justify-content:flex-end;align-items:center}
+@media(min-width:768px){#viewRecipe.stepflow #materialBrowse>.fields button{white-space:nowrap}}
+#manageMaterialSlot #newMaterial{white-space:nowrap}
+/* --- 配方庫：卡片多欄、桌機不再單張拉滿 --- */
+#viewSaved .saved-category{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 18px}
+#viewSaved .saved-category>h2{grid-column:1/-1;margin:0;font-size:18px}
+#viewSaved .saved-row{margin:0;padding:14px;background:#fff;border:2px solid var(--line);border-radius:14px}
+#viewSaved .saved-row h3{margin:0 0 4px;font-size:17px}
+#viewSaved .saved-row p{margin:0 0 4px}
+#viewSaved .saved-recipe-summary{font-size:14px;color:var(--muted)}
+@media(min-width:700px){#viewSaved .saved-category{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
+#viewSaved #recipeSearch{width:100%}
+@media(min-width:1024px){#viewSaved #savedPanel,#viewSaved .panel-card{max-width:none}}
+#viewRecipe.stepflow #recipeWorkspace{border:0;box-shadow:none;background:none;border-radius:0}
+#viewRecipe.stepflow #recipePanel>summary::before,#viewRecipe.stepflow #recipePanel>summary::after{content:none;display:none}
 </style>
