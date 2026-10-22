@@ -89,3 +89,37 @@ test('版面規則：每個步驟只顯示自己的面板；桌機步驟 2、3 �
   assert.deepEqual(small,[],'v2 樣式不得出現小於 12px 的字級');
   assert.match(styles,/\.stepper-btn\{[^}]*min-height:4[48]px/,'進度按鈕點擊區至少 44px');
 });
+
+async function targetSetup(count){
+  const {node,tick,works,h}=await boot();
+  await works[1].onclick();await tick();await tick();
+  const bs=h.call('bootstrap').value;
+  const oilIds=bs.materials.filter(m=>m.category==='精油'&&bs.prices.some(p=>p.materialId===m.id&&p.unit==='mL')).slice(0,count).map(m=>m.id);
+  assert.equal(oilIds.length,count,'內建目錄需至少有 '+count+' 種以 mL 採購的精油');
+  const choose=id=>node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:id}}:null}});
+  oilIds.forEach(choose);choose('demo-oil');
+  node('planningMode').value='target';node('planningBasis').value='mL';node('planningTotal').value='100';node('planningPercent').value='1';node('planningBase').value='demo-oil';node('planningMode').onchange();
+  return {node,oilIds};
+}
+
+test('精油平均分配：10 種精油、1% × 100 mL ＝ 20 滴，每種 2 滴，基底補足 99 mL',async()=>{
+  const {node,oilIds}=await targetSetup(10);
+  assert.ok(node('evenOils'),'規劃區需有「精油平均分配」按鈕');
+  node('evenOils').onclick();
+  const items=node('items').innerHTML;
+  assert.equal((items.match(/<span>2 滴 ·/g)||[]).length,10,'10 種精油各 2 滴');
+  assert.match(items,/99 mL/);
+  assert.match(node('targetProgress').textContent,/已分配 20／約 20 滴/);
+  assert.match(node('concentrationValue').textContent,/1\.00%/);
+  assert.equal(node('stepBtn3').disabled,false,'平均分配後沒有待填用量');
+  void oilIds;
+});
+
+test('精油平均分配：不能整除時餘數由前面幾種各多 1 滴，總滴數仍等於目標',async()=>{
+  const {node}=await targetSetup(3);
+  node('evenOils').onclick();
+  const drops=[...node('items').innerHTML.matchAll(/<span>(\d+) 滴 ·/g)].map(m=>Number(m[1]));
+  assert.deepEqual(drops,[7,7,6]);
+  assert.equal(drops.reduce((a,b)=>a+b,0),20);
+  assert.match(node('targetProgress').textContent,/已分配 20／約 20 滴/);
+});

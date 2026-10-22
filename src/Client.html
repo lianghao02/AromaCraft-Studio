@@ -842,6 +842,32 @@
       $('targetProgress').textContent=(r.issues.length?'缺少換算資料，尚無法核對分配':r.targetDrops!==null?'已分配 '+fmt(r.drops)+'／約 '+fmt(r.targetDrops)+' 滴（依原料換算估算）':'已分配 '+fmt(r.allocated)+'／'+fmt(r.budget)+' '+r.basis+' 精油')+(r.over?'；已超過目標，仍可儲存':'')+(r.missingBase?'；請選擇補足原料':'');
     }catch(e){$('targetProgress').textContent=e.message;}
   }
+  // 依目標調配時，把目標精油量平均分給已選精油；滴數取整，餘數從前面幾支各多 1 滴
+  function evenOils(){
+    try{
+      readInputs();
+      const r=AromaCore.targetProgress(recipe,data.materials,data.prices);if(!r)return;
+      const oils=recipe.items.filter(i=>data.materials.find(m=>m.id===i.materialId)?.category==='精油');
+      if(!oils.length){notice('請先加入精油。',true);return;}
+      if(r.issues.length){notice('部分原料缺少換算資料，無法平均分配。',true);return;}
+      const n=oils.length;let shares,unit,text;
+      if(r.targetDrops!==null){
+        const total=Math.round(r.targetDrops),base=Math.floor(total/n),rest=total-base*n;
+        shares=oils.map((_,i)=>base+(i<rest?1:0));unit='滴';
+        text='已平均分配：'+n+' 種精油共 '+total+' 滴'+(rest?'（前 '+rest+' 種各多 1 滴）':'，每種 '+base+' 滴')+'。';
+      }else{
+        const each=Math.round(r.budget/n*1e4)/1e4;shares=oils.map(()=>each);unit=r.basis;
+        text='已平均分配：'+n+' 種精油每種 '+each+' '+unit+'。';
+      }
+      for(const [k,o] of oils.entries()){
+        const price=AromaCore.itemPrice(o,data.prices),category=data.materials.find(m=>m.id===o.materialId)?.category;
+        if(!AromaCore.availableUnits(price,category).includes(unit)){notice((data.materials.find(m=>m.id===o.materialId)?.name||'原料')+' 無法以「'+unit+'」填寫，請改手動分配。',true);return;}
+        commitQuantity(o.materialId,String(shares[k]),unit);
+      }
+      renderRecipe();notice(text);
+    }catch(e){fail(e);}
+  }
+  if($('evenOils'))$('evenOils').onclick=evenOils;
   function changePlanning(){try{if(recipe.planning?.mode==='target'&&$('planningMode').value==='free'){const prepared=AromaCore.prepare(recipe,data.materials,data.prices,data.packages||[]),factor=recipe.planning.sizing==='perUnit'?Number(recipe.units):1;recipe.items=prepared.items.map(i=>({...i,quantity:i.quantity/factor}));}readInputs();draft();$('targetFields').hidden=recipe.planning.mode!=='target';renderRecipe();}catch(e){notice(e.message,true);}}
   for(const id of ['planningMode','sizingMode','planningBasis','planningBase','recipePackaging'])$(id).onchange=changePlanning;
   for(const id of ['planningTotal','planningPercent'])$(id).onchange=changePlanning;
