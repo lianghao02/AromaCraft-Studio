@@ -57,7 +57,7 @@
     }
   }
 
-  let recipePickerOpen=false, quantityQueue=[], quantityPosition=0, quantityMode=false;
+  let recipePickerOpen=false, quantityQueue=[], quantityPosition=0;
   const pendingQuantities=new Set(), removedSelections=new Map();
   function switchTab(target) {
     const picker=$('materialPicker'), owner=$(target==='tabManage'?'manageMaterialSlot':'viewRecipe');
@@ -174,8 +174,7 @@
     }
     $('workLabel').textContent = empty&&!recipe.id?'1 選製作類別':'1 製作類別 · '+AromaCore.categoryOf(recipe.type);
     if($('summaryBar'))$('summaryBar').hidden=$('viewRecipe').hidden||!$('recipePanel').open||$('materialPicker').open||empty;
-    if($('selectionStatus'))$('selectionStatus').textContent='已選 '+recipe.items.length+' 項'+(pendingQuantities.size?' · '+pendingQuantities.size+' 項待填用量':'');
-    if($('fillQuantities')){$('fillQuantities').disabled=busy||empty;$('fillQuantities').textContent=quantityMode?'返回選原料':'填寫用量（'+recipe.items.length+' 項） →';$('fillQuantities').className=quantityMode?'return-btn':'primary return-btn';}
+    if($('selectionStatus'))$('selectionStatus').textContent='已選 '+recipe.items.length+' 項'+(pendingQuantities.size?' · 待填 '+pendingQuantities.size+' 項':'');
     for(const id of ['returnToRecipe'])if($(id)){$(id).textContent='填寫用量（'+recipe.items.length+' 項） →';$(id).disabled=busy||empty;}
     stepperSync();
   }
@@ -261,7 +260,7 @@
       if(r.basis&&!recipe.concentration?.maxPercent)$('limitBasis').value=r.basis;
       const value=r.noOil?'未加入精油':r.available?(r.basis==='mL'||r.densityEstimated?'約 ':'')+r.percent.toFixed(2)+'% · '+(r.basis==='g'?(r.densityEstimated?'重量估算':'重量百分比'):'容量估算'):r.dropsPer100g!==null?'每 100 g 基底 '+fmt(r.dropsPer100g)+' 滴 · 添加比例':r.oilMl>0&&r.baseG>0?'精油 '+fmt(r.oilMl)+' mL／基底 '+fmt(r.baseG)+' g · 添加量':r.drops>0&&!r.allOilDropsKnown?'已知 '+fmt(r.drops)+' 滴 · 尚未完整換算':'尚無法算百分比';
       $('concentrationValue').textContent=r.available?recipe.name+' · '+value:r.noOil?'未加入精油':'濃度資料不足';$('concentrationMessage').textContent=r.available?'':r.noOil?'':'換算資料不足，請展開下方說明補齊。';$('concentrationDetailsMessage').textContent=r.message;
-      $('pickerConcentrationValue').textContent=value;$('pickerConcentrationMessage').textContent=r.message+(recipe.items.some(i=>{const p=data.prices.filter(p=>p.materialId===i.materialId).at(-1);return p?.densityEstimated===true||p?.densityEstimated==='TRUE';})?' 含原料估算密度。':'');
+      $('pickerConcentrationValue').textContent=value;$('pickerConcentrationMessage').textContent=(r.message===value+'。'?'':r.message)+(recipe.items.some(i=>{const p=data.prices.filter(p=>p.materialId===i.materialId).at(-1);return p?.densityEstimated===true||p?.densityEstimated==='TRUE';})?' 含原料估算密度。':'');
       $('pickerConcentrationIssues').innerHTML=(r.issues||[]).map(x=>x.kind==='density'?'<button type="button" data-density="'+escape(x.materialId)+'">補 '+escape(x.name)+' 的密度</button>':'<button type="button" data-item="'+escape(x.materialId)+'">補 '+escape(x.name)+' 的用量資料</button>').join('');
       $('workBasis').textContent=(r.basis||recipe.concentration?.basis)==='g'?'重量配方 · g':'容量配方 · mL';
     }catch(e){$('concentrationValue').textContent='比例待確認';$('concentrationMessage').textContent=e.message;$('pickerConcentrationValue').textContent='比例待確認';$('pickerConcentrationMessage').textContent=e.message;}
@@ -398,7 +397,7 @@
     const next = await rpc('bootstrap');
     data = next; draftKey = 'aromacraft-draft-v1:' + data.email;
     if(!window.AROMA_LOCAL)$('connection').textContent = (window.AROMA_DEMO ? '本機示範 · 不會存入 Google Sheets · ' : '家庭資料已連線 · ') + data.email + ' · ' + data.serverTime;
-    if (!recipe || !preserve) {recipe = blank('其他');pendingQuantities.clear();removedSelections.clear();quantityMode=false;$('workPanel').open=true;$('materialPicker').open=false;$('recipePanel').open=false;}
+    if (!recipe || !preserve) {recipe = blank('其他');pendingQuantities.clear();removedSelections.clear();$('workPanel').open=true;$('materialPicker').open=false;$('recipePanel').open=false;}
     renderMaterials(); renderSaved(); renderRecipe();
     if($('catalogSnapshotInfo')&&typeof AromaCatalog!=='undefined')$('catalogSnapshotInfo').textContent='目前內建官網價格快照：'+(AromaCatalog.snapshotDate||'未知')+'（要更新價格時，按「更新官網價格」複製提示詞給 AI 即可）。';
     autoApplyCatalog();
@@ -503,7 +502,7 @@
   }
   async function replace(next) {
     if (dirty && !await confirmChange('切換配方？','目前有未儲存的修改，要放棄並切換到「'+next.type+'」嗎？','放棄並切換')) return false;
-    productionSource=null;recipe = next; pendingQuantities.clear();removedSelections.clear();$('selectionUndo').hidden=true;quantityMode=false;draft(); renderRecipe();
+    productionSource=null;recipe = next; pendingQuantities.clear();removedSelections.clear();$('selectionUndo').hidden=true;draft(); renderRecipe();
     return true;
   }
   document.querySelectorAll('.work').forEach(b => b.onclick = async () => {
@@ -620,18 +619,18 @@
   if(window.visualViewport&&window.visualViewport.addEventListener){const initialHeight=window.visualViewport.height;window.visualViewport.addEventListener('resize',()=>document.documentElement.classList.toggle('keyboard-open',window.innerWidth<768&&window.visualViewport.height<initialHeight*.72));}
   $('pickerConcentrationIssues').onclick=e=>{const d=e.target.closest('[data-density]');if(d)return editMaterial(d.dataset.density,null,{openDensity:true});const b=e.target.closest('[data-item]');if(b)editItem(b.dataset.item);};
   function renderSelected(){
-    const managing=$('materialPicker').dataset?.manage==='true';$('planner').hidden=managing;$('liveConcentration').hidden=managing;
-    $('quantityStage').hidden=!quantityMode;$('confirmQuantities').hidden=!quantityMode;$('quantityAdvanced').hidden=!quantityMode;
-    if($('materialBrowse'))$('materialBrowse').hidden=quantityMode&&!managing;
-    $('selectedItemsTitle').textContent=quantityMode?'填寫各項用量':'已選原料';
-    $('selectedItems').innerHTML=recipe.items.length?recipe.items.map(i=>{
+    const managing=$('materialPicker').dataset?.manage==='true';$('planner').hidden=managing;$('liveConcentration').hidden=managing||!recipe.items.length;
+    // 步驟 2 一律直接在已選列填用量（不再有「先勾選、再集中填量」兩段）
+    const has=recipe.items.length>0&&!managing;
+    $('confirmQuantities').hidden=!has;$('quantityAdvanced').hidden=!has;
+    if($('materialBrowse'))$('materialBrowse').hidden=false;
+    $('selectedItemsTitle').hidden=!has;$('selectedItemsTitle').textContent='已選原料（'+recipe.items.length+'）';
+    $('selectedItems').innerHTML=has?recipe.items.map(i=>{
       const m=data.materials.find(m=>m.id===i.materialId),p=AromaCore.itemPrice(i,data.prices),name=m?AromaCatalog.materialInfo(m,p).name:'原料不存在',id=escape(i.materialId),unit=i.unit||'g',pending=pendingQuantities.has(i.materialId);
-      if(!quantityMode)return '<div class="selected-material-chip"><span>'+escape(name)+'<small>'+(pending?'待填用量':fmt(i.quantity??i.grams)+' '+escape(unit))+'</small></span><button type="button" data-unselect="'+id+'" aria-label="取消勾選 '+escape(name)+'">✕</button></div>';
-      return '<div class="quantity-row"><strong>'+escape(name)+'</strong><div class="quantity-fields"><label for="quantity-'+id+'">使用量<span class="qty-stepper"><button type="button" class="step-btn" data-step="-'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="減少 '+escape(name)+' 用量">－</button><input id="quantity-'+id+'" data-quantity="'+id+'" type="number" min="0" step="'+(unit==='滴'?'1':'any')+'" inputmode="'+(unit==='滴'?'numeric':'decimal')+'" value="'+(pending?'':escape(i.quantity??i.grams))+'" aria-label="'+escape(name)+' 使用量" placeholder="用量" enterkeyhint="next" aria-describedby="quantity-error-'+id+'"><button type="button" class="step-btn" data-step="'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="增加 '+escape(name)+' 用量">＋</button></span></label><label>單位<select id="quantity-unit-'+id+'" data-quantity-unit="'+id+'" aria-label="'+escape(name)+' 單位">'+[...new Set([...AromaCore.availableUnits(p,m.category),unit])].map(u=>'<option'+(u===unit?' selected':'')+'>'+escape(u)+'</option>').join('')+'</select></label></div><p id="quantity-error-'+id+'" class="quantity-error" role="status"></p>'+(m.category==='基底油'&&AromaCore.metadata(p).density===null?'<small>要改用 '+(AromaCore.nativeBasis(p)==='g'?'mL':'g')+' 填寫？<button type="button" data-density="'+id+'">補密度</button></small>':'')+(m.category==='精油'?'<small>'+(AromaCore.availableUnits(p,m.category).includes('滴')?'以滴輸入，預設20滴／mL估算；更改單位會保留數字。':'這筆精油以重量採購，需有容量換算資料才能使用滴數。')+'</small>':'')+'<div class="quantity-row-actions"><button type="button" data-item="'+id+'">換算設定</button><button type="button" data-unselect="'+id+'">移除</button></div></div>';
-    }).join(''):'<p class="empty">先勾選需要的原料，再集中填用量。</p>';
+      return '<div class="quantity-row"><strong>'+escape(name)+'</strong><div class="quantity-fields"><label for="quantity-'+id+'">使用量<span class="qty-stepper"><button type="button" class="step-btn" data-step="-'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="減少 '+escape(name)+' 用量">－</button><input id="quantity-'+id+'" data-quantity="'+id+'" type="number" min="0" step="'+(unit==='滴'?'1':'any')+'" inputmode="'+(unit==='滴'?'numeric':'decimal')+'" value="'+(pending?'':escape(i.quantity??i.grams))+'" aria-label="'+escape(name)+' 使用量" placeholder="用量" enterkeyhint="next" aria-describedby="quantity-error-'+id+'"><button type="button" class="step-btn" data-step="'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="增加 '+escape(name)+' 用量">＋</button></span></label><label>單位<select id="quantity-unit-'+id+'" data-quantity-unit="'+id+'" aria-label="'+escape(name)+' 單位">'+[...new Set([...AromaCore.availableUnits(p,m.category),unit])].map(u=>'<option'+(u===unit?' selected':'')+'>'+escape(u)+'</option>').join('')+'</select></label></div><p id="quantity-error-'+id+'" class="quantity-error" role="status"></p>'+(m.category==='基底油'&&AromaCore.metadata(p).density===null?'<small>要改用 '+(AromaCore.nativeBasis(p)==='g'?'mL':'g')+' 填寫？<button type="button" data-density="'+id+'">補密度</button></small>':'')+(m.category==='精油'?'<small class="qty-hint">'+(AromaCore.availableUnits(p,m.category).includes('滴')?'以滴輸入，預設20滴／mL估算；更改單位會保留數字。':'這筆精油以重量採購，需有容量換算資料才能使用滴數。')+'</small>':'')+'<div class="quantity-row-actions"><button type="button" data-item="'+id+'">換算設定</button><button type="button" data-unselect="'+id+'">移除</button></div></div>';
+    }).join(''):'';
     updateTargetProgress();
   }
-  function setQuantityMode(value){readInputs();quantityMode=value;$('quantityError').hidden=true;$('materialPicker').open=true;$('recipePanel').open=false;renderSelected();updateState();$('selectedItemsTitle').scrollIntoView({block:'start'});}
   function removeSelection(id){
     if(recipe.baseId===id&&recipe.targetQuantity){notice('請先取消補足原料，再取消勾選。',true);return;}
     const item=recipe.items.find(i=>i.materialId===id);if(!item)return;
@@ -670,7 +669,6 @@
     if(!pendingQuantities.size){$('quantityError').hidden=true;$('quantityError').textContent='';return;}
     if(force||!$('quantityError').hidden){$('quantityError').hidden=false;$('quantityError').textContent=[...pendingQuantities].map(id=>{const m=data.materials.find(m=>m.id===id),name=m?AromaCatalog.materialInfo(m).name:'原料';return name+'：'+($('quantity-error-'+id)?.textContent||'請填寫用量');}).join('；');}
   }
-  $('fillQuantities').onclick=()=>setQuantityMode(!quantityMode);if($('backToSelection'))$('backToSelection').onclick=()=>setQuantityMode(false);
   $('confirmQuantities').onclick=()=>{
     readInputs();
     for(const item of recipe.items){const input=$('quantity-'+item.materialId),unit=$('quantity-unit-'+item.materialId)?.value||item.unit||'g';if(input&&!(recipe.planning?.mode==='target'&&recipe.planning.baseId===item.materialId))commitQuantity(item.materialId,input.value,unit);}
@@ -778,7 +776,7 @@
     if(dirty && !await confirmChange('載入配方？','目前有未儲存的修改，要放棄並載入「'+(target?.name || '配方')+'」嗎？','放棄並載入')) return;
     return task(async()=>{
       productionSource=null;recipe=await rpc('loadRecipe',{id:b.dataset.load,version:Number(b.dataset.version),current:true});upgradePlanning();
-      dirty=false;pendingSave=null;pendingLog=null;pendingQuantities.clear();removedSelections.clear();quantityMode=false;
+      dirty=false;pendingSave=null;pendingLog=null;pendingQuantities.clear();removedSelections.clear();
       $('workPanel').open=false;
       switchTab('tabRecipe');
       renderRecipe();
@@ -797,7 +795,7 @@
     const s=draftStorage.getItem(draftKey); if(!s) return notice('此帳號沒有本機草稿。');
     const restored=JSON.parse(s);if(!Array.isArray(restored.items)||!restored.cost||!AromaCore.TYPES.includes(restored.type)) throw Error('草稿格式不正確');
     if(dirty && !await confirmChange('要恢復本機草稿嗎？','恢復草稿「'+restored.name+'」','取代目前修改')) return;
-    recipe=restored;productionSource=restored.uiProductionSource||null;delete recipe.uiProductionSource;pendingQuantities.clear();for(const id of restored.uiPendingQuantities||[])pendingQuantities.add(id);delete recipe.uiPendingQuantities;quantityMode=true;dirty=true;pendingSave=null;renderRecipe();notice('已恢復本機草稿，尚未存入雲端。');
+    recipe=restored;productionSource=restored.uiProductionSource||null;delete recipe.uiProductionSource;pendingQuantities.clear();for(const id of restored.uiPendingQuantities||[])pendingQuantities.add(id);delete recipe.uiPendingQuantities;dirty=true;pendingSave=null;renderRecipe();notice('已恢復本機草稿，尚未存入雲端。');
   }catch(e){fail(e);} };
   async function finishProduction(){
     if(!productionSource){if(dirty||!recipe.id)await save();beginProduction();notice('已帶入配方，可調整實際用量；做好後再按完成製作。');return;}
@@ -858,7 +856,7 @@
   function changePlanning(){try{if(recipe.planning?.mode==='target'&&$('planningMode').value==='free'){const prepared=AromaCore.prepare(recipe,data.materials,data.prices,data.packages||[]),factor=recipe.planning.sizing==='perUnit'?Number(recipe.units):1;recipe.items=prepared.items.map(i=>({...i,quantity:i.quantity/factor}));}readInputs();draft();$('targetFields').hidden=recipe.planning.mode!=='target';renderRecipe();}catch(e){notice(e.message,true);}}
   for(const id of ['planningMode','sizingMode','planningBasis','planningBase','recipePackaging'])$(id).onchange=changePlanning;
   for(const id of ['planningTotal','planningPercent'])$(id).onchange=changePlanning;
-  function beginProduction(){productionSource=JSON.parse(JSON.stringify(recipe));const prepared=AromaCore.prepare(recipe,data.materials,data.prices,data.packages||[]);recipe={...recipe,items:prepared.items.map(i=>({...i})),planning:{...recipe.planning,mode:'free',sizing:'batch'}};dirty=false;pendingQuantities.clear();quantityMode=true;renderRecipe();$('workPanel').open=false;switchTab('tabRecipe');$('materialPicker').open=true;$('recipePanel').open=true;const details=$('recordProduction').closest?.('details');if(details)details.open=true;$('selectedItemsTitle').scrollIntoView({block:'start'});}
+  function beginProduction(){productionSource=JSON.parse(JSON.stringify(recipe));const prepared=AromaCore.prepare(recipe,data.materials,data.prices,data.packages||[]);recipe={...recipe,items:prepared.items.map(i=>({...i})),planning:{...recipe.planning,mode:'free',sizing:'batch'}};dirty=false;pendingQuantities.clear();renderRecipe();$('workPanel').open=false;switchTab('tabRecipe');$('materialPicker').open=true;$('recipePanel').open=true;const details=$('recordProduction').closest?.('details');if(details)details.open=true;$('selectedItemsTitle').scrollIntoView({block:'start'});}
   $('cancelProduction').onclick=async()=>{if(!productionSource)return;if(dirty&&!await confirmChange('返回原配方？','尚未完成的實際用量將捨棄，原配方不變。','返回原配方'))return;recipe=productionSource;productionSource=null;dirty=false;pendingQuantities.clear();renderRecipe();};
   $('saveAsNew').onclick=()=>task(async()=>{if(productionSource)throw Error('請先完成製作或返回原配方');recipe={...recipe,id:'',version:0,name:recipe.name+'（副本）'};draft();renderRecipe();await save();});
   function editPackage(id){const p=(data.packages||[]).find(p=>p.id===id)||{id:uid(),name:'',price:''};openEditor(id?'編輯包材':'新增包材',input('包材名稱（含整套用品）','packageName',p.name,'text','required maxlength="100"')+input('每份整套費用（NT$）','packagePrice',p.price,'number','required min="0" step="any"'),()=>task(async()=>{await rpc('savePackage',{...p,name:$('packageName').value,price:$('packagePrice').value,requestId:uid()});$('editor').close();await refresh();notice('包材已儲存，配方採最新單價，歷史製作成本保留。');}));}

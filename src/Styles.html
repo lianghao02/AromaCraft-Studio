@@ -720,7 +720,7 @@ button,[role="button"],select,summary,label,input,.material-card,.step-btn{touch
 #toggleWork,#blank{min-height:44px}
 #closeNotice{position:relative}#closeNotice::before{content:"";position:absolute;inset:-8px}
 @media(max-width:767px){body.kb-open #summaryBar,body.kb-open #primaryNav{display:none!important}}
-@media(prefers-reduced-motion:reduce){.material-card,button,.step-btn{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.material-card,button,.step-btn,.stepper-btn{transition:none!important}}
 /* 更新官網價格：提示詞對話框 */
 #promptDialog{width:min(92vw,640px);max-height:90vh;overflow:auto}
 #promptDialog textarea{width:100%;min-height:240px;font-size:13px;line-height:1.5;font-family:ui-monospace,Menlo,Consolas,'Microsoft JhengHei UI',monospace;box-sizing:border-box}
@@ -734,15 +734,15 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 .help-btn{min-height:36px;padding:4px 12px;font-size:13px}
 .sync-capsule{min-height:36px;padding:4px 12px;font-size:13px}
 @media(min-width:600px){.brand small{display:block;font-size:12px}header{padding:18px 24px 10px}}
-.stepper{display:flex;gap:6px;margin:0 0 10px;position:sticky;top:0;z-index:5;background:var(--cream);padding-top:6px}
-.step-btn{flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:6px 8px;font-size:15px;font-weight:700;color:var(--muted);background:transparent;border:0;border-bottom:4px solid #e4dccb;border-radius:0;box-shadow:none;transform:none}
-.step-btn b{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#e8e0cf;color:var(--ink);font-size:14px}
-.step-btn[data-state="active"]{color:var(--green);border-bottom-color:var(--green)}
-.step-btn[data-state="active"] b{background:var(--green);color:#fff}
-.step-btn[data-state="done"]{color:var(--ink);border-bottom-color:var(--green-light)}
-.step-btn[data-state="done"] b{background:var(--green-soft);color:var(--green)}
-.step-btn:disabled{opacity:.45;cursor:not-allowed}
-.step-btn:active:not(:disabled){transform:none;box-shadow:none;background:var(--green-soft)}
+.stepper{display:flex;gap:6px;margin:0 0 10px;position:sticky;top:0;z-index:5;background:var(--cream);padding:6px 0 2px;border-bottom:1px solid #e4dccb}
+.stepper-btn{flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:6px 8px;font-size:15px;font-weight:700;color:var(--muted);background:transparent;border:0;border-bottom:4px solid #e4dccb;border-radius:0;box-shadow:none;transform:none}
+.stepper-btn b{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#e8e0cf;color:var(--ink);font-size:14px}
+.stepper-btn[data-state="active"]{color:var(--green);border-bottom-color:var(--green)}
+.stepper-btn[data-state="active"] b{background:var(--green);color:#fff}
+.stepper-btn[data-state="done"]{color:var(--ink);border-bottom-color:var(--green-light)}
+.stepper-btn[data-state="done"] b{background:var(--green-soft);color:var(--green)}
+.stepper-btn:disabled{opacity:.45;cursor:not-allowed}
+.stepper-btn:active:not(:disabled){transform:none;box-shadow:none;background:var(--green-soft)}
 .step-head{margin:4px 0 12px}
 .step-head h2{margin:0 0 4px;font-size:22px}
 .step-head p{margin:0;font-size:14px}
@@ -772,4 +772,37 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
   #viewRecipe.stepflow .works{grid-template-columns:repeat(5,minmax(0,1fr))}
   #viewRecipe.stepflow .work:last-child:nth-child(odd){grid-column:auto}
 }
+/* --- 步驟 2：已選列在上、原料列表在下、底部固定摘要 --- */
+.step-bar{display:none}
+#viewRecipe.stepflow[data-step="2"] .step-bar{display:block;position:sticky;bottom:var(--mobile-nav-space);z-index:6;margin-top:12px;padding:10px 12px;background:#fffcf7;border:2px solid var(--wood-border);border-radius:16px;box-shadow:0 -4px 14px rgba(45,35,20,.12)}
+.step-bar #liveConcentration{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:0 0 6px;padding:0;border:0;background:none;box-shadow:none}
+.step-bar #liveConcentration h3{margin:0;font-size:14px;font-weight:600}
+.step-bar #liveConcentration #workBasis,.step-bar #liveConcentration>small{display:none}
+.step-bar #pickerConcentrationValue{font-size:16px}
+.step-bar #pickerConcentrationMessage{margin:0;font-size:12px;color:var(--muted)}
+.step-bar #pickerConcentrationMessage:empty{display:none}
+.step-bar-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.step-bar #selectionStatus{font-size:15px;font-weight:700;white-space:nowrap}
+.step-bar #confirmQuantities{margin:0;flex:1 1 auto;max-width:220px}
+#viewRecipe.stepflow #materialPicker .fold-body{padding:0}
+#viewRecipe.stepflow #planner{margin:0 0 10px;padding:0;border:0;background:none;box-shadow:none}
+#viewRecipe.stepflow #planner .advanced>summary{min-height:40px;padding:6px 0;font-size:14px;font-weight:600;color:var(--green);text-decoration:underline;text-underline-offset:3px}
+#viewRecipe.stepflow #selectedItemsTitle{margin:0 0 8px;font-size:17px}
+#viewRecipe.stepflow #selectedItems{margin-bottom:12px}
+#viewRecipe.stepflow #quantityAdvanced{margin:0 0 12px}
+#viewRecipe.stepflow #materialBrowse>.fields{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;margin:0 0 8px}
+#viewRecipe.stepflow #materialBrowse>.fields label{margin:0}
+#viewRecipe.stepflow #search{width:100%}
+#viewRecipe.stepflow #materialBrowse>.fields button{min-height:44px;white-space:nowrap}
+#viewRecipe.stepflow #materialCount{font-size:14px;margin:8px 0}
+@media(min-width:768px){#viewRecipe.stepflow[data-step="2"] .step-bar{bottom:12px}}
+/* 已選列：名稱與操作同一行，下一行是用量與單位 */
+#viewRecipe.stepflow #selectedItems .quantity-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;padding:12px;margin:0 0 10px;background:#fff;border:2px solid var(--line);border-radius:14px}
+#viewRecipe.stepflow #selectedItems .quantity-row>strong{grid-column:1;grid-row:1;font-size:16px}
+#viewRecipe.stepflow #selectedItems .quantity-row-actions{grid-column:2;grid-row:1;display:flex;gap:2px;margin:0}
+#viewRecipe.stepflow #selectedItems .quantity-row-actions button{min-height:44px;padding:0 8px;border:0;background:none;box-shadow:none;font-size:14px;font-weight:600;color:var(--green);text-decoration:underline;text-underline-offset:3px}
+#viewRecipe.stepflow #selectedItems .quantity-row-actions button[data-unselect]{color:var(--red)}
+#viewRecipe.stepflow #selectedItems .quantity-fields{grid-column:1/-1;grid-row:2;margin-top:0}
+#viewRecipe.stepflow #selectedItems .quantity-error,#viewRecipe.stepflow #selectedItems .quantity-row>small{grid-column:1/-1;margin:2px 0 0;font-size:13px}
+#viewRecipe.stepflow #selectedItems .qty-hint{display:none}
 </style>

@@ -29,9 +29,9 @@
   <div id="viewRecipe" class="tab-view stepflow" data-mode="share" data-step="1">
     <!-- 三步驟進度：由 Client 依三個面板的開合狀態同步，不另存狀態 -->
     <nav id="stepper" class="stepper" aria-label="配方步驟">
-      <button type="button" id="stepBtn1" class="step-btn" data-step="1"><b>1</b><span>類別</span></button>
-      <button type="button" id="stepBtn2" class="step-btn" data-step="2"><b>2</b><span>原料</span></button>
-      <button type="button" id="stepBtn3" class="step-btn" data-step="3"><b>3</b><span>確認</span></button>
+      <button type="button" id="stepBtn1" class="stepper-btn" data-step="1"><b>1</b><span>類別</span></button>
+      <button type="button" id="stepBtn2" class="stepper-btn" data-step="2"><b>2</b><span>原料</span></button>
+      <button type="button" id="stepBtn3" class="stepper-btn" data-step="3"><b>3</b><span>確認</span></button>
     </nav>
     <div class="step-head"><h2 id="stepTitle">你要做什麼？</h2><p id="stepHint" class="muted">選一個類別，會直接進入下一步；換類別時，已選的原料與用量會保留。</p></div>
     <!-- 頂部工作視圖雙模式切換（A+B 融合） -->
@@ -75,11 +75,13 @@
     </div></details>
 
     <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">可多選，選好後集中填用量</small></summary><div class="fold-body">
-      <section id="planner" class="planner" aria-label="調配方式"><details id="plannerAdvanced" class="advanced"><summary id="plannerSummary">進階：調配方式（點此更改）</summary><div class="fields"><label>調配方式<select id="planningMode"><option value="free">自由填量</option><option value="target">依目標調配</option></select></label></div></details><div id="targetFields" hidden><div class="fields"><label>目標總量<input id="planningTotal" type="number" min="0.000001" step="any" inputmode="decimal"></label><label>總量單位<select id="planningBasis"><option value="mL">mL（容量）</option><option value="g">g（重量）</option></select></label><label>目標精油濃度（%）<input id="planningPercent" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>自動補足原料<select id="planningBase"><option value="">選擇補足原料</option></select></label></div><p id="targetProgress" role="status"></p><small>自行分配各瓶精油滴數；超過目標會提醒，仍可儲存。目標是包含精油的成品總量。</small></div></section><div id="liveConcentration" class="concentration-panel picker-ratio"><strong id="workBasis"></strong><h3>精油濃度</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><small>精油濃度僅供參考，使用前請確認成分與用途是否適合。</small></div><div class="picker-top-bar"><span id="selectionStatus" role="status">先勾選原料，再集中填用量</span><button type="button" id="fillQuantities" class="primary return-btn">填寫用量</button></div><div id="quantityStage" hidden><p class="muted">在同一處填寫各項用量，單位依採購資料帶入。</p></div><h3 id="selectedItemsTitle">已選原料</h3><div id="selectedItems" class="recipe-list"></div><div id="selectionUndo" hidden><span id="selectionUndoText"></span><button type="button" id="undoSelection">復原移除</button></div><p id="quantityError" role="alert" hidden></p><button type="button" id="confirmQuantities" class="primary" hidden>確認用量與成本 →</button><details id="quantityAdvanced" class="advanced" hidden><summary>換算與實秤重量（選填）</summary><button type="button" id="returnToRecipe">逐項換算設定</button></details>
+      <h3 id="selectedItemsTitle">已選原料</h3><div id="selectedItems" class="recipe-list"></div><div id="selectionUndo" hidden><span id="selectionUndoText"></span><button type="button" id="undoSelection">復原移除</button></div><p id="quantityError" role="alert" hidden></p><details id="quantityAdvanced" class="advanced" hidden><summary>換算與實秤重量（選填）</summary><button type="button" id="returnToRecipe">逐項換算設定</button></details>
       <details id="ylCatalog" class="yl-catalog"><summary>悠樂芳精油目錄與成本試算</summary><p class="muted">官網批發價估算（內建快照，不會即時連線官網），含稅未含運費。每 mL 計算；此區只算精油，不含基底與包材，也不併入目前 g 重量配方。試算清單重新整理會重設。</p><label>搜尋精油或商品編號<input id="ylSearch" type="search" placeholder="例如：薰衣草、乳香"></label><div id="ylCategories" class="chips" aria-label="悠樂芳分類"></div><label class="check"><input id="ylPending" type="checkbox">顯示容量或價格待補品項</label><p id="ylCount" role="status"></p><div id="ylCards" class="yl-grid"></div><button id="ylMore" type="button">再顯示 24 筆</button><div class="yl-estimate"><h3>本次精油用量</h3><div id="ylChosen"></div><strong id="ylTotal" role="status" aria-live="polite"></strong><button id="ylClear" type="button">清空精油試算</button></div></details>
+      <section id="planner" class="planner" aria-label="調配方式"><details id="plannerAdvanced" class="advanced"><summary id="plannerSummary">進階：調配方式（點此更改）</summary><div class="fields"><label>調配方式<select id="planningMode"><option value="free">自由填量</option><option value="target">依目標調配</option></select></label></div></details><div id="targetFields" hidden><div class="fields"><label>目標總量<input id="planningTotal" type="number" min="0.000001" step="any" inputmode="decimal"></label><label>總量單位<select id="planningBasis"><option value="mL">mL（容量）</option><option value="g">g（重量）</option></select></label><label>目標精油濃度（%）<input id="planningPercent" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>自動補足原料<select id="planningBase"><option value="">選擇補足原料</option></select></label></div><p id="targetProgress" role="status"></p><small>自行分配各瓶精油滴數；超過目標會提醒，仍可儲存。目標是包含精油的成品總量。</small></div></section>
       <div id="materialBrowse"><div class="fields"><label>搜尋原料<input id="search" type="search" placeholder="輸入名稱或備註"></label><button id="newMaterial">＋ 新增原料</button></div>
       <div id="categories" class="chips" aria-label="原料類別"></div><div id="oilKinds" class="chips oil-kinds" aria-label="精油分類" hidden></div><label class="check inactive-setting"><input id="showInactive" type="checkbox">顯示停用原料</label><p id="materialCount" role="status"></p><div id="materials" class="grid"></div><button id="materialsMore" type="button">再顯示原料</button></div>
     </div></details>
+
 
     <div id="recipeWorkspace" class="recipe-workspace" aria-label="配方與成本">
     <details id="recipePanel" class="panel-card" aria-labelledby="recipe-title">
@@ -143,6 +145,10 @@
 
 
 
+      <div id="stepBar" class="step-bar" aria-label="本步驟摘要">
+      <div id="liveConcentration" class="concentration-panel picker-ratio"><strong id="workBasis"></strong><h3>精油濃度</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><small>精油濃度僅供參考，使用前請確認成分與用途是否適合。</small></div>
+      <div class="step-bar-row"><span id="selectionStatus" role="status">還沒選原料</span><button type="button" id="confirmQuantities" class="primary" hidden>下一步 →</button></div>
+    </div>
   </div>
 
   <!-- 分頁 2：配方庫 -->
