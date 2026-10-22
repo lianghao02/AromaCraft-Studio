@@ -99,6 +99,31 @@
   if($('manageRecordsBtn'))$('manageRecordsBtn').onclick=()=>switchManage('manageRecords');
   if($('manageDataBtn'))$('manageDataBtn').onclick=()=>switchManage('manageData');
   if($('manageCatalogSlot')?.append&&$('ylCatalog'))$('manageCatalogSlot').append($('ylCatalog'));
+  // 三步驟進度：三個面板的 open 狀態是唯一來源，這裡只負責「同一時間只留一個」與進度顯示。
+  const STEP_COPY=[['你要做什麼？','選一個類別，會直接進入下一步；換類別時，已選的原料與用量會保留。'],['加入原料與用量','點原料加入，填好用量後按下一步。'],['確認並儲存','核對成本與份數，確認後儲存。']];
+  let lastStep=1;
+  function stepPanels(){return [$('workPanel'),$('materialPicker'),$('recipePanel')];}
+  function stepperSync(opened){
+    const view=$('viewRecipe');if(!view)return;
+    const panels=stepPanels(),inManage=!!panels[1]?.dataset&&panels[1].dataset.manage==='true';
+    if(opened&&opened.open)panels.forEach((p,i)=>{if(p!==opened&&p.open&&!(i===1&&inManage))p.open=false;});
+    let step=panels[2].open?3:(panels[1].open&&!inManage)?2:panels[0].open?1:lastStep;
+    // 全部收起時畫面會空白；等同一輪的開合更新結束後，再補開目前步驟
+    if(!inManage)setTimeout(()=>{if(!panels[0].open&&!panels[1].open&&!panels[2].open)panels[lastStep-1].open=true;},0);
+    lastStep=step;
+    if(view.dataset)view.dataset.step=String(step);else if(view.setAttribute)view.setAttribute('data-step',String(step));
+    const ready=!!recipe&&recipe.items.length>0&&pendingQuantities.size===0;
+    for(let n=1;n<=3;n++){
+      const b=$('stepBtn'+n);if(!b)continue;
+      b.disabled=n===3&&!ready;
+      if(b.setAttribute)b.setAttribute('aria-current',n===step?'step':'false');
+      if(b.dataset)b.dataset.state=n===step?'active':n<step?'done':'todo';
+    }
+    if($('stepTitle'))$('stepTitle').textContent=STEP_COPY[step-1][0];
+    if($('stepHint'))$('stepHint').textContent=STEP_COPY[step-1][1];
+  }
+  stepPanels().forEach(p=>{if(p&&p.addEventListener)p.addEventListener('toggle',()=>stepperSync(p));});
+  [1,2,3].forEach(n=>{const b=$('stepBtn'+n);if(b)b.onclick=()=>{const p=stepPanels()[n-1];if(!p||b.disabled)return;p.open=true;stepperSync(p);if(window.scrollTo)window.scrollTo({top:0,behavior:'instant'});};});
   let currentWorkMode = 'formulate';
   function switchWorkMode(mode) {
     currentWorkMode = mode;
@@ -152,6 +177,7 @@
     if($('selectionStatus'))$('selectionStatus').textContent='已選 '+recipe.items.length+' 項'+(pendingQuantities.size?' · '+pendingQuantities.size+' 項待填用量':'');
     if($('fillQuantities')){$('fillQuantities').disabled=busy||empty;$('fillQuantities').textContent=quantityMode?'返回選原料':'填寫用量（'+recipe.items.length+' 項） →';$('fillQuantities').className=quantityMode?'return-btn':'primary return-btn';}
     for(const id of ['returnToRecipe'])if($(id)){$(id).textContent='填寫用量（'+recipe.items.length+' 項） →';$(id).disabled=busy||empty;}
+    stepperSync();
   }
   function focusAfterWork(){$('recipePanel').open=false;$('materialPicker').open=true;$('materialPicker').scrollIntoView({block:'start'});updateState();}
   function focusRecipe() { $('recipePanel').open=true; $('recipePanel').scrollIntoView({ block:'start' }); updateState(); }
@@ -493,7 +519,6 @@
       $('workPanel').open=false;
       $('materialPicker').open=true;
       switchTab('tabRecipe');
-      notice('已選擇製作類別，請加入原料與用量。');
       focusAfterWork();
     }
   });

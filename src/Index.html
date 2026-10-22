@@ -3,7 +3,7 @@
 <head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#20372e"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="AromaCraft"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23285548'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='28' fill='%23fff8ec'%3EAC%3C/text%3E%3C/svg%3E"><?!= include_('Styles'); ?></head>
 <body>
 <header>
-  <h1 class="brand">AC <span>AromaCraft <small>家庭精油分享會 · 配方與成本</small></span></h1>
+  <h1 class="brand"><span>AromaCraft <small>家庭精油分享會 · 配方與成本</small></span></h1>
   <div class="header-actions">
     <button type="button" id="syncStatusCapsule" class="sync-capsule offline" title="開啟帳號與同步資訊" aria-label="帳號與同步資訊">
       <span class="sync-dot"></span>
@@ -26,7 +26,14 @@
   </nav>
 
   <!-- 分頁 1：調配方工作檯 -->
-  <div id="viewRecipe" class="tab-view" data-mode="share">
+  <div id="viewRecipe" class="tab-view stepflow" data-mode="share" data-step="1">
+    <!-- 三步驟進度：由 Client 依三個面板的開合狀態同步，不另存狀態 -->
+    <nav id="stepper" class="stepper" aria-label="配方步驟">
+      <button type="button" id="stepBtn1" class="step-btn" data-step="1"><b>1</b><span>類別</span></button>
+      <button type="button" id="stepBtn2" class="step-btn" data-step="2"><b>2</b><span>原料</span></button>
+      <button type="button" id="stepBtn3" class="step-btn" data-step="3"><b>3</b><span>確認</span></button>
+    </nav>
+    <div class="step-head"><h2 id="stepTitle">你要做什麼？</h2><p id="stepHint" class="muted">選一個類別，會直接進入下一步；換類別時，已選的原料與用量會保留。</p></div>
     <!-- 頂部工作視圖雙模式切換（A+B 融合） -->
 
 
