@@ -908,4 +908,10 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 #viewSaved .log-row:first-child{border-top:0}
 @media(min-width:1024px){#viewManage .manage-group{display:block}#viewManage #manageMaterialSlot #materials{grid-template-columns:repeat(4,minmax(0,1fr))}}
 #restoreGuide{display:none}
+/* 已選列精簡：欄位名稱改由 aria-label 提供，一列只佔兩行，10 種以上原料也不會過長 */
+#viewRecipe.stepflow #selectedItems .quantity-row{padding:8px 12px 10px;gap:0 8px}
+#viewRecipe.stepflow #selectedItems .quantity-fields label{font-size:0;margin:0;gap:0}
+#viewRecipe.stepflow #selectedItems .quantity-fields input,#viewRecipe.stepflow #selectedItems .quantity-fields select,#viewRecipe.stepflow #selectedItems .quantity-fields button{font-size:16px}
+#viewRecipe.stepflow #selectedItems .quantity-fields input,#viewRecipe.stepflow #selectedItems .quantity-fields select{margin-top:0}
+#viewRecipe.stepflow #selectedItems .quantity-row-actions button{min-height:40px}
 </style>
