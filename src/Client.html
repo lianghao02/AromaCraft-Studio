@@ -299,7 +299,7 @@
       $('pillUnitCost').textContent = costText;
     }
     if ($('panelCost')) {
-      $('panelCost').textContent = costText;
+      $('panelCost').textContent = costText;$('panelCost').setAttribute('data-long',String(String(costText).length>24));
       $('panelWeight').textContent = weightText;
       $('panelSafety').textContent = safetyText;
       $('panelSafety').className = safetyClass;
