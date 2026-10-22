@@ -70,6 +70,7 @@ test('步驟 2 一律同列填用量：沒有集中填量按鈕，下一步在�
   const bar=index.match(/<div id="stepBar"[\s\S]*?<\/div>\s*<\/div>/)[0];
   for(const id of ['confirmQuantities','selectionStatus','liveConcentration'])assert.match(bar,new RegExp('id="'+id+'"'),'底部摘要列需含 #'+id);
   assert.match(index,/<div id="pickSide"[\s\S]*id="selectedItems"[\s\S]*id="stepBar"[\s\S]*<div id="materialBrowse"/,'已選區與摘要列在原料列表之前');
+  assert.ok(index.indexOf('id="planner"')>index.indexOf('id="stepBar"')&&index.indexOf('id="planner"')<index.indexOf('<div id="materialBrowse"'),'調配方式不在桌機右側固定欄內，避免擠壓已選列');
 });
 
 test('步驟 3：成本與濃度在上、儲存可見；開始製作只在製作中出現；重新開始只留一處',()=>{
