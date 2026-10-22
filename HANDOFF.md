@@ -1,13 +1,14 @@
 # HANDOFF
 
-## 2026-10-22 模組化評估：先補測試與模組地圖，不拆 Client.html（Claude，未提交）
+## 2026-10-22 模組化評估：先補測試與模組地圖，不拆 Client.html（已提交）
 - 起因：使用者貼入跨專案的「有條件地拆、分批拆、先補測試再拆」建議，要我處理 18 這個專案的部分（19 由另一個對話負責，未碰；02、04 等其他專案不在本工作階段資料夾，未碰）。
 - 查證：根目錄 `index.html`（2,895 行、444KB）是 `tools/build-standalone.cjs` 的**建置產物**，不可手改。專案本來就已分層：`Core`（共用計算）、`Code.gs`（伺服器）、`Client`（畫面）、`Catalog`（資料）、`Styles`、`Index`。手寫最大檔是 `src/Client.html`（845 行、83KB），內有 40 個頂層函式共用 19 個頂層狀態與 `data`／`recipe`／`dirty`／`busy` 等可變變數，可抽的純函式只有 `money`／`fmt`／`escape` 幾行；純邏輯早在 `Core.html`。
 - 結論：**目前不拆 `Client.html`**（風險：載入順序與閉包狀態；好處：僅可讀性）。改做兩件零風險的事：
   1. 新增 `tests/dom-contract.test.cjs`：Client 引用的元素 id 必須存在於 `Index.html` 或由 Client 動態產生；8 個遺留選用元素（`modeFormulate`、`modeCost`、`gotoSaved`、`manageMaterialsBtn`、`quickNewMaterial`、`btnReturnFormulate`、`backToSelection`、`save`）全有 `if` 保護，列入白名單。已用暫時注入不存在的元素驗證會失敗、還原後通過。這是拆檔或搬移程式碼的前置保護，也補上「假 DOM 會自動造元素、掩蓋缺元素」的缺口（曾發生 `#blank`）。
   2. 新增 `docs/模組地圖.md`（檔案分工、組裝與新增來源檔的步驟、`Client.html` 內部分區、改動類型對應測試、已踩過的坑、拆分準則）；`AGENTS.md` 加一行指向它與「`index.html` 是建置產物」。
 - 日後要拆時：依模組地圖的拆分準則（傳統 script 檔、一次搬一組、每次單獨提交、先跑 `dom-contract` 與 `client`）；建議接縫為製作流程、原料清單、官網價格自動套用與提示詞對話框。
-- 驗證：`npm test` 98/98（新增 3 項）、`npm run check` 通過；未改任何程式行為，`index.html` 未變。未提交、未部署。
+- 驗證：`npm test` 98/98（新增 3 項）、`npm run check` 通過；未改任何程式行為，`index.html` 未變。已於 `bb29971` 提交測試與模組地圖，`3e63cae` 補充建置注意事項；本機追蹤的 `origin/main` 與 HEAD 一致。
+- **本輪接手驗證（Codex，2026-10-22）**：重新執行 `npm test`，98/98 通過；另獨立執行 DOM 契約測試，3/3 通過。本輪只更正前述提交狀態，未修改產品程式、未新增發布。
 
 ## 2026-10-21 v1.6.4 發布：一鍵複製提示詞更新官網價格（Claude）
 - **發布結果**：使用者明確授權後，提交 affb648 並推送 origin/main；Pages 工作流程 39609999325 成功（GitHub 佇列排隊約 4 分多鐘，非程式問題）。正式站 `index.html`、`sw.js` HTTP 200，與 HEAD 逐位元組一致（SHA-256 前綴 7840f8fd／4f0595e8），快取名稱 `aromacraft-v1.6.4`，頁尾 v1.6.4；`#showRefreshPrompt`、`#promptDialog`、`#catalogRefreshPrompt`、`autoApplyCatalog`、`catalogStatus` 皆在正式站。
