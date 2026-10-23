@@ -1,0 +1,22 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {createHarness}=require('../tools/gas-mock.cjs');
+function boot(){const h=createHarness();h.setup();h.call('importCatalog');return h;}
+function ok(h,action,data){const r=h.call(action,data);assert.equal(r.ok,true,r.error);return JSON.parse(JSON.stringify(r.value));}
+const item=(materialId,count,revision=0)=>({materialId,count,revision});
+const save=(h,items,requestId='stock-test')=>ok(h,'saveInventory',{requestId,items});
+const a='yl-360276',b='yl-353876';
+test('瓶數新增、減少至零：不刪除原料、不追加價格、不更動八表結構',()=>{const h=boot(),before=ok(h,'export');assert.deepEqual(ok(h,'bootstrap').inventory,{});save(h,[item(a,3)]);save(h,[item(a,2,1)],'stock-2');save(h,[item(a,0,2)],'stock-3');const after=ok(h,'export');assert.deepEqual(Object.keys(after.tables),Object.keys(before.tables));for(const name of Object.keys(before.tables).filter(n=>n!=='系統設定'))assert.deepEqual(after.tables[name],before.tables[name]);assert.equal(ok(h,'bootstrap').inventory[a].count,0);assert.equal(ok(h,'bootstrap').inventory[a].revision,3);});
+test('拒絕負數、小數、字串、超量、未知原料與不正確庫存版本',()=>{const h=boot();for(const count of [-1,1.5,NaN,Infinity,10000,'2',null])assert.equal(h.call('saveInventory',{requestId:'bad',items:[item(a,count)]}).ok,false);for(const i of [item('missing',1),item('demo-soap',1),item(a,1,-1),item(a,1,0.5)])assert.equal(h.call('saveInventory',{requestId:'bad',items:[i]}).ok,false);assert.deepEqual(ok(h,'bootstrap').inventory,{});});
+test('盤點整批先驗證；一列衝突或重複商品不得部分寫入',()=>{const h=boot();save(h,[item(a,2)]);const before=ok(h,'export');for(const items of [[item(b,1),item(a,3,0)],[item(b,1),item(b,2)],[item(b,1),item(a,-1,1)]])assert.equal(h.call('saveInventory',{requestId:'batch-bad',items}).ok,false);assert.deepEqual(ok(h,'export').tables,before.tables);save(h,[item(a,4,1),item(b,2)],'batch-good');assert.equal(ok(h,'bootstrap').inventory[b].count,2);});
+test('重試冪等與版本衝突：同一請求不重複寫入，較舊裝置不能覆蓋',()=>{const h=boot(),items=[item(a,2),item(b,1)];const result=save(h,items);const before=ok(h,'export');assert.deepEqual(save(h,items),result);assert.deepEqual(ok(h,'export').tables,before.tables);save(h,[item(a,3,1)],'next');assert.deepEqual(save(h,items),result);assert.match(h.call('saveInventory',{requestId:'stale',items:[item(a,1)]}).error,/CONFLICT/);assert.equal(h.call('saveInventory',{requestId:'stock-test',items:[item(a,9),item(b,1)]}).ok,false);assert.equal(h.call('saveInventory',{requestId:'stock-test',items:[item('yl-356676',2),item(b,1)]}).ok,false);});
+test('完成實際製作不自動扣瓶數，配方與成本快照不含庫存',()=>{const h=boot(),d=ok(h,'bootstrap'),p=d.prices.find(p=>p.materialId===a);save(h,[item(a,2)]);const r=ok(h,'saveRecipe',{policyVersion:2,version:0,requestId:'recipe-stock',name:'庫存隔離測試',type:'按摩油',units:1,quantityUnit:'mixed',concentration:{auto:true,useDefaultDrops:true},planning:{mode:'free',sizing:'batch',packagingId:''},cost:d.cost,items:[{materialId:a,priceId:p.id,quantity:3,unit:'滴'}]});ok(h,'saveLog',{policyVersion:2,requestId:'production-stock',recipeId:r.id,version:r.version,date:'2026-10-23',units:1,actualRecipe:r});assert.equal(ok(h,'bootstrap').inventory[a].count,2);save(h,[item(a,0,1)],'zero-after-production');assert.deepEqual(ok(h,'loadRecipe',{id:r.id,version:r.version}).snapshot,r.snapshot);assert.equal(ok(h,'bootstrap').logs.length,1);});
+test('庫存操作仍經過家庭帳號驗證',()=>{const h=boot();h.state.active='outsider@example.test';assert.equal(h.call('saveInventory',{requestId:'denied',items:[item(a,2)]}).ok,false);});
+
+test('缺少商品可先新增無價格原料，保存分類與註記，手動改瓶數不清除分類',()=>{
+ const h=boot(),before=ok(h,'bootstrap');
+ ok(h,'saveMaterial',{id:'inventory-synthetic',name:'合成測試原料',category:'精油',revision:0,active:true,note:'容量與價格待補'});
+ save(h,[{...item('inventory-synthetic',1),oilType:'單方',storageGroup:'測試收納區',note:'品項待確認'}],'new-stock');
+ save(h,[item('inventory-synthetic',2,1)],'manual-stock');
+ const final=ok(h,'bootstrap');assert.equal(final.prices.length,before.prices.length);assert.equal(final.materials.length,before.materials.length+1);assert.equal(final.inventory['inventory-synthetic'].oilType,'單方');assert.equal(final.inventory['inventory-synthetic'].storageGroup,'測試收納區');assert.equal(final.inventory['inventory-synthetic'].note,'品項待確認');
+ const snapshot=ok(h,'export').tables;assert.equal(h.call('saveInventory',{requestId:'bad-kind',items:[{...item('inventory-synthetic',3,2),oilType:'未知分類'}]}).ok,false);assert.deepEqual(ok(h,'export').tables,snapshot);
+});

@@ -167,10 +167,34 @@ function currentRecipe_(id,version){
   r.policyVersion=2;return r;
 }
 
+// Bottle counts are independent of prices, recipe quantities and production snapshots.
+function inventoryRows_(){return rows_('系統設定').filter(r=>r.key.startsWith('庫存:')).map(r=>{const v=JSON.parse(r.value);if(!Number.isSafeInteger(v.count)||v.count<0||v.count>9999||!Number.isSafeInteger(v.revision)||v.revision<1||r.key!=='庫存:'+v.materialId)throw Error('庫存資料格式不正確，請先還原備份');return v;});}
+function inventory_(){const out=Object.create(null);inventoryRows_().forEach(v=>{out[v.materialId]=v;});return out;}
+function saveInventory_(d,email){
+  const requestId=requestId_(d.requestId),items=d.items;
+  if(!Array.isArray(items)||!items.length||items.length>100)throw Error('庫存清單須包含 1 至 100 項');
+  const materials=rows_('原料資料'),history=inventoryRows_(),current=inventory_(),seen=new Set(),updates=[];
+  for(const item of items){
+    const materialId=core_().text(item.materialId,'原料識別碼',100),m=materials.find(m=>m.id===materialId);
+    if(!m||m.category!=='精油')throw Error('庫存只接受已存在的精油原料');
+    if(seen.has(materialId))throw Error('庫存清單有重複原料，請先合併瓶數');seen.add(materialId);
+    if(typeof item.count!=='number'||!Number.isSafeInteger(item.count)||item.count<0||item.count>9999)throw Error('庫存須為 0 至 9999 的整數瓶數');
+    if(typeof item.revision!=='number'||!Number.isSafeInteger(item.revision)||item.revision<0)throw Error('庫存版本不正確，請重新載入');
+    const prior=history.find(r=>r.requestId===requestId&&r.materialId===materialId);
+    if(prior){if(prior.count!==item.count||prior.updatedBy!==email||['oilType','storageGroup','note'].some(k=>item[k]!==undefined&&item[k]!==prior[k]))throw Error('庫存請求識別碼衝突');updates.push(prior);continue;}
+    const old=current[materialId];if((old?.revision||0)!==item.revision)throw Error('CONFLICT：庫存已由其他裝置修改，請重新載入並核對瓶數');
+    const oilType=item.oilType===undefined?(old?.oilType||'待確認'):item.oilType;if(!['單方','複方','待確認'].includes(oilType))throw Error('精油分類不正確');
+    const storageGroup=core_().text(item.storageGroup??old?.storageGroup??'','收納分類',50,false),note=core_().text(item.note??old?.note??'','庫存註記',500,false);
+    updates.push({materialId,count:item.count,revision:item.revision+1,oilType,storageGroup,note,requestId,updatedAt:stamp_(),updatedBy:email});
+  }
+  const existing=history.filter(r=>r.requestId===requestId);if(existing.length&&(existing.length!==items.length||existing.some(r=>!items.some(i=>i.materialId===r.materialId&&i.count===r.count))))throw Error('庫存請求識別碼衝突');
+  append_('系統設定',updates.filter(r=>!history.some(p=>p.requestId===r.requestId&&p.materialId===r.materialId)).map(v=>({key:'庫存:'+v.materialId,value:safeJson_(v)})));
+  return updates;
+}
 function bootstrap_() {
   const cost = rows_('成本設定');
   const archived=archivedRecipes_();
-  return { packages:packages_(),unitSchema:columns_('配方明細').includes('dropsPerMl'),materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
+  return { inventory:inventory_(),packages:packages_(),unitSchema:columns_('配方明細').includes('dropsPerMl'),materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
     recipes: recipes_().map(r => {let current=r.snapshot;try{current=core_().calculate({...currentRecipe_(r.id,r.version),packages:packages_()},rows_('原料資料'),rows_('原料價格'),rows_('安全規則'));}catch(e){current={...r.snapshot,perUnit:null,costComplete:false};}return ({ id: r.id, version: r.version, name: r.name, type: r.type, archived:archived[r.id]===true,createdAt: r.createdAt, safety: r.snapshot.safety,
       perUnit:current.perUnit,knownPerUnit:current.knownPerUnit,costComplete:current.costComplete,notes:r.notes,oils:(current.items||[]).filter(i=>i.category==='精油').map(i=>({materialId:i.materialId,name:i.name})),concentration:current.concentration||null });}),
     logs: rows_('製作紀錄').map(l => ({ ...l, snapshot: JSON.parse(l.snapshotJson) })),
@@ -294,6 +318,7 @@ function api(request) {
         case 'archiveRecipe': return archiveRecipe_(d);
         case 'saveMaterial': return saveMaterial_(d);
         case 'saveProduct': return saveProduct_(d,email);
+        case 'saveInventory': return saveInventory_(d,email);
         case 'savePrice': return savePrice_(d, email);
         case 'saveLog': return saveLog_(d, email);
         case 'saveCost': {

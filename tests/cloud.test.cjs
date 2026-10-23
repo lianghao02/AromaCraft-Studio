@@ -48,3 +48,26 @@ test('離線製作快照不按同步時價格重算，永久刪除保留紀錄�
  b.api('savePrice',{materialId:'demo-soap',requestId:'price-changed',label:'新價',amount:100,unit:'g',paid:500});b.api('deleteRecipe',{id:r.id,requestId:'deleted'});await settled();
  a.offline=false;a.events.online();await settled();const result=a.api('bootstrap');assert.equal(result.recipes.length,0);assert.equal(result.logs.length,1);assert.deepEqual(JSON.parse(JSON.stringify(result.logs[0].snapshot)),JSON.parse(JSON.stringify(log.snapshot)));assert.equal(result.logs[0].snapshot.material,0);assert.equal(JSON.parse(a.storage.get('aromacraft_standalone_tables_v2_outbox_v1')).length,0);
 });
+
+test('瓶數庫存：離線持久化、兩裝置同步與備份包含庫存，不新增價格',async()=>{
+ const m=mock(),a=device(m);await a.login();await a.ctx.window.AromaSync.migrateToCloud();const b=device(m);await b.login();
+ const id='yl-360276',prices=a.api('bootstrap').prices.length;
+ a.api('saveInventory',{requestId:'stock-initial',items:[{materialId:id,count:2,revision:0}]});await settled();assert.equal(b.api('bootstrap').inventory[id].count,2);
+ a.offline=true;a.api('saveInventory',{requestId:'stock-offline',items:[{materialId:id,count:1,revision:1}]});await settled();
+ const reopened=device(m,a.storage);await reopened.login();await settled();assert.equal(reopened.api('bootstrap').inventory[id].count,1);assert.equal(b.api('bootstrap').inventory[id].count,1);assert.equal(reopened.api('bootstrap').prices.length,prices);
+ const exported=reopened.api('export');assert(exported.tables['系統設定'].some(r=>r.key==='庫存:'+id));assert.equal(JSON.parse(a.storage.get('aromacraft_standalone_tables_v2_outbox_v1')).length,0);
+});
+test('庫存同項目離線衝突：保留待同步操作，不覆蓋另一台瓶數；不同項目可合併',async()=>{
+ const m=mock(),a=device(m);await a.login();await a.ctx.window.AromaSync.migrateToCloud();const b=device(m);await b.login();
+ a.offline=true;a.api('saveInventory',{requestId:'offline-stock',items:[{materialId:'yl-360276',count:2,revision:0}]});await settled();
+ b.api('saveInventory',{requestId:'other-stock',items:[{materialId:'yl-353876',count:1,revision:0}]});await settled();a.offline=false;a.events.online();await settled();assert.equal(b.api('bootstrap').inventory['yl-360276'].count,2);assert.equal(a.api('bootstrap').inventory['yl-353876'].count,1);
+ a.offline=true;a.api('saveInventory',{requestId:'stale-stock',items:[{materialId:'yl-360276',count:1,revision:1}]});await settled();
+ b.api('saveInventory',{requestId:'new-stock',items:[{materialId:'yl-360276',count:3,revision:1}]});await settled();a.offline=false;a.events.online();await settled();
+ assert.equal(b.api('bootstrap').inventory['yl-360276'].count,3);assert.equal(a.api('bootstrap').inventory['yl-360276'].count,1);assert.equal(JSON.parse(a.storage.get('aromacraft_standalone_tables_v2_outbox_v1')).length,1);assert.match(a.node('syncStatusText').textContent,/失敗|同步|衝突|庫存|修改/);
+});
+
+test('離線新增未定價精油與庫存能一起同步，不會產生猜測價格',async()=>{
+ const m=mock(),a=device(m);await a.login();await a.ctx.window.AromaSync.migrateToCloud();const b=device(m);await b.login();const priceCount=b.api('bootstrap').prices.length;
+ a.offline=true;a.api('saveMaterial',{id:'inventory-offline-new',name:'合成未定價原料',category:'精油',revision:0,active:true,note:'容量與價格待補'});a.api('saveInventory',{requestId:'new-material-stock',items:[{materialId:'inventory-offline-new',count:1,revision:0,oilType:'單方',storageGroup:'測試收納區',note:''}]});await settled();a.offline=false;a.events.online();await settled();
+ const data=b.api('bootstrap');assert.equal(data.inventory['inventory-offline-new'].count,1);assert.equal(data.inventory['inventory-offline-new'].oilType,'單方');assert(data.materials.some(r=>r.id==='inventory-offline-new'));assert.equal(data.prices.length,priceCount);
+});

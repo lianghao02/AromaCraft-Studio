@@ -218,7 +218,7 @@ __AROMA_SERVER__
    }
  };
 
- const mutations=['saveRecipe','deleteRecipe','archiveRecipe','saveMaterial','saveProduct','savePrice','saveLog','savePackage','saveCost','migrateUnits','importCatalog'];
+ const mutations=['saveInventory','saveRecipe','deleteRecipe','archiveRecipe','saveMaterial','saveProduct','savePrice','saveLog','savePackage','saveCost','migrateUnits','importCatalog'];
  window.google={script:{get run(){let success,failure;const runner={withSuccessHandler(fn){success=fn;return runner;},withFailureHandler(fn){failure=fn;return runner;},api(request){setTimeout(()=>{
   const before=JSON.parse(JSON.stringify(tables())),previous=outbox.slice();
   try{

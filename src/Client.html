@@ -24,6 +24,7 @@
   }
   const materialPageSize=()=>window.innerWidth<768?8:24;
   let materialLimit=materialPageSize(),validationError='';
+  let inventoryImportRows=[],inventoryImportPending=null;
   let data, recipe, category = '全部', oilKind = '全部', busy = false, dirty = false, editorAction, pendingSave, pendingLog, draftKey, noticeTimer = null;
   let productionSource=null;
   window.AromaDraftPending=()=>dirty;window.addEventListener('aroma-cloud-update',()=>{if(!busy&&!dirty)refresh().catch(fail);});
@@ -155,6 +156,7 @@
 
   function updateState() {
     if (!recipe) return;
+    $('applyInventoryImport').disabled=!$('confirmInventoryImport').checked||!inventoryImportRows.length;
     if(data){if($('migrateUnits'))$('migrateUnits').hidden=!data.admin;if($('importCatalog')){$('importCatalog').hidden=!data.admin;$('importCatalog').disabled=busy||!data.unitSchema;}}
     const empty = !recipe.items.length;
     $('recordProduction').textContent=productionSource?'完成製作':'開始製作';$('productionBanner').hidden=!productionSource;if($('productionFold'))$('productionFold').hidden=!productionSource;if($('log'))$('log').hidden=!productionSource;
@@ -327,8 +329,9 @@
     updateTargetProgress();updateState();
   }
   function renderMaterials() {
+    $('inventoryImport').hidden=$('materialPicker').dataset?.manage!=='true';
     const search = $('search').value.trim().toLowerCase();
-    const describe=(m,p)=>typeof AromaCatalog!=='undefined'?AromaCatalog.materialInfo(m,p):{kind:m.category==='精油'?'待分類':m.category,name:m.name,amount:p?.amount,unit:p?.unit,paid:p?.paid,priceLabel:'採購價'};
+    const describe=(m,p)=>{const info=typeof AromaCatalog!=='undefined'?AromaCatalog.materialInfo(m,p):{kind:m.category==='精油'?'待分類':m.category,name:m.name,amount:p?.amount,unit:p?.unit,paid:p?.paid,priceLabel:'採購價'};if(info.kind==='待分類'&&['單方','複方'].includes(data.inventory?.[m.id]?.oilType))info.kind=data.inventory[m.id].oilType;return info;};
     const active=data.materials.filter(m=>$('showInactive').checked||m.active===true||m.active==='TRUE');
     const pick = term => active.filter(m => (category === '全部' || m.category === category) && (category!=='精油'||oilKind==='全部'||describe(m).kind===oilKind) && (m.name+' '+m.note+' '+m.id).toLowerCase().includes(term));
     let list = pick(search), usedTerm = '';
@@ -365,6 +368,7 @@
       return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯名稱、容量與價格':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
         <div class="mat-card-header">
           <span class="badge">${escape(info.kind)}</span>
+          ${m.category==='精油'?`<span class="inventory-badge ${(data.inventory?.[m.id]?.count||0)>=100?'is-many':''} ${(data.inventory?.[m.id]?.count||0)===0?'is-zero':''}" aria-label="庫存 ${data.inventory?.[m.id]?.count||0} 瓶"><strong>${data.inventory?.[m.id]?.count||0}</strong> 瓶</span>`:''}
           ${info.image?`<span class="mat-picture has-image" aria-hidden="true"><img class="material-thumbnail" src="${escape(info.image)}" width="44" height="54" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""></span>`:''}
           <button type="button" class="mat-gear" data-gear="${escape(m.id)}" aria-label="管理 ${escape(m.name)} 原料與價格" title="管理原料與價格">⚙️</button>
         </div>
@@ -474,7 +478,11 @@
   function editMaterial(id, afterSaved=null, opts={}) {
     const m=data.materials.find(m=>m.id===id)||{id:uid(),revision:0,name:'',category:'其他',note:'',active:true};
     const p=data.prices.filter(p=>p.materialId===m.id).at(-1),requestId=uid();
-    openEditor(id?'原料與價格':'新增原料',input('商品名稱','matName',m.name,'text','required maxlength="100"')+'<label>原料類別<select id="matCategory">'+['精油','皂基','蜂蠟','基底油','其他'].map(c=>'<option '+(c===m.category?'selected':'')+'>'+c+'</option>').join('')+'</select></label><div class="fields">'+input('每包／每瓶數量','amount',p?.amount??'','number','required min="0.000001" step="any" inputmode="decimal"')+'<label>單位<select id="priceUnit"><option>mL</option><option>L</option><option>g</option><option>kg</option></select></label></div>'+input('每包／每瓶價格（NT$）','paid',p?.paid??'','number','min="0" step="any"')+'<details class="advanced"'+(opts.openDensity?' open':'')+'><summary>密度與精油滴數換算（選填）</summary><button id="applyCommonDensity" type="button">套用常見估算值（標記為估算）</button>'+input('密度（g/mL，選填）','productDensity',p?.density??'','number','min="0.000001" step="any"')+input('密度來源／實測方式','densitySource',p?.densitySource||'')+'<label class="check"><input id="densityEstimated" type="checkbox" '+(p?.densityEstimated===true||p?.densityEstimated==='TRUE'?'checked':'')+'>此密度為估算值</label>'+input('自訂每 mL 幾滴（選填；預設 20）','productDrops',p?.dropsPerMl??'','number','min="0.000001" step="any" inputmode="decimal"')+'<small>平常不必填，使用預設 20 滴／mL 估算；有實測值可自訂。</small></details>',()=>task(async()=>{
+    let stock=data.inventory?.[m.id]||{count:0,revision:0};
+    const inventoryEditor=id&&m.category==='精油'?'<section class="inventory-editor"><label for="inventoryCount">目前庫存（瓶）</label><div class="inventory-controls"><button type="button" id="inventoryMinus" aria-label="減少庫存">−</button><input id="inventoryCount" type="number" min="0" max="9999" step="1" inputmode="numeric" value="'+stock.count+'"><button type="button" id="inventoryPlus" aria-label="增加庫存">＋</button></div><small>只記持有瓶數；不追蹤剩餘 mL，不隨配方用量扣庫存。0 瓶不會刪除原料。</small><button type="button" id="saveInventory">儲存庫存</button><p id="inventoryStatus" role="status">庫存獨立儲存，不變更價格。</p></section>':'';
+
+    openEditor(id?'原料與價格':'新增原料',input('商品名稱','matName',m.name,'text','required maxlength="100"')+inventoryEditor+'<label>原料類別<select id="matCategory">'+['精油','皂基','蜂蠟','基底油','其他'].map(c=>'<option '+(c===m.category?'selected':'')+'>'+c+'</option>').join('')+'</select></label><div class="fields">'+input('每包／每瓶數量','amount',p?.amount??'','number','required min="0.000001" step="any" inputmode="decimal"')+'<label>單位<select id="priceUnit"><option>mL</option><option>L</option><option>g</option><option>kg</option></select></label></div>'+input('每包／每瓶價格（NT$）','paid',p?.paid??'','number','min="0" step="any"')+'<details class="advanced"'+(opts.openDensity?' open':'')+'><summary>密度與精油滴數換算（選填）</summary><button id="applyCommonDensity" type="button">套用常見估算值（標記為估算）</button>'+input('密度（g/mL，選填）','productDensity',p?.density??'','number','min="0.000001" step="any"')+input('密度來源／實測方式','densitySource',p?.densitySource||'')+'<label class="check"><input id="densityEstimated" type="checkbox" '+(p?.densityEstimated===true||p?.densityEstimated==='TRUE'?'checked':'')+'>此密度為估算值</label>'+input('自訂每 mL 幾滴（選填；預設 20）','productDrops',p?.dropsPerMl??'','number','min="0.000001" step="any" inputmode="decimal"')+'<small>平常不必填，使用預設 20 滴／mL 估算；有實測值可自訂。</small></details>',()=>task(async()=>{
+      if(inventoryEditor&&Number($('inventoryCount').value)!==stock.count)throw Error('庫存尚未儲存，請先按「儲存庫存」，或將瓶數改回原值。');
       await rpc('saveProduct',{requestId,id:m.id,revision:m.revision,name:$('matName').value,category:$('matCategory').value,note:m.note,active:m.active!==false&&m.active!=='FALSE',amount:$('amount').value,unit:$('priceUnit').value,paid:$('paid').value,dropsPerMl:$('productDrops').value||null,density:$('productDensity').value||null,densitySource:$('densitySource').value,densityEstimated:$('densityEstimated').checked,gramsPerUnit:p?.gramsPerUnit??null});
       $('editor').close();await refresh();const nextPrice=data.prices.filter(p=>p.materialId===m.id).at(-1),selected=recipe.items.find(i=>i.materialId===m.id);
       if(selected){
@@ -488,6 +496,17 @@
       if(afterSaved){afterSaved(nextPrice);return;}
       if(!selected||selected.priceId===nextPrice.id)notice('商品與價格已儲存，新加入的原料採用此價格。');
     }));
+    if(inventoryEditor){
+      const adjust=delta=>{const value=Number($('inventoryCount').value);$('inventoryCount').value=Math.min(9999,Math.max(0,(Number.isFinite(value)?Math.trunc(value):0)+delta));};
+      $('inventoryMinus').onclick=()=>adjust(-1);$('inventoryPlus').onclick=()=>adjust(1);
+      let pendingStock=null;
+      $('saveInventory').onclick=()=>task(async()=>{
+        const raw=$('inventoryCount').value.trim(),count=Number(raw);if(!raw||!Number.isSafeInteger(count)||count<0||count>9999)throw Error('庫存須為 0 至 9999 的整數瓶數');
+        if(!pendingStock||pendingStock.items[0].count!==count)pendingStock={requestId:uid(),items:[{materialId:m.id,count,revision:stock.revision}]};
+        const result=await rpc('saveInventory',pendingStock);stock=result[0];pendingStock=null;data.inventory={...data.inventory,[m.id]:stock};
+        $('inventoryStatus').textContent='庫存已保存 '+stock.count+' 瓶；家庭同步狀態請看頁面上方。';renderMaterials();
+      });
+    }
     if(p?.unit&&!['g','kg','mL','L'].includes(p.unit))$('priceUnit').innerHTML+='<option>'+escape(p.unit)+'</option>';$('priceUnit').value=p?.unit||'mL';
     if(opts.prefillName&&!id)$('matName').value=opts.prefillName;
     $('applyCommonDensity').onclick=()=>{const c=COMMON_DENSITY[$('matCategory').value];if(!c){notice('此類別沒有常見估算值，請填實測密度。',true);return;}$('productDensity').value=c[0];$('densitySource').value=c[1];$('densityEstimated').checked=true;};
@@ -903,6 +922,47 @@
   function editPackage(id){const p=(data.packages||[]).find(p=>p.id===id)||{id:uid(),name:'',price:''};openEditor(id?'編輯包材':'新增包材',input('包材名稱（含整套用品）','packageName',p.name,'text','required maxlength="100"')+input('每份整套費用（NT$）','packagePrice',p.price,'number','required min="0" step="any"'),()=>task(async()=>{await rpc('savePackage',{...p,name:$('packageName').value,price:$('packagePrice').value,requestId:uid()});$('editor').close();await refresh();notice('包材已儲存，配方採最新單價，歷史製作成本保留。');}));}
   $('newPackage').onclick=()=>editPackage();$('packageList').onclick=e=>{const b=e.target.closest('[data-package]');if(b)editPackage(b.dataset.package);};
 
+  $('inventoryFile').onchange=async()=>{try{const file=$('inventoryFile').files?.[0];if(!file)return;if(file.size>100000)throw Error('盤點清單檔案不可超過 100 KB');$('inventoryJson').value=await file.text();$('previewInventory').click();}catch(e){$('inventoryImportStatus').textContent=e.message;}};
+  $('inventoryJson').oninput=()=>{inventoryImportRows=[];inventoryImportPending=null;$('inventoryPreview').innerHTML='';$('confirmInventoryImport').checked=false;$('applyInventoryImport').disabled=true;};
+  $('previewInventory').onclick=()=>{
+    try{
+      inventoryImportRows=[];inventoryImportPending=null;$('confirmInventoryImport').checked=false;$('applyInventoryImport').disabled=true;$('inventoryPreview').innerHTML='';
+      const text=$('inventoryJson').value;if(text.length>100000)throw Error('清單不可超過 100 KB');const parsed=JSON.parse(text),rows=Array.isArray(parsed)?parsed:parsed.items;
+      if(!Array.isArray(rows)||!rows.length||rows.length>100)throw Error('清單須包含 1 至 100 項');
+      const oils=data.materials.filter(m=>m.category==='精油');
+      inventoryImportRows=rows.map(r=>{
+        if(!r||typeof r!=='object'||typeof r.count!=='number'||!Number.isSafeInteger(r.count)||r.count<0||r.count>9999)throw Error('每列瓶數須為 0 至 9999 的整數');
+        const name=String(r.name||r.label||r.materialId||'待辨識').slice(0,100),byId=oils.find(m=>m.id===r.materialId),byName=oils.filter(m=>m.name===name||AromaCatalog.materialInfo(m).name===name),m=byId||(byName.length===1?byName[0]:null);
+        const createIfMissing=!m&&r.createIfMissing===true&&byName.length===0;
+        return {name,materialId:m?.id||'',count:r.count,needsReview:r.needsReview===true,createIfMissing,newId:String(r.materialId||'inventory-'+uid()),oilType:r.oilType||'待確認',storageGroup:String(r.storageGroup||'').slice(0,50),note:String(r.note||'').slice(0,500)};
+      });
+      $('inventoryPreview').innerHTML=inventoryImportRows.map((r,i)=>'<div class="inventory-import-row"><label class="check"><input type="checkbox" data-stock-use="'+i+'" '+((r.materialId||r.createIfMissing)&&!r.needsReview?'checked':'')+'>'+escape(r.name)+'</label><label>對應精油<select data-stock-material="'+i+'"><option value="">待確認，請選擇商品</option>'+(r.createIfMissing?'<option value="__new__" selected>新增：'+escape(r.name)+'（容量／價格待補）</option>':'')+oils.map(m=>'<option value="'+escape(m.id)+'" '+(r.materialId===m.id?'selected':'')+'>'+escape(m.name)+'</option>').join('')+'</select></label><label>瓶數<input type="number" min="0" max="9999" step="1" data-stock-count="'+i+'" value="'+r.count+'"></label><small>'+escape([r.storageGroup,r.note].filter(Boolean).join(' · '))+'</small></div>').join('');
+      $('inventoryImportStatus').textContent='共 '+rows.length+' 項、'+rows.reduce((sum,r)=>sum+r.count,0)+' 瓶；新增原料不會猜填容量或價格。請核對後確認，未選取的原料庫存不變。';
+    }catch(e){inventoryImportRows=[];$('inventoryImportStatus').textContent='無法預覽：'+e.message;}
+  };
+  const invalidateInventoryImport=()=>{inventoryImportPending=null;$('confirmInventoryImport').checked=false;$('applyInventoryImport').disabled=true;};
+  $('inventoryPreview').oninput=invalidateInventoryImport;$('inventoryPreview').onchange=invalidateInventoryImport;
+  $('confirmInventoryImport').onchange=()=>{$('applyInventoryImport').disabled=!$('confirmInventoryImport').checked||!inventoryImportRows.length;};
+  $('applyInventoryImport').onclick=()=>task(async()=>{
+    if(!$('confirmInventoryImport').checked||!inventoryImportRows.length)throw Error('請先預覽並確認盤點清單');
+    if(!inventoryImportPending){
+      const items=[],create=[];for(let i=0;i<inventoryImportRows.length;i++){
+        if(!$('inventoryPreview').querySelector('[data-stock-use="'+i+'"]').checked)continue;
+        const row=inventoryImportRows[i],choice=$('inventoryPreview').querySelector('[data-stock-material="'+i+'"]').value,materialId=choice==='__new__'&&row.createIfMissing?row.newId:choice,raw=$('inventoryPreview').querySelector('[data-stock-count="'+i+'"]').value.trim(),count=Number(raw);
+        if(!materialId||materialId==='__new__'||!raw||!Number.isSafeInteger(count)||count<0||count>9999)throw Error('請核對第 '+(i+1)+' 項的商品與整數瓶數');
+        if(!['單方','複方','待確認'].includes(row.oilType))throw Error('精油分類只接受單方、複方或待確認');
+        if(items.some(x=>x.materialId===materialId))throw Error('同一精油出現多列，請先合併瓶數');
+        items.push({materialId,count,revision:data.inventory?.[materialId]?.revision||0,oilType:row.oilType,storageGroup:row.storageGroup,note:row.note});
+        if(choice==='__new__'){if(create.some(m=>m.name===row.name))throw Error('新增清單有重複品名，請先合併瓶數');create.push({id:materialId,name:row.name,category:'精油',revision:0,active:true,note:'使用者盤點新增；容量與價格待補。'+row.note});}
+      }
+      if(!items.length)throw Error('請至少選取一項已確認精油');inventoryImportPending={requestId:uid(),items,create};
+    }
+    let added=0;
+    try{for(const material of inventoryImportPending.create||[]){if(data.materials.some(m=>m.id===material.id))continue;const saved=await rpc('saveMaterial',material);data.materials.push(saved);added++;}}
+    catch(e){$('inventoryImportStatus').textContent='已新增 '+added+' 項原料；庫存尚未匯入，可重試。';throw e;}
+    const result=await rpc('saveInventory',{requestId:inventoryImportPending.requestId,items:inventoryImportPending.items});data.inventory={...data.inventory,...Object.fromEntries(result.map(v=>[v.materialId,v]))};inventoryImportPending=null;
+    $('inventoryImportStatus').textContent='已保存 '+result.length+' 項精油庫存；家庭同步狀態請看頁面上方。';$('confirmInventoryImport').checked=false;$('applyInventoryImport').disabled=true;renderMaterials();
+  });
   switchManage('manageBasics');
   task(()=>refresh());
 })();

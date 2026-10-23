@@ -952,4 +952,11 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 /* The next product starts a new draft; saved recipes remain in the library. */
 #blank.next-product{display:block;width:100%;min-height:48px;margin-top:12px;background:var(--cream);border:2px solid var(--green);color:var(--green-deep);font-weight:700}
 .next-product-hint{display:block;margin-top:8px;font-size:12px;line-height:1.5;color:var(--muted)}
+/* Bottle stock is deliberately separate from volume and recipe calculations. */
+.inventory-badge{position:absolute;top:8px;right:44px;display:flex;gap:3px;align-items:center;justify-content:center;min-width:44px;height:27px;padding:2px 6px;border:1px solid #6f9983;border-radius:10px;background:#e1f1e5;color:#285b47;font-size:12px;white-space:nowrap;box-shadow:0 2px 0 #b3cdba}
+.inventory-badge strong{font-size:17px;line-height:1}.inventory-badge.is-many{gap:2px;padding-inline:3px}.inventory-badge.is-many strong{font-size:13px}.inventory-badge.is-zero{background:#f2efe8;color:#636a61;border-color:#bab8ab;box-shadow:0 2px 0 #d9d5c9}
+#materialPicker .material-card[data-category="精油"] .mat-card-header{min-height:30px;padding-right:90px}
+.inventory-editor{margin:12px 0 18px;padding:14px;border:2px solid #91b39e;border-radius:16px;background:#f0f7ee}.inventory-editor small{display:block;font-size:12px;line-height:1.6}.inventory-controls{display:flex;align-items:center;gap:12px;margin:10px 0}.inventory-controls button{min-width:48px;min-height:48px;font-size:24px}.inventory-controls input{width:100px;min-height:48px;text-align:center;font-size:24px}.inventory-editor p{font-size:13px;line-height:1.5}
+.inventory-import{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--cream)}.inventory-import>summary{min-height:44px;color:var(--green);font-weight:700}.inventory-import textarea{width:100%;font-size:14px}.inventory-import-row{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.inventory-import-row input[type="number"]{max-width:120px}.inventory-import p{font-size:13px;line-height:1.6}
+@media(max-width:359px){.inventory-badge{right:38px;min-width:36px;padding-inline:3px}.inventory-badge strong{font-size:15px}.inventory-badge.is-many strong{font-size:12px}}
 </style>

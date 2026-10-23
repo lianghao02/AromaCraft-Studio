@@ -1,5 +1,19 @@
 # HANDOFF
 
+## 2026-10-23：v1.8.0 精油庫存瓶數
+
+- Repository Full Name：lianghao02/AromaCraft-Studio
+- Branch：codex/inventory-counts
+- Commit SHA：001cc5f（v1.7.1 基準，庫存修改前基準）
+- Skill Version：v1.0.0
+- Task Type：IMPROVE / HANDOFF
+- 新增精油卡片瓶數、齒輪內獨立庫存儲存、0 瓶歸零與盤點清單預覽／確認匯入。不追蹤剩餘 mL，不自動扣庫存，不改價格、配方與成本快照。
+- 沿用八表結構，庫存修訂追加至系統設定；舊資料無須遷移。持久化、待同步佇列、請求去重及版本衝突保護已驗證。
+- 120 項測試通過；npm test、npm run check、npm run build、git diff --check 通過。新增 tests/inventory.test.cjs，擴充 cloud／standalone 測試。瀏覽器驗證 0／2／9999 瓶、負數拒絕、7 項候選盤點匯入、價格不變、320／390／820／1366px 版面，無 pageerror。
+- 照片暫定清單只存版本庫外，未放入公開原始碼／種子資料，亦未寫入正式家庭資料。使用者仍需核對瓶蓋品名、規格與數量。
+- 操作、格式與驗證邊界見 docs/庫存瓶數.md。家庭實機同步與 iPhone Safari 尚未驗證；發布來源升版 v1.8.0；使用者要求正式庫存流程，公開版本不含任何私人或測試瓶數。實際推送及 Pages 部署以 Git／Actions 核對為準。正式家庭資料寫入仍受限於本工作階段沒有家庭帳號授權連線。
+
+
 ## 2026-10-23：v1.7.1 原料步驟捲動與下一個產品
 
 - Repository Full Name：lianghao02/AromaCraft-Studio
