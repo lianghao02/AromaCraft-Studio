@@ -198,7 +198,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('editorForm').onsubmit({preventDefault(){}});assert.equal(node('editorError').hidden,false);assert.match(node('items').innerHTML,/12 g/);
   node('editQuantity').value='10';node('editQuantity').oninput();assert.match(node('unitPreview').textContent,/NT\$30\.00/);node('editorForm').onsubmit({preventDefault(){}});assert.match(node('items').innerHTML,/10 mL/);assert.doesNotMatch(node('items').innerHTML,/12 g/);
   // 主要集中填量路徑：不開視窗、空白阻擋、整滴、復原與管理隔離。
-  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;await works[1].onclick();
   choose('demo-oil');choose('yl-354876');
   assert.equal(node('editor').open,false);assert.equal(node('materialBrowse').hidden,false);assert.equal(node('summaryBar').hidden,true);
   assert.match(node('selectedItems').innerHTML,/data-quantity="demo-oil"/);assert.match(node('selectedItems').innerHTML,/data-quantity="yl-354876"/);
@@ -233,7 +233,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   node('confirmQuantities').onclick();assert.equal(node('recipePanel').open,true);assert.equal(node('quantityError').hidden,true);assert.doesNotMatch(node('items').innerHTML,/20 滴/);await node('quickSave').onclick();const savedSix=h.call('bootstrap').value.recipes.at(-1),loadedSix=h.call('loadRecipe',{id:savedSix.id,version:savedSix.version}).value;for(const id of oilIds){const item=loadedSix.items.find(i=>i.materialId===id);assert.equal(item.unit,'滴');assert.equal(Number(item.quantity),1);}
   {
   // 完整問答流程：目標調配、每份放大、儲存，再以實際七滴完成製作，原配方仍六滴。
-  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;
+  const fresh=node('blank').onclick();if(node('confirmDialog').open)node('confirmProceed').onclick();await fresh;await works[1].onclick();
   choose(oilIds[0]);choose('demo-oil');node('planningMode').value='target';node('planningBasis').value='mL';node('planningTotal').value='30';node('planningPercent').value='1';node('planningBase').value='demo-oil';node('planningMode').onchange();
   node('quantity-'+oilIds[0]).value='6';node('quantity-unit-'+oilIds[0]).value='滴';quantity(oilIds[0],'6');
   assert.match(node('targetProgress').textContent,/6／約 6 滴/);assert.equal(node('quantity-demo-oil').disabled,true);assert.equal(Number(node('quantity-demo-oil').value),29.7);

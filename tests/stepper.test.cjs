@@ -11,7 +11,7 @@ async function boot(){
   const catalogCtx=vm.createContext({Intl,Date,Map});
   vm.runInContext(fs.readFileSync(path.join(src,'Catalog.html'),'utf8').replace(/^\s*<script>/,'').replace(/<\/script>\s*$/,''),catalogCtx);
   const nodes=new Map();
-  function node(id){if(!nodes.has(id))nodes.set(id,{dataset:{},value:'',textContent:'',hidden:false,disabled:false,isConnected:true,innerHTML:'',open:false,addEventListener(event,handler){this[event+'Handler']=handler;},append(child){child.parentId=id;},insertBefore(child){child.parentId=id;},setAttribute(k,v){this[k]=v;},scrollIntoView(){},focus(){},close(){this.open=false;},showModal(){this.open=true;}});return nodes.get(id);}
+  function node(id){if(!nodes.has(id))nodes.set(id,{dataset:{},value:'',textContent:'',hidden:false,disabled:false,isConnected:true,innerHTML:'',open:false,addEventListener(event,handler){this[event+'Handler']=handler;},append(child){child.parentId=id;},insertBefore(child){child.parentId=id;},setAttribute(k,v){this[k]=v;},scrollIntoView(options){this.scrollOptions=options;},focus(options){this.focusOptions=options;},close(){this.open=false;},showModal(){this.open=true;}});return nodes.get(id);}
   const works=['精油皂','精油膏'].map(type=>({...node(type),dataset:{type}}));
   const runner={withSuccessHandler(fn){this.success=fn;return this;},withFailureHandler(fn){this.failure=fn;return this;},api(r){setImmediate(()=>this.success(h.call(r.action,r.data)));}};
   const ctx=vm.createContext({Intl,Date,JSON,setTimeout:()=>0,clearTimeout:()=>{},crypto:require('node:crypto'),confirm:()=>true,
@@ -123,4 +123,30 @@ test('精油平均分配：不能整除時餘數由前面幾種各多 1 滴，�
   assert.deepEqual(drops,[7,7,6]);
   assert.equal(drops.reduce((a,b)=>a+b,0),20);
   assert.match(node('targetProgress').textContent,/已分配 20／約 20 滴/);
+});
+
+// Regression: a collapsed quantity list must reveal the first missing field, not advance.
+test('待填用量：從收合區按下一步會展開並置中第一個錯誤欄位',async()=>{
+  const {node,tick,works}=await boot();
+  await works[1].onclick();await tick();await tick();
+  for(const id of ['demo-soap','demo-oil'])node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:id}}:null}});
+  node('toggleSelectedItems').onclick();assert.equal(node('selectedItems').hidden,true);
+  node('quantity-demo-soap').value='';node('quantity-demo-oil').value='';
+  node('confirmQuantities').onclick();
+  assert.equal(node('selectedItems').hidden,false);
+  assert.equal(node('toggleSelectedItems')['aria-expanded'],'true');
+  assert.equal(node('quantity-demo-soap').focusOptions.preventScroll,true);
+  assert.equal(node('quantity-demo-soap').scrollOptions.block,'center');
+  assert.equal(node('viewRecipe').dataset.step,'2');
+});
+
+test('製作另一個產品：取消保留草稿，確認後清空並回到類別選擇',async()=>{
+  const {node,tick,works}=await boot();await works[1].onclick();await tick();await tick();
+  node('materials').onclick({target:{closest:q=>q==='[data-add]'?{dataset:{add:'demo-soap'}}:null}});
+  const cancel=node('blank').onclick();assert.equal(node('confirmDialog').open,true);node('confirmKeep').onclick();await cancel;
+  assert.match(node('selectedItems').innerHTML,/demo-soap/);assert.equal(node('viewRecipe').dataset.step,'2');
+  const proceed=node('blank').onclick();node('confirmProceed').onclick();await proceed;
+  assert.equal(node('viewRecipe').dataset.step,'1');assert.equal(node('workPanel').open,true);
+  assert.equal(node('materialPicker').open,false);assert.equal(node('recipePanel').open,false);
+  assert.equal(node('selectedItems').innerHTML,'');assert.equal(node('stepBtn3').disabled,true);
 });

@@ -75,10 +75,10 @@
     </div></details>
 
     <details id="materialPicker" class="fold"><summary><h2 id="materialPickerTitle">2 選原料與調整用量</h2><small id="materialPickerHint">點原料加入，直接在已選列填用量</small></summary><div class="fold-body">
-      <div id="pickSide" class="pick-side"><h3 id="selectedItemsTitle">已選原料</h3><div id="selectedItems" class="recipe-list"></div><div id="selectionUndo" hidden><span id="selectionUndoText"></span><button type="button" id="undoSelection">復原移除</button></div><p id="quantityError" role="alert" hidden></p>
+      <div id="pickSide" class="pick-side"><h3 id="selectedItemsTitle">已選原料</h3><button id="toggleSelectedItems" type="button" class="subtle-btn" aria-controls="selectedItems" aria-expanded="true" hidden>收合用量</button><div id="selectedItems" class="recipe-list"></div><p id="quantityError" role="alert" hidden></p>
       <details id="ylCatalog" class="yl-catalog"><summary>悠樂芳精油目錄與成本試算</summary><p class="muted">官網批發價估算（內建快照，不會即時連線官網），含稅未含運費。每 mL 計算；此區只算精油，不含基底與包材，也不併入目前 g 重量配方。試算清單重新整理會重設。</p><label>搜尋精油或商品編號<input id="ylSearch" type="search" placeholder="例如：薰衣草、乳香"></label><div id="ylCategories" class="chips" aria-label="悠樂芳分類"></div><label class="check"><input id="ylPending" type="checkbox">顯示容量或價格待補品項</label><p id="ylCount" role="status"></p><div id="ylCards" class="yl-grid"></div><button id="ylMore" type="button">再顯示 24 筆</button><div class="yl-estimate"><h3>本次精油用量</h3><div id="ylChosen"></div><strong id="ylTotal" role="status" aria-live="polite"></strong><button id="ylClear" type="button">清空精油試算</button></div></details>
     <div id="stepBar" class="step-bar" aria-label="本步驟摘要">
-      <div id="liveConcentration" class="concentration-panel picker-ratio"><strong id="workBasis"></strong><h3>精油濃度</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><small>精油濃度僅供參考，使用前請確認成分與用途是否適合。</small></div>
+      <div id="selectionUndo" hidden><span id="selectionUndoText"></span><button type="button" id="undoSelection">復原移除</button></div><button type="button" id="reviewQuantities" class="subtle-btn" hidden>查看／填寫用量 ↑</button><div id="liveConcentration" class="concentration-panel picker-ratio"><strong id="workBasis"></strong><h3>精油濃度</h3><strong id="pickerConcentrationValue">待填用量</strong><p id="pickerConcentrationMessage" role="status"></p><small>精油濃度僅供參考，使用前請確認成分與用途是否適合。</small></div>
       <div class="step-bar-row"><span id="selectionStatus" role="status">還沒選原料</span><button type="button" id="confirmQuantities" class="primary" hidden>下一步 →</button></div>
     </div>
       </div>
@@ -115,7 +115,7 @@
         </div>
         <button id="btnGotoCost" type="button" class="pill-btn">查看大約成本 ➔</button>
       </div>
-          <div class="confirm-actions"><div class="panel-save-actions"><span id="panelSafety" class="badge" hidden>待驗證</span><button id="saveAsNew" type="button">另存新配方</button><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div><p id="saveHint" class="muted" role="status"></p></div>
+          <div class="confirm-actions"><div class="panel-save-actions"><span id="panelSafety" class="badge" hidden>待驗證</span><button id="saveAsNew" type="button">另存新配方</button><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div><p id="saveHint" class="muted" role="status"></p><button id="blank" type="button" class="subtle-btn next-product">＋ 製作另一個產品</button><small class="next-product-hint">回到類別選擇，已儲存的配方與製作紀錄會保留。</small></div>
         </aside>
         <div class="confirm-main">
           <div class="recipe-settings"><h3 class="settings-title">基本資料</h3>
@@ -144,7 +144,6 @@
             <div class="toolbar">
               <button id="btnPrintRecipe" type="button" class="subtle-btn print-hide" title="列印或另存為 A4 配方工作單">🖨️ 列印工作單</button>
               <button id="copy">複製成新配方</button>
-              <button id="blank" type="button" class="subtle-btn danger-text">重新開始</button>
             </div>
           </div></details>
           <details id="productionFold" class="advanced production-details" hidden><summary>實際製作與紀錄</summary><div class="production-actions"><label>製作日期<input id="productionDate" type="date"></label><button id="recordProduction" type="button">開始製作／完成製作</button></div></details>
@@ -264,7 +263,7 @@
   </div>
 
   <footer class="app-footer print-hide">
-    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.7.0</div>
+    <div class="footer-brand"><strong>AromaCraft Studio 手作配方工作室</strong> · v1.7.1</div>
     <p class="muted">安全警語與成本計算供試算起步參考；各原料皮膚接觸限制與良率耗損，請依實際來源報告與衛生規範檢驗。<br><span id="storageDescription">本機草稿保存在此瀏覽器；已儲存資料由 Firebase 家庭雲端同步；草稿僅留此裝置。</span></p>
   </footer>
 </main>

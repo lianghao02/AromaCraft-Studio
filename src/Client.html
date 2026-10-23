@@ -101,7 +101,7 @@
   if($('manageCatalogSlot')?.append&&$('ylCatalog'))$('manageCatalogSlot').append($('ylCatalog'));
   // 三步驟進度：三個面板的 open 狀態是唯一來源，這裡只負責「同一時間只留一個」與進度顯示。
   const STEP_COPY=[['你要做什麼？','選一個類別，會直接進入下一步；換類別時，已選的原料與用量會保留。'],['加入原料與用量','點原料加入，填好用量後按下一步。'],['確認並儲存','核對成本與份數，確認後儲存。']];
-  let lastStep=1;
+  let lastStep=1, pickerReturnY=0, quantitiesCollapsed=false;
   function stepPanels(){return [$('workPanel'),$('materialPicker'),$('recipePanel')];}
   function stepperSync(opened){
     const view=$('viewRecipe');if(!view)return;
@@ -124,7 +124,7 @@
     if($('stepHint'))$('stepHint').textContent=producing?'正在記錄實際製作用量，修改只影響這次紀錄，原配方不變。':STEP_COPY[step-1][1];
   }
   stepPanels().forEach(p=>{if(p&&p.addEventListener)p.addEventListener('toggle',()=>stepperSync(p));});
-  [1,2,3].forEach(n=>{const b=$('stepBtn'+n);if(b)b.onclick=()=>{const p=stepPanels()[n-1];if(!p||b.disabled)return;p.open=true;stepperSync(p);if(window.scrollTo)window.scrollTo({top:0,behavior:'instant'});};});
+  [1,2,3].forEach(n=>{const b=$('stepBtn'+n);if(b)b.onclick=()=>{const p=stepPanels()[n-1];if(!p||b.disabled)return;if(lastStep===2)pickerReturnY=window.scrollY||0;p.open=true;stepperSync(p);const restore=()=>{if(window.scrollTo)window.scrollTo({top:n===2?pickerReturnY:0,behavior:'instant'});};restore();if(window.requestAnimationFrame)window.requestAnimationFrame(restore);};});
   let currentWorkMode = 'formulate';
   function switchWorkMode(mode) {
     currentWorkMode = mode;
@@ -180,7 +180,7 @@
     stepperSync();
   }
   function focusAfterWork(){$('recipePanel').open=false;$('materialPicker').open=true;$('materialPicker').scrollIntoView({block:'start'});updateState();}
-  function focusRecipe() { $('recipePanel').open=true; $('recipePanel').scrollIntoView({ block:'start' }); updateState(); }
+  function focusRecipe() { if(lastStep===2&&$('materialPicker').open)pickerReturnY=window.scrollY||0;$('recipePanel').open=true; $('recipePanel').scrollIntoView({ block:'start' }); updateState(); }
   function rpc(action, payload = {}) {
     return new Promise((resolve, reject) => {
       if (!window.google?.script?.run) return reject(Error('此頁需透過 Apps Script 網頁應用程式開啟；本機預覽僅供示範，不連線至家庭資料。'));
@@ -501,8 +501,8 @@
     try { draftStorage.removeItem(draftKey); } catch(e) {}
     await refresh(); notice('配方已儲存；同步結果請查看上方狀態。');
   }
-  async function replace(next) {
-    if (dirty && !await confirmChange('切換配方？','目前有未儲存的修改，要放棄並切換到「'+next.type+'」嗎？','放棄並切換')) return false;
+  async function replace(next, confirmed=false) {
+    if (dirty && !confirmed && !await confirmChange('切換配方？','目前有未儲存的修改，要放棄並切換到「'+next.type+'」嗎？','放棄並切換')) return false;
     productionSource=null;recipe = next; pendingQuantities.clear();removedSelections.clear();$('selectionUndo').hidden=true;draft(); renderRecipe();
     return true;
   }
@@ -523,11 +523,14 @@
     }
   });
   if($('blank'))$('blank').onclick = async () => {
-    if(data && await replace(blank(recipe.type))) {
-      $('workPanel').open=false;
-      $('materialPicker').open=true;
-      switchTab('tabRecipe');
-      focusAfterWork();
+    if(!data||busy)return;
+    if((dirty||productionSource)&&!await confirmChange('開始另一個產品？',productionSource?'目前尚未完成的實際製作內容會捨棄；已儲存配方與製作紀錄會保留。':'目前未儲存的配方修改會捨棄；已儲存配方與製作紀錄會保留。','開始另一個產品'))return;
+    if(await replace(blank(recipe.type),true)){
+      pendingSave=null;pendingLog=null;pickerReturnY=0;quantitiesCollapsed=false;dirty=false;
+      $('materialPicker').open=false;$('recipePanel').open=false;$('workPanel').open=true;
+      stepperSync($('workPanel'));switchTab('tabRecipe');
+      const top=()=>{if(window.scrollTo)window.scrollTo({top:0,behavior:'instant'});};top();if(window.requestAnimationFrame)window.requestAnimationFrame(top);
+      notice('請選擇下一個產品的類別。已儲存配方與製作紀錄仍在配方庫。');
     }
   };
   $('addMaterials').onclick = () => {
@@ -623,14 +626,31 @@
     const managing=$('materialPicker').dataset?.manage==='true';$('planner').hidden=managing;$('liveConcentration').hidden=managing||!recipe.items.length;
     // 步驟 2 一律直接在已選列填用量（不再有「先勾選、再集中填量」兩段）
     const has=recipe.items.length>0&&!managing;
+    const showQuantities=!quantitiesCollapsed||window.innerWidth>=1024;
+    $('toggleSelectedItems').hidden=!has;$('toggleSelectedItems').textContent=showQuantities?'收合用量':'展開用量';$('toggleSelectedItems').setAttribute('aria-expanded',String(showQuantities));
+    $('reviewQuantities').hidden=!has;$('selectedItems').hidden=has&&!showQuantities;
     $('confirmQuantities').hidden=!has;$('quantityAdvanced').hidden=!has;
     if($('materialBrowse'))$('materialBrowse').hidden=false;
     $('selectedItemsTitle').hidden=!has;$('selectedItemsTitle').textContent='已選原料（'+recipe.items.length+'）';
+    const selectedScroll=$('selectedItems').scrollTop||0;
     $('selectedItems').innerHTML=has?recipe.items.map(i=>{
       const m=data.materials.find(m=>m.id===i.materialId),p=AromaCore.itemPrice(i,data.prices),name=m?AromaCatalog.materialInfo(m,p).name:'原料不存在',id=escape(i.materialId),unit=i.unit||'g',pending=pendingQuantities.has(i.materialId);
       return '<div class="quantity-row"><strong>'+escape(name)+'</strong><div class="quantity-fields"><label for="quantity-'+id+'">使用量<span class="qty-stepper"><button type="button" class="step-btn" data-step="-'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="減少 '+escape(name)+' 用量">－</button><input id="quantity-'+id+'" data-quantity="'+id+'" type="number" min="0" step="'+(unit==='滴'?'1':'any')+'" inputmode="'+(unit==='滴'?'numeric':'decimal')+'" value="'+(pending?'':escape(i.quantity??i.grams))+'" aria-label="'+escape(name)+' 使用量" placeholder="用量" enterkeyhint="next" aria-describedby="quantity-error-'+id+'"><button type="button" class="step-btn" data-step="'+(['kg','L'].includes(unit)?'0.1':'1')+'" data-for="'+id+'" aria-label="增加 '+escape(name)+' 用量">＋</button></span></label><label>單位<select id="quantity-unit-'+id+'" data-quantity-unit="'+id+'" aria-label="'+escape(name)+' 單位">'+[...new Set([...AromaCore.availableUnits(p,m.category),unit])].map(u=>'<option'+(u===unit?' selected':'')+'>'+escape(u)+'</option>').join('')+'</select></label></div><p id="quantity-error-'+id+'" class="quantity-error" role="status"></p>'+(m.category==='基底油'&&AromaCore.metadata(p).density===null?'<small>要改用 '+(AromaCore.nativeBasis(p)==='g'?'mL':'g')+' 填寫？<button type="button" data-density="'+id+'">補密度</button></small>':'')+(m.category==='精油'?'<small class="qty-hint">'+(AromaCore.availableUnits(p,m.category).includes('滴')?'以滴輸入，預設20滴／mL估算；更改單位會保留數字。':'這筆精油以重量採購，需有容量換算資料才能使用滴數。')+'</small>':'')+'<div class="quantity-row-actions"><button type="button" data-item="'+id+'">換算設定</button><button type="button" data-unselect="'+id+'">移除</button></div></div>';
     }).join(''):'';
+    $('selectedItems').scrollTop=selectedScroll;
     updateTargetProgress();
+  }
+  let quantityDesktop=window.innerWidth>=1024;
+  window.addEventListener('resize',()=>{const next=window.innerWidth>=1024;if(next!==quantityDesktop){quantityDesktop=next;if(data&&recipe)renderSelected();}});
+  $('toggleSelectedItems').onclick=()=>{quantitiesCollapsed=!quantitiesCollapsed;renderSelected();};
+  $('reviewQuantities').onclick=()=>{quantitiesCollapsed=false;renderSelected();const input=$('quantity-'+([...pendingQuantities][0]||recipe.items[0]?.materialId));if(input)focusQuantity(input.id.replace('quantity-',''));};
+  // Preserve the clicked card's viewport position even on browsers without scroll anchoring.
+  function keepMaterialPosition(id,change){
+    const card=()=>[...($('materials').querySelectorAll?.('[data-add]')||[])].find(el=>el.dataset.add===id);
+    const before=card()?.getBoundingClientRect?.().top;change();
+    if(!Number.isFinite(before))return;
+    const restore=()=>{const after=card()?.getBoundingClientRect?.().top;if(Number.isFinite(after)&&window.scrollBy)window.scrollBy({top:after-before,behavior:'instant'});};
+    restore();if(window.requestAnimationFrame)window.requestAnimationFrame(restore);
   }
   function removeSelection(id){
     if(recipe.baseId===id&&recipe.targetQuantity){notice('請先取消補足原料，再取消勾選。',true);return;}
@@ -639,7 +659,7 @@
     recipe=AromaCore.balance({...recipe,items:recipe.items.filter(i=>i.materialId!==id)},data.materials,data.prices);pendingQuantities.delete(id);
     $('selectionUndo').hidden=false;$('selectionUndoText').textContent='已移除原料，原用量可復原。';draft();renderRecipe();
   }
-  $('undoSelection').onclick=()=>{const pair=[...removedSelections].at(-1);if(!pair)return;const [id,saved]=pair;recipe.items.splice(saved.position,0,saved.item);if(saved.pending)pendingQuantities.add(id);if(saved.weight)recipe.concentration={...recipe.concentration,measuredWeights:{...recipe.concentration?.measuredWeights,[id]:saved.weight}};removedSelections.delete(id);$('selectionUndo').hidden=!removedSelections.size;draft();renderRecipe();};
+  $('undoSelection').onclick=()=>{const pair=[...removedSelections].at(-1);if(!pair)return;const [id,saved]=pair;keepMaterialPosition(id,()=>{recipe.items.splice(saved.position,0,saved.item);if(saved.pending)pendingQuantities.add(id);if(saved.weight)recipe.concentration={...recipe.concentration,measuredWeights:{...recipe.concentration?.measuredWeights,[id]:saved.weight}};removedSelections.delete(id);$('selectionUndo').hidden=!removedSelections.size;draft();renderRecipe();});};
   let stepHeld=false;
   const stepQuantity=btn=>{const input=$('quantity-'+btn.dataset.for);if(!input||input.disabled)return;const step=Number(btn.dataset.step),next=Math.max(0,Math.round(((Number(input.value)||0)+step)*1e6)/1e6);input.value=next;input.dispatchEvent(new Event('input',{bubbles:true}));};
   $('selectedItems').onclick=e=>{const st=e.target.closest('[data-step]');if(st){if(stepHeld){stepHeld=false;return;}stepQuantity(st);return;}const dens=e.target.closest('[data-density]');if(dens){editMaterial(dens.dataset.density,null,{openDensity:true});return;}const details=e.target.closest('[data-item]');if(details){editItem(details.dataset.item);return;}const b=e.target.closest('[data-unselect]');if(b)removeSelection(b.dataset.unselect);};
@@ -670,12 +690,18 @@
     if(!pendingQuantities.size){$('quantityError').hidden=true;$('quantityError').textContent='';return;}
     if(force||!$('quantityError').hidden){$('quantityError').hidden=false;$('quantityError').textContent=[...pendingQuantities].map(id=>{const m=data.materials.find(m=>m.id===id),name=m?AromaCatalog.materialInfo(m).name:'原料';return name+'：'+($('quantity-error-'+id)?.textContent||'請填寫用量');}).join('；');}
   }
+  function focusQuantity(id){
+    const input=$('quantity-'+id);if(!input)return;quantitiesCollapsed=false;$('selectedItems').hidden=false;$('toggleSelectedItems').textContent='收合用量';$('toggleSelectedItems').setAttribute('aria-expanded','true');
+    input.focus({preventScroll:true});
+    const reveal=()=>{const row=input.closest?.('.quantity-row')||input;if(row.scrollIntoView)row.scrollIntoView({block:'center',behavior:'instant'});};
+    reveal();if(window.requestAnimationFrame)window.requestAnimationFrame(reveal);
+  }
   $('confirmQuantities').onclick=()=>{
     readInputs();
     for(const item of recipe.items){const input=$('quantity-'+item.materialId),unit=$('quantity-unit-'+item.materialId)?.value||item.unit||'g';if(input&&!(recipe.planning?.mode==='target'&&recipe.planning.baseId===item.materialId))commitQuantity(item.materialId,input.value,unit);}
     quantityFeedback(true);
-    if(pendingQuantities.size){const input=$('quantity-'+[...pendingQuantities][0]);if(input?.focus)input.focus();return;}
-    calculate();if(validationError){$('quantityError').hidden=false;$('quantityError').textContent=validationError;return;}$('materialPicker').open=false;focusRecipe();
+    if(pendingQuantities.size){focusQuantity([...pendingQuantities][0]);return;}
+    calculate();if(validationError){$('quantityError').hidden=false;$('quantityError').textContent=validationError;return;}pickerReturnY=window.scrollY||0;$('materialPicker').open=false;focusRecipe();
   };
   if($('recipePanel').addEventListener)$('recipePanel').addEventListener('toggle',updateState);
   if($('materialPicker').addEventListener)$('materialPicker').addEventListener('toggle',updateState);
@@ -732,11 +758,11 @@
         return;
       }
       if (!recipe.items.some(i => i.materialId === id)) {
-        addSelection(id,m);
+        keepMaterialPosition(id,()=>addSelection(id,m));
       }
       else {
         if(recipe.baseId===id&&recipe.targetQuantity){notice('請先取消補足原料，再取消勾選。',true);return;}
-        removeSelection(id);
+        keepMaterialPosition(id,()=>removeSelection(id));
       }
     }
   };

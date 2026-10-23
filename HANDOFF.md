@@ -1,5 +1,24 @@
 # HANDOFF
 
+## 2026-10-23：v1.7.1 原料步驟捲動與下一個產品
+
+- Repository Full Name：lianghao02/AromaCraft-Studio
+- Branch：codex/scroll-usability
+- Commit SHA：61c3c68（修訂基準；本次修改前基準）
+- Skill Version：v1.0.0
+- Task Type：FIX / IMPROVE
+- 選取／取消原料與復原時維持原料卡的畫面位置，不依賴瀏覽器捲動錨定；已選用量清單重繪保留內部捲動位置。
+- 待填欄位會展開用量區、聚焦並置中；手機欄位聚焦／鍵盤開啟時隱藏浮動摘要，避免遮住輸入與錯誤。
+- 搜尋列改為隨行；手機／平板用量區限制高度並可收合，底部提供「查看／填寫用量」。桌機維持左右並排；跨 1024px 切換時同步展開狀態。
+- 復原移除放在隨行摘要；從確認頁返回原料步驟會恢復離開前的位置。
+- 僅修改 src/Client.html、src/Index.html、src/Styles.html、tests/stepper.test.cjs 與重建 index.html；計算、價格、同步與權限來源未改。
+- 新增「製作另一個產品」入口：從更多設定移至確認頁儲存區，回到類別步驟並清空本次原料、待填狀態與待送出要求；有未儲存修改或未完成實際製作時先確認，取消保留原內容。已存配方與製作紀錄不刪除。
+- Chromium 390／1366px 實際儲存後重新開始、選不同類別、取消／確認捨棄草稿通過；已儲存配方於操作前後讀回一致。
+- 驗證：109 項測試通過（15 個測試檔）；npm test、npm run check、npm run build、git diff --check 通過。
+- Chromium：390、820、1366px；停用原生 overflow-anchor 後連選 6 項，卡片位移均小於 3px；搜尋、復原、收合／展開、漏填欄位命中檢查與手機桌機切換通過；返回捲動位置分別 1649→1649、1470→1470、914→914；pageerror 為 0。使用記憶體示範資料，不連線家庭資料。
+- 尚未驗證：iPhone Safari 原生鍵盤、真實家庭帳號與正式 PWA。使用者已授權提交、推送與部署；本輪升版 v1.7.1，實際 commit、部署與線上核對結果以 Git 和部署回報為準。下方 v1.7.0 發布資訊為前輪紀錄。
+
+
 ## 核心元資料 (Metadata)
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
