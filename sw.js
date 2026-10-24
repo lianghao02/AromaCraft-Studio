@@ -1,6 +1,6 @@
 // CacheStorage 與同來源的其他網站共用，只清理本專案的舊版本。
 const CACHE_PREFIX = 'aromacraft-';
-const CACHE_NAME = 'aromacraft-v1.8.1';
+const CACHE_NAME = 'aromacraft-v1.8.2';
 const STATIC_ASSETS = [
   './',
   './index.html',

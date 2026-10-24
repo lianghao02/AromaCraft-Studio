@@ -33,6 +33,11 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.match(node('materials').innerHTML,/>乳香<|>乳香.*?<\/h3>/);
   assert.doesNotMatch(node('materials').innerHTML,/class="mat-name">[^<]*精油/);
   assert.match(node('materials').innerHTML,/354876.jpg/);assert.match(node('materials').innerHTML,/loading="lazy"/);
+  // Keep a bottle visible while the official image loads; reveal photos only after success.
+  assert.match(node('materials').innerHTML,/<svg viewBox="0 0 32 44"/);
+  const loadedImage={naturalWidth:0,classList:{contains:c=>c==='material-thumbnail',add:c=>{loadedImage.visible=c==='is-loaded';}}};
+  node('materials').loadHandler({target:loadedImage});assert.notEqual(loadedImage.visible,true);
+  loadedImage.naturalWidth=300;node('materials').loadHandler({target:loadedImage});assert.equal(loadedImage.visible,true);
   const failedImage={hidden:false,classList:{contains:c=>c==='material-thumbnail'},parentElement:{classList:{remove:c=>{failedImage.fallback=c==='has-image';}}}};
   node('materials').errorHandler({target:failedImage});assert.equal(failedImage.hidden,true);assert.equal(failedImage.fallback,true);
   node('search').value='';node('search').oninput();

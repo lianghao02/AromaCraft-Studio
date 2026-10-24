@@ -365,11 +365,11 @@
       const bottleText=latestPrice?fmt(info.amount)+' '+(info.unit==='mL'?'mL':escape(info.unit))+' · <span class="nw">'+info.priceLabel+' '+bottleMoney+'</span>':'';
       const priceText=!latestPrice?'尚未設定採購價格':managing?bottleText+dropHtml:(unitPrice!==null&&Number.isFinite(unitPrice)?'<span class="nw">NT$'+nf(unitPrice)+'／'+unitName+'</span>':bottleText)+dropHtml;
       const priceTitle=latestPrice?info.priceLabel+' '+bottleMoney+'／'+fmt(info.amount)+' '+(info.unit||''):'';
-      return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯原料與庫存':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
+      return `<article class="material-card ${m.category==='精油'?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯原料與庫存':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
         <div class="mat-card-header">
           <span class="badge">${escape(info.kind)}</span>
           ${m.category==='精油'?`<span class="inventory-badge ${(data.inventory?.[m.id]?.count||0)>=100?'is-many':''} ${(data.inventory?.[m.id]?.count||0)===0?'is-zero':''}" aria-label="庫存 ${data.inventory?.[m.id]?.count||0} 瓶"><strong>${data.inventory?.[m.id]?.count||0}</strong> 瓶</span>`:''}
-          ${info.image?`<span class="mat-picture has-image" aria-hidden="true"><img class="material-thumbnail" src="${escape(info.image)}" width="44" height="54" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""></span>`:''}
+          ${m.category==='精油'?`<span class="mat-picture" aria-hidden="true"><svg viewBox="0 0 32 44" width="28" height="38" focusable="false"><rect x="10" y="1" width="12" height="10" rx="2" fill="#f5f1e7" stroke="#b8b4a9"/><rect x="8" y="11" width="16" height="31" rx="4" fill="#704729" stroke="#543720"/><rect x="9" y="20" width="14" height="15" rx="1" fill="#e4eee1"/><path d="M16 31c-7-3-4-8 0-7 4-1 7 4 0 7z" fill="#417355"/></svg>${info.image?`<img class="material-thumbnail" src="${escape(info.image)}" width="44" height="54" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="">`:''}</span>`:''}
         </div>
         <h3 class="mat-name">${escape(info.name)}</h3>
         <p class="mat-meta" title="${escape(priceTitle)}">${priceText}</p>
@@ -746,6 +746,9 @@
   if($('materialsMore'))$('materialsMore').onclick=()=>{materialLimit+=materialPageSize();renderMaterials();};
   $('recipeSearch').oninput = $('recipeType').onchange = renderSaved;
   $('newMaterial').onclick = () => editMaterial();
+  if($('materials').addEventListener)$('materials').addEventListener('load',e=>{
+    if(e.target?.classList?.contains('material-thumbnail')&&e.target.naturalWidth>0)e.target.classList.add('is-loaded');
+  },true);
   if($('materials').addEventListener)$('materials').addEventListener('error',e=>{
     if(e.target?.classList?.contains('material-thumbnail')){e.target.hidden=true;e.target.parentElement?.classList?.remove('has-image');}
   },true);
