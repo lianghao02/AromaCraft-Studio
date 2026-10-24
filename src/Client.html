@@ -70,7 +70,7 @@
       if(picker?.dataset)picker.dataset.manage=String(target==='tabManage');
       if(target==='tabManage'){picker.open=true;switchManage('manageBasics');}
       if($('materialPickerTitle'))$('materialPickerTitle').textContent=target==='tabManage'?'原料與價格':'2 選原料與調整用量';
-      if($('materialPickerHint'))$('materialPickerHint').textContent=target==='tabManage'?'點卡片編輯名稱、容量與價格':'點原料加入，直接在已選列填用量';
+      if($('materialPickerHint'))$('materialPickerHint').textContent=target==='tabManage'?'點卡片編輯原料與庫存':'點原料加入，直接在已選列填用量';
     }
     const tabMap = [
       ['tabRecipe', 'viewRecipe'],
@@ -365,12 +365,11 @@
       const bottleText=latestPrice?fmt(info.amount)+' '+(info.unit==='mL'?'mL':escape(info.unit))+' · <span class="nw">'+info.priceLabel+' '+bottleMoney+'</span>':'';
       const priceText=!latestPrice?'尚未設定採購價格':managing?bottleText+dropHtml:(unitPrice!==null&&Number.isFinite(unitPrice)?'<span class="nw">NT$'+nf(unitPrice)+'／'+unitName+'</span>':bottleText)+dropHtml;
       const priceTitle=latestPrice?info.priceLabel+' '+bottleMoney+'／'+fmt(info.amount)+' '+(info.unit||''):'';
-      return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯名稱、容量與價格':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
+      return `<article class="material-card ${info.image?'has-thumbnail':''} ${inRecipe ? 'in-recipe' : ''} ${m.active === false || m.active === 'FALSE' ? 'inactive' : ''}" data-add="${escape(m.id)}" data-category="${escape(m.category)}" data-oil-kind="${escape(info.kind)}" role="button" tabindex="0" ${managing?'':`aria-pressed="${inRecipe}"`} aria-label="${escape(info.name)}，${managing?'編輯原料與庫存':inRecipe?'已勾選，點擊取消':'點擊勾選原料'}">
         <div class="mat-card-header">
           <span class="badge">${escape(info.kind)}</span>
           ${m.category==='精油'?`<span class="inventory-badge ${(data.inventory?.[m.id]?.count||0)>=100?'is-many':''} ${(data.inventory?.[m.id]?.count||0)===0?'is-zero':''}" aria-label="庫存 ${data.inventory?.[m.id]?.count||0} 瓶"><strong>${data.inventory?.[m.id]?.count||0}</strong> 瓶</span>`:''}
           ${info.image?`<span class="mat-picture has-image" aria-hidden="true"><img class="material-thumbnail" src="${escape(info.image)}" width="44" height="54" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""></span>`:''}
-          <button type="button" class="mat-gear" data-gear="${escape(m.id)}" aria-label="管理 ${escape(m.name)} 原料與價格" title="管理原料與價格">⚙️</button>
         </div>
         <h3 class="mat-name">${escape(info.name)}</h3>
         <p class="mat-meta" title="${escape(priceTitle)}">${priceText}</p>
@@ -759,14 +758,6 @@
     if (!data) return;
     const create = e.target.closest('[data-create]');
     if (create) { editMaterial(undefined, nextPrice => { const id = nextPrice.materialId, m = data.materials.find(x => x.id === id); if (m && !recipe.items.some(i => i.materialId === id)) addSelection(id, m); }, { prefillName: create.dataset.create }); return; }
-    const gearBtn = e.target.closest('[data-gear]');
-    if (gearBtn) {
-      e.stopPropagation();
-      const id = gearBtn.dataset.gear;
-      const m = data.materials.find(x => x.id === id);
-      editMaterial(id);
-      return;
-    }
     const card = e.target.closest('[data-add]');
     if (card) {
       const id = card.dataset.add;
@@ -788,7 +779,7 @@
   $('materials').onkeydown = e => {
     if (e.key === 'Enter' || e.key === ' ') {
       const card = e.target.closest('[data-add]');
-      if (card && !e.target.closest('[data-gear]')) {
+      if (card) {
         e.preventDefault();
         card.click();
       }
