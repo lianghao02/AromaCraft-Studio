@@ -169,28 +169,6 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
 .tab-btn.active{background:#ffffff;color:var(--green);border:2px solid var(--wood-border);box-shadow:0 3px 0 var(--wood-shadow);transform:translateY(-1px)}.tab-btn.active:active{transform:translateY(2px);box-shadow:0 0 0 transparent}
 @media(hover:hover){.tab-btn:hover:not(.active){background:rgba(255,255,255,.5);color:var(--ink)}}
 
-/* === 工作視圖雙模式切換（Segmented Control） === */
-.mode-switch{display:flex;gap:4px;background:#e2ebe0;padding:4px;border-radius:12px;margin-bottom:14px}
-.mode-btn{flex:1;min-height:42px;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.mode-btn.active{background:#fff;color:var(--green);font-weight:700;box-shadow:0 2px 6px rgba(32,55,46,.12)}
-@media(hover:hover){.mode-btn:hover:not(.active){color:var(--ink);background:rgba(255,255,255,.45)}}
-
-/* === 隨行成本膠囊（指標隨行） === */
-.cost-pill{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:#f2f6ee;border:1px solid #d4dfce;border-radius:12px;margin:12px 0 6px}
-.cost-pill .pill-info{display:flex;flex-direction:column}
-.cost-pill .pill-info small{font-size:11px;color:var(--muted)}
-.cost-pill .pill-info strong{font-size:16px;color:var(--green);font-weight:700}
-.pill-btn{min-height:36px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#fff;background:var(--green);border:1px solid var(--green);border-radius:8px;cursor:pointer;transition:all .15s ease}
-@media(hover:hover){.pill-btn:hover{background:#244534}}
-
-.cost-nav-bar{margin-bottom:12px}
-
-/* 通用模式顯示控制（手機與預設） */
-#viewRecipe[data-mode="formulate"] #costPanel{display:none!important}
-#viewRecipe[data-mode="cost"] #materialPicker{display:none!important}
-#viewRecipe[data-mode="cost"] #costPill{display:none!important}
-
-.quick-nav{display:flex;gap:8px;margin-bottom:12px}
 .subtle-btn{flex:1;min-height:40px;font-size:12px;font-weight:700;padding:8px 10px;background:#fff;border:2px solid var(--line);border-radius:12px;box-shadow:0 2px 0 var(--line-strong);color:var(--muted);transition:all .08s ease}
 @media(hover:hover){.subtle-btn:hover{color:var(--green);border-color:var(--green);background:var(--green-soft)}}.subtle-btn:active{transform:translateY(2px);box-shadow:0 0 0 transparent}
 
@@ -205,23 +183,6 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
 #closeNotice{flex-shrink:0;min-height:28px;height:28px;width:28px;padding:0;border:0;background:transparent;cursor:pointer;font-size:14px;border-radius:50%;color:#fff;opacity:.8;display:flex;align-items:center;justify-content:center}
 @media(hover:hover){#closeNotice:hover{background:rgba(255,255,255,.15);opacity:1}}
 @keyframes slideDown{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
-
-/* === 新手 3 步配方指南卡片 === */
-.guide-card{background:#fffef8;border:2px solid var(--wood-border);border-radius:var(--radius);padding:14px 16px;margin:0 0 14px;box-shadow:0 3px 0 var(--wood-shadow),0 6px 14px rgba(45,35,20,0.04)}
-.guide-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.guide-title{display:flex;align-items:center;gap:6px;color:var(--green)}
-.guide-title strong{font-size:14px;font-weight:700}
-.guide-close{min-height:28px;height:28px;width:28px;padding:0;border:0;background:transparent;color:var(--muted);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
-@media(hover:hover){.guide-close:hover{background:rgba(0,0,0,.06);color:var(--ink)}}
-.guide-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.guide-step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:12px;background:#fff;border:2px solid var(--line);box-shadow:0 2px 0 var(--line-strong);cursor:pointer;transition:all .12s ease}
-.guide-step:hover,.guide-step:focus-visible{background:#f5fbf7;border-color:var(--green);transform:translateY(-1px);box-shadow:0 3px 0 var(--green-deep);outline:none}
-.step-num{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);border:1.5px solid var(--green-deep);color:white;font-size:12px;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.15)}
-.step-content strong{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
-.step-content p{margin:0;font-size:12px;color:var(--muted);line-height:1.45}
-.guide-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);gap:8px}
-.subtle-link{background:none;border:0;padding:0;color:var(--muted);font-size:11px;min-height:auto;cursor:pointer;text-decoration:underline}
-@media(hover:hover){.subtle-link:hover{color:var(--ink)}}
 
 /* === 使用說明手冊 Dialog === */
 .help-dialog{width:min(94%,600px);max-height:88vh}
@@ -256,16 +217,9 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
   h1,.section-head h1{font-size:24px}
   h2,.section-head h2{font-size:20px}
 
-  .guide-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .guide-step{padding:10px 12px;flex-direction:row;align-items:center;gap:10px}
-  .guide-step .step-num{margin-top:0}
-
   .tabs{gap:10px;padding:6px;border-radius:16px;margin-bottom:18px}
   .tab-btn{font-size:15px;min-height:46px}
 
-  .mode-switch{grid-area:mode;margin-bottom:6px}
-  .guide-card{grid-area:guide;margin:0 0 10px}
-  .quick-nav{grid-area:quick;margin:0 0 10px}
   #workPanel{grid-area:work;margin:0 0 14px}
   #recipePanel{grid-area:recipe;margin:0}
 
@@ -383,7 +337,7 @@ dialog::backdrop{background:rgba(19,46,35,0.45);backdrop-filter:blur(2px)}
 
 /* === 專業 A4 列印排版（@media print） === */
 @media print{
-  header,nav,.tabs,.quick-nav,.mode-switch,.cost-pill,.cost-nav-bar,#workPanel,#materialPicker,.guide-card,.panel-save-card,.add-material,.advanced,.summary,#notice,dialog,.print-hide,button{display:none!important}
+  header,nav,.tabs,#workPanel,#materialPicker,.panel-save-card,.add-material,.advanced,.summary,#notice,dialog,.print-hide,button{display:none!important}
   body,main{background:#fff!important;color:#000!important;max-width:100%!important;padding:0!important;margin:0!important}
   #viewRecipe{display:block!important}
   #recipePanel,#costPanel{border:1px solid #ccc!important;border-radius:0!important;box-shadow:none!important;margin-bottom:20px!important;page-break-inside:avoid;padding:16px!important}
@@ -717,7 +671,7 @@ input[type="date"]::-webkit-date-and-time-value{min-height:1.5em;text-align:left
 /* 手感：取消雙擊縮放與預設藍色點擊底色（已有按下下沉回饋）、觸控區至少 44px、鍵盤彈出時收起底部固定列 */
 html{-webkit-tap-highlight-color:transparent}
 button,[role="button"],select,summary,label,input,.material-card,.step-btn{touch-action:manipulation}
-#toggleWork,#blank{min-height:44px}
+#blank{min-height:44px}
 #closeNotice{position:relative}#closeNotice::before{content:"";position:absolute;inset:-8px}
 @media(max-width:767px){body.kb-open #summaryBar,body.kb-open #primaryNav{display:none!important}}
 @media(prefers-reduced-motion:reduce){.material-card,button,.step-btn,.stepper-btn{transition:none!important}}
@@ -747,7 +701,6 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 .step-head h2{margin:0 0 4px;font-size:22px}
 .step-head p{margin:0;font-size:14px}
 #viewRecipe.stepflow{display:block}
-#viewRecipe.stepflow .guide-card,#viewRecipe.stepflow .quick-nav{display:none!important}
 #viewRecipe.stepflow>#workPanel,#viewRecipe.stepflow>#materialPicker,#viewRecipe.stepflow>#recipePanel{margin:0 0 14px;min-width:0}
 #viewRecipe.stepflow[data-step="1"]>#materialPicker,#viewRecipe.stepflow[data-step="1"]>#recipePanel,#viewRecipe.stepflow[data-step="1"]>#recipeWorkspace,
 #viewRecipe.stepflow[data-step="2"]>#workPanel,#viewRecipe.stepflow[data-step="2"]>#recipePanel,#viewRecipe.stepflow[data-step="2"]>#recipeWorkspace,
@@ -838,7 +791,6 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 #recipePanel .confirm-cost{order:1}
 #recipePanel .confirm-conc{order:2}
 #recipePanel #formulaBar{order:3}
-#recipePanel #costPill{display:none}
 #recipePanel .confirm-main{order:4;min-width:0}
 #recipePanel .confirm-actions{order:5}
 #recipePanel .confirm-cost #costPanel{margin:0;padding:14px 16px;border:2px solid var(--green);border-radius:16px;background:var(--green-soft);box-shadow:none}
@@ -909,7 +861,6 @@ header{flex-wrap:nowrap;padding:12px 16px 8px}
 #viewSaved .log-row{padding:12px 0;border-top:1px solid #e4dccb}
 #viewSaved .log-row:first-child{border-top:0}
 @media(min-width:1024px){#viewManage .manage-group{display:block}#viewManage #manageMaterialSlot #materials{grid-template-columns:repeat(4,minmax(0,1fr))}}
-#restoreGuide{display:none}
 /* 已選列精簡：欄位名稱改由 aria-label 提供，一列只佔兩行，10 種以上原料也不會過長 */
 #viewRecipe.stepflow #selectedItems .quantity-row{padding:8px 12px 10px;gap:0 8px}
 #viewRecipe.stepflow #selectedItems .quantity-fields label{font-size:0;margin:0;gap:0}

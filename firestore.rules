@@ -2,11 +2,107 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 授權家庭成員白名單（限定您與太太的 Email）
+    // ===============================================================
+    // 假設資料模型 (Assumed Data Model)
+    // ===============================================================
+    //
+    // 所有家庭共用資料皆置於 /families/{familyId} 之下，且僅允許存取
+    // familyId == 'home_sharing' 空間；身分授權僅限已驗證 Email 之家庭成員。
+    //
+    // 1. /families/home_sharing/settings/syncHead
+    //    - schemaVersion: int (固定為 2，必填)
+    //    - revision: int (正整數，建立為 1，更新須逐版 +1，必填)
+    //    - snapshotId: string (1..99 字元，須對應同交易建立的快照，必填)
+    //    - updatedAt: timestamp (須等於 request.time，必填)
+    //    - updatedBy: string (須等於 request.auth.uid，必填)
+    //
+    // 2. /families/home_sharing/backup/{snapshotId}（不可更新、不可刪除）
+    //    - schemaVersion: int (固定為 2，必填)
+    //    - revision: int (正整數，須與 syncHead.revision 一致，必填)
+    //    - tablesJson: string (1..900000 字元，JSON 序列化表格，必填)
+    //    - updatedAt: timestamp (須等於 request.time，必填)
+    //    - updatedBy: string (須等於 request.auth.uid，必填)
+    //
+    // 3. /families/home_sharing/materials/{materialId}
+    //    - 對應 Code.gs SCHEMA_['原料資料']：id, name, category, active, note, revision
+    //
+    // 4. /families/home_sharing/prices/{priceId}（歷史紀錄：禁止刪除，核心金額欄位不可修改）
+    //    - 對應 Code.gs SCHEMA_['原料價格'] 與 UNIT_COLUMNS_['原料價格']
+    //
+    // 5. /families/home_sharing/recipes/{recipeId}
+    //    - 對應 Code.gs SCHEMA_['配方資料'] 與 UNIT_COLUMNS_['配方資料']
+    //    - type 須符合 Core.html TYPES；已存 snapshotJson 更新時不可竄改
+    //
+    // 6. /families/home_sharing/recipeDetails/{detailId}
+    //    - 對應 Code.gs SCHEMA_['配方明細'] 與 UNIT_COLUMNS_['配方明細']
+    //
+    // 7. /families/home_sharing/logs/{logId}（永久存證：只允許建立，禁止修改與刪除）
+    //    - 對應 Code.gs SCHEMA_['製作紀錄']
+    //
+    // 8. /families/home_sharing/packagingDefaults/{configId}（禁止刪除）
+    //    - 支援成本預設欄位與 Code.gs SCHEMA_['成本設定']
+    //
+    // 9. /families/home_sharing/safetyRules/{ruleId}
+    //    - 對應 Code.gs SCHEMA_['安全規則'] 與 UNIT_COLUMNS_['安全規則']
+    //
+    // 10. /families/home_sharing/settings/{settingId}（排除 syncHead）
+    //    - 對應 Code.gs SCHEMA_['系統設定']：key, value
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // 共用輔助函式
+    // ===============================================================
+
+    // 檢查使用者是否已完成 Firebase 身分驗證
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 授權家庭成員白名單（限定已通過 Email 驗證的家庭成員帳號）
     function isFamilyMember() {
-      return request.auth != null &&
-        request.auth.token.email != null &&
+      return isAuthenticated() &&
+        'email' in request.auth.token &&
+        request.auth.token.email is string &&
+        'email_verified' in request.auth.token &&
+        request.auth.token.email_verified == true &&
         request.auth.token.email.lower() in ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
+    }
+
+    // 驗證為授權家庭成員且僅存取指定家庭資料空間
+    function isAllowedFamily(familyId) {
+      return isFamilyMember() && familyId == 'home_sharing';
+    }
+
+    // 對應 src/Core.html 的合法配方類別清單 (TYPES)
+    function validRecipeTypes() {
+      return ['精油膏', '清潔劑', '精油皂', '按摩油', '其他', '無水精油膏', '融製精油皂', '日常清潔液', '水垢清潔'];
+    }
+
+    // 驗證選填的非空字串欄位與最大長度
+    function isOptNonEmptyStr(data, field, maxLen) {
+      return !(field in data) ||
+        (data[field] is string && data[field].size() > 0 && data[field].size() <= maxLen);
+    }
+
+    // 驗證選填或可為 null 的字串欄位與最大長度
+    function isOptNullableStr(data, field, maxLen) {
+      return !(field in data) ||
+        data[field] == null ||
+        (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    // 驗證選填的時間戳記或 ISO 8601 時間字串
+    function isOptTimestampOrIso(data, field) {
+      return !(field in data) ||
+        data[field] is timestamp ||
+        (data[field] is string && data[field].size() > 0 && data[field].size() <= 40);
+    }
+
+    // 若舊資料已存在指定欄位，更新時須保持原值不可修改
+    function isUnchangedIfPresent(reqData, resData, field) {
+      return !(field in resData) ||
+        (field in reqData && reqData[field] == resData[field]);
     }
 
     // 預設拒絕所有根目錄未授權存取
@@ -16,107 +112,335 @@ service cloud.firestore {
 
     // 家庭專屬資料空間：/families/{familyId}/{collectionName}/{docId}
     match /families/{familyId} {
-      allow read: if isFamilyMember();
-      allow write: if false; // 禁止覆寫家庭根設定
+      allow read: if isAllowedFamily(familyId);
+      allow write: if false; // 禁止覆寫家庭根節點設定
 
-      // 同步快照使用 JSON 字串，不寫入二維陣列；歷史快照只允許建立。
-      function validHead(){return request.resource.data.keys().hasAll(['schemaVersion','revision','snapshotId','updatedAt','updatedBy']) && request.resource.data.keys().hasOnly(['schemaVersion','revision','snapshotId','updatedAt','updatedBy']) && request.resource.data.schemaVersion==2 && request.resource.data.revision is int && request.resource.data.revision>0 && request.resource.data.snapshotId is string && request.resource.data.snapshotId.size()<100 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;}
-      function headMatchesSnapshot(){let snapshot=getAfter(/databases/$(database)/documents/families/$(familyId)/backup/$(request.resource.data.snapshotId)).data;return snapshot.revision==request.resource.data.revision && snapshot.updatedBy==request.auth.uid;}
-      function validSnapshot(){let head=getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data;return request.resource.data.keys().hasAll(['schemaVersion','revision','tablesJson','updatedAt','updatedBy']) && request.resource.data.keys().hasOnly(['schemaVersion','revision','tablesJson','updatedAt','updatedBy']) && request.resource.data.schemaVersion==2 && request.resource.data.revision is int && request.resource.data.revision>0 && request.resource.data.tablesJson is string && request.resource.data.tablesJson.size()>0 && request.resource.data.tablesJson.size()<=900000 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time && head.revision==request.resource.data.revision;}
-      match /backup/{snapshotId}{
-        allow read: if isFamilyMember() && familyId=='home_sharing';
-        allow create: if isFamilyMember() && familyId=='home_sharing' && snapshotId!='snapshot' && validSnapshot() && getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data.snapshotId==snapshotId;
-        allow update,delete: if false;
+      // 同步指標驗證：須包含完整版本欄位且時間與操作者相符
+      function validHead(data) {
+        return data.keys().hasAll(['schemaVersion', 'revision', 'snapshotId', 'updatedAt', 'updatedBy']) &&
+          data.keys().hasOnly(['schemaVersion', 'revision', 'snapshotId', 'updatedAt', 'updatedBy']) &&
+          data.schemaVersion == 2 &&
+          data.revision is int &&
+          data.revision > 0 &&
+          data.snapshotId is string &&
+          data.snapshotId.size() > 0 &&
+          data.snapshotId.size() < 100 &&
+          data.updatedBy == request.auth.uid &&
+          data.updatedAt == request.time;
       }
-      match /settings/syncHead{
-        allow read: if isFamilyMember() && familyId=='home_sharing';
-        allow create: if isFamilyMember() && familyId=='home_sharing' && validHead() && request.resource.data.revision==1 && headMatchesSnapshot();
-        allow update: if isFamilyMember() && familyId=='home_sharing' && validHead() && request.resource.data.revision==resource.data.revision+1 && headMatchesSnapshot();
+
+      // 確認交易中建立的備份快照與指標版本及操作者一致
+      function headMatchesSnapshot() {
+        let snapshot = getAfter(/databases/$(database)/documents/families/$(familyId)/backup/$(request.resource.data.snapshotId)).data;
+        return snapshot.revision == request.resource.data.revision &&
+          snapshot.updatedBy == request.auth.uid;
+      }
+
+      // 同步快照驗證：使用 JSON 字串保存表格，禁止寫入二維陣列並限制大小於 900KB 內
+      function validSnapshot(data) {
+        let head = getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data;
+        return data.keys().hasAll(['schemaVersion', 'revision', 'tablesJson', 'updatedAt', 'updatedBy']) &&
+          data.keys().hasOnly(['schemaVersion', 'revision', 'tablesJson', 'updatedAt', 'updatedBy']) &&
+          data.schemaVersion == 2 &&
+          data.revision is int &&
+          data.revision > 0 &&
+          data.tablesJson is string &&
+          data.tablesJson.size() > 0 &&
+          data.tablesJson.size() <= 900000 &&
+          data.updatedBy == request.auth.uid &&
+          data.updatedAt == request.time &&
+          head.revision == data.revision;
+      }
+
+      // 1. 原料資料 (materials) 驗證器
+      function isValidMaterial(data) {
+        return data.keys().hasAll(['name', 'category', 'active']) &&
+          data.keys().hasOnly(['id', 'name', 'category', 'active', 'note', 'revision']) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          data.name is string &&
+          data.name.size() > 0 &&
+          data.name.size() <= 100 &&
+          data.category in ['精油', '皂基', '蜂蠟', '基底油', '其他'] &&
+          data.active is bool &&
+          isOptNullableStr(data, 'note', 1000) &&
+          (!('revision' in data) || (data.revision is int && data.revision >= 0));
+      }
+
+      // 2. 原料價格批次 (prices) 驗證器
+      function isValidPrice(data) {
+        return data.keys().hasAll(['materialId', 'paid', 'amount']) &&
+          data.keys().hasOnly([
+            'id', 'materialId', 'label', 'amount', 'unit', 'paid',
+            'density', 'gramsPerUnit', 'createdAt', 'createdBy',
+            'dropsPerMl', 'densitySource', 'densityEstimated'
+          ]) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          data.materialId is string &&
+          data.materialId.size() > 0 &&
+          data.materialId.size() <= 100 &&
+          isOptNullableStr(data, 'label', 100) &&
+          data.amount is number &&
+          data.amount > 0 &&
+          data.amount <= 1000000000000 &&
+          isOptNonEmptyStr(data, 'unit', 20) &&
+          data.paid is number &&
+          data.paid >= 0 &&
+          data.paid <= 1000000000000 &&
+          (!('density' in data) || data.density == null || data.density == '' || (data.density is number && data.density > 0 && data.density <= 1000000)) &&
+          (!('gramsPerUnit' in data) || data.gramsPerUnit == null || data.gramsPerUnit == '' || (data.gramsPerUnit is number && data.gramsPerUnit > 0 && data.gramsPerUnit <= 1000000)) &&
+          (!('dropsPerMl' in data) || data.dropsPerMl == null || data.dropsPerMl == '' || (data.dropsPerMl is number && data.dropsPerMl > 0 && data.dropsPerMl <= 1000000)) &&
+          isOptNullableStr(data, 'densitySource', 500) &&
+          (!('densityEstimated' in data) || data.densityEstimated is bool) &&
+          isOptTimestampOrIso(data, 'createdAt') &&
+          isOptNonEmptyStr(data, 'createdBy', 100);
+      }
+
+      // 3. 配方資料 (recipes) 驗證器
+      function isValidRecipe(data) {
+        return data.keys().hasAll(['name', 'type', 'version']) &&
+          data.keys().hasOnly([
+            'id', 'version', 'name', 'type', 'units', 'notes', 'baseId',
+            'costJson', 'snapshotJson', 'requestId', 'createdAt', 'createdBy',
+            'quantityUnit', 'targetQuantity', 'concentrationJson'
+          ]) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          data.name is string &&
+          data.name.size() > 0 &&
+          data.name.size() <= 100 &&
+          data.type in validRecipeTypes() &&
+          data.version is int &&
+          data.version >= 0 &&
+          (!('units' in data) || (data.units is int && data.units >= 1 && data.units <= 100000)) &&
+          isOptNullableStr(data, 'notes', 3000) &&
+          isOptNullableStr(data, 'baseId', 100) &&
+          isOptNullableStr(data, 'costJson', 50000) &&
+          isOptNullableStr(data, 'snapshotJson', 100000) &&
+          isOptNonEmptyStr(data, 'requestId', 100) &&
+          isOptTimestampOrIso(data, 'createdAt') &&
+          isOptNonEmptyStr(data, 'createdBy', 100) &&
+          (!('quantityUnit' in data) || data.quantityUnit == null || data.quantityUnit in ['g', 'mL', 'mixed']) &&
+          (!('targetQuantity' in data) || data.targetQuantity == null || data.targetQuantity == '' || (data.targetQuantity is number && data.targetQuantity > 0 && data.targetQuantity <= 1000000000)) &&
+          isOptNullableStr(data, 'concentrationJson', 50000);
+      }
+
+      // 4. 配方明細 (recipeDetails) 驗證器
+      function isValidRecipeDetail(data) {
+        return data.keys().hasAll(['recipeId', 'version', 'materialId']) &&
+          data.keys().hasOnly([
+            'recipeId', 'version', 'materialId', 'grams', 'priceId',
+            'quantity', 'unit', 'dropsPerMl'
+          ]) &&
+          data.recipeId is string &&
+          data.recipeId.size() > 0 &&
+          data.recipeId.size() <= 100 &&
+          data.version is int &&
+          data.version >= 0 &&
+          data.materialId is string &&
+          data.materialId.size() > 0 &&
+          data.materialId.size() <= 100 &&
+          (!('grams' in data) || data.grams == null || data.grams == '' || (data.grams is number && data.grams >= 0 && data.grams <= 1000000000)) &&
+          isOptNullableStr(data, 'priceId', 100) &&
+          (!('quantity' in data) || data.quantity == null || data.quantity == '' || (data.quantity is number && data.quantity >= 0 && data.quantity <= 1000000000)) &&
+          (!('unit' in data) || data.unit == null || data.unit == '' || data.unit in ['g', 'kg', 'mL', 'L', '滴', '%']) &&
+          (!('dropsPerMl' in data) || data.dropsPerMl == null || data.dropsPerMl == '' || (data.dropsPerMl is number && data.dropsPerMl > 0 && data.dropsPerMl <= 1000000));
+      }
+
+      // 5. 製作紀錄 (logs) 驗證器
+      function isValidLog(data) {
+        return data.keys().hasAll(['recipeId', 'units']) &&
+          data.keys().hasOnly([
+            'id', 'recipeId', 'version', 'date', 'units', 'notes',
+            'snapshotJson', 'requestId', 'createdAt', 'createdBy'
+          ]) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          data.recipeId is string &&
+          data.recipeId.size() > 0 &&
+          data.recipeId.size() <= 100 &&
+          (!('version' in data) || (data.version is int && data.version >= 0)) &&
+          (!('date' in data) || (data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))) &&
+          data.units is int &&
+          data.units >= 1 &&
+          data.units <= 100000 &&
+          isOptNullableStr(data, 'notes', 3000) &&
+          isOptNullableStr(data, 'snapshotJson', 100000) &&
+          isOptNonEmptyStr(data, 'requestId', 100) &&
+          isOptTimestampOrIso(data, 'createdAt') &&
+          isOptNonEmptyStr(data, 'createdBy', 100);
+      }
+
+      // 6. 包材與成本預設 (packagingDefaults) 驗證器
+      function isValidPackagingDefault(data) {
+        return data.keys().hasOnly([
+            'id', 'packaging', 'minutes', 'hourly', 'other', 'loss', 'margin', 'sale',
+            'valueJson', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+          ]) &&
+          (
+            ('packaging' in data && data.packaging is number && data.packaging >= 0 && data.packaging <= 1000000000000) ||
+            ('valueJson' in data && data.valueJson is string && data.valueJson.size() > 0 && data.valueJson.size() <= 50000)
+          ) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          (!('packaging' in data) || (data.packaging is number && data.packaging >= 0 && data.packaging <= 1000000000000)) &&
+          (!('minutes' in data) || (data.minutes is number && data.minutes >= 0 && data.minutes <= 1000000000000)) &&
+          (!('hourly' in data) || (data.hourly is number && data.hourly >= 0 && data.hourly <= 1000000000000)) &&
+          (!('other' in data) || (data.other is number && data.other >= 0 && data.other <= 1000000000000)) &&
+          (!('loss' in data) || (data.loss is number && data.loss >= 0 && data.loss < 100)) &&
+          (!('margin' in data) || (data.margin is number && data.margin >= 0 && data.margin < 100)) &&
+          (!('sale' in data) || data.sale == null || (data.sale is number && data.sale >= 0 && data.sale <= 1000000000000)) &&
+          (!('valueJson' in data) || (data.valueJson is string && data.valueJson.size() > 0 && data.valueJson.size() <= 50000)) &&
+          isOptTimestampOrIso(data, 'createdAt') &&
+          isOptNonEmptyStr(data, 'createdBy', 100) &&
+          isOptTimestampOrIso(data, 'updatedAt') &&
+          isOptNonEmptyStr(data, 'updatedBy', 100);
+      }
+
+      // 7. 安全規則 (safetyRules) 驗證器
+      function isValidSafetyRule(data) {
+        return data.keys().hasAll(['materialId', 'type']) &&
+          data.keys().hasOnly([
+            'id', 'materialId', 'type', 'maxPercent', 'source', 'status', 'note', 'basis'
+          ]) &&
+          isOptNonEmptyStr(data, 'id', 100) &&
+          data.materialId is string &&
+          data.materialId.size() > 0 &&
+          data.materialId.size() <= 100 &&
+          data.type in validRecipeTypes() &&
+          (!('maxPercent' in data) || data.maxPercent == null || data.maxPercent == '' || (data.maxPercent is number && data.maxPercent >= 0 && data.maxPercent <= 100)) &&
+          isOptNullableStr(data, 'source', 500) &&
+          isOptNullableStr(data, 'status', 50) &&
+          isOptNullableStr(data, 'note', 1000) &&
+          (!('basis' in data) || data.basis == null || data.basis == '' || data.basis in ['g', 'mL']);
+      }
+
+      // 8. 系統設定 (settings) 驗證器
+      function isValidSetting(data) {
+        return data.keys().hasAll(['key', 'value']) &&
+          data.keys().hasOnly(['key', 'value']) &&
+          data.key is string &&
+          data.key.size() > 0 &&
+          data.key.size() <= 150 &&
+          data.value is string &&
+          data.value.size() <= 50000;
+      }
+
+      // 雲端同步快照（僅允許建立且不可修改或刪除）
+      match /backup/{snapshotId} {
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) &&
+          snapshotId != 'snapshot' &&
+          validSnapshot(request.resource.data) &&
+          getAfter(/databases/$(database)/documents/families/$(familyId)/settings/syncHead).data.snapshotId == snapshotId;
+        allow update, delete: if false;
+      }
+
+      // 雲端同步版本指標（須與同交易快照一致且遞增版號）
+      match /settings/syncHead {
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) &&
+          validHead(request.resource.data) &&
+          request.resource.data.revision == 1 &&
+          headMatchesSnapshot();
+        allow update: if isAllowedFamily(familyId) &&
+          validHead(request.resource.data) &&
+          request.resource.data.revision == resource.data.revision + 1 &&
+          headMatchesSnapshot();
         allow delete: if false;
       }
 
       // 1. 原料資料 (materials)
       match /materials/{materialId} {
-        allow read: if isFamilyMember();
-        allow create, update: if isFamilyMember() &&
-          request.resource.data.name is string &&
-          request.resource.data.name.size() > 0 &&
-          request.resource.data.name.size() <= 100 &&
-          request.resource.data.category in ['精油', '皂基', '蜂蠟', '基底油', '其他'] &&
-          request.resource.data.active is bool;
-        allow delete: if isFamilyMember();
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidMaterial(request.resource.data);
+        allow update: if isAllowedFamily(familyId) &&
+          isValidMaterial(request.resource.data) &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'id');
+        allow delete: if isAllowedFamily(familyId);
       }
 
       // 2. 原料價格批次 (prices)
       match /prices/{priceId} {
-        allow read: if isFamilyMember();
-        allow create: if isFamilyMember() &&
-          request.resource.data.materialId is string &&
-          request.resource.data.paid is number &&
-          request.resource.data.paid >= 0 &&
-          request.resource.data.amount is number &&
-          request.resource.data.amount > 0;
-        // 價格批次為歷史紀錄，建立後禁止隨意修改關鍵金額
-        allow update: if isFamilyMember() &&
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidPrice(request.resource.data);
+        // 價格批次為歷史紀錄，建立後禁止隨意修改關鍵金額與識別資訊
+        allow update: if isAllowedFamily(familyId) &&
+          isValidPrice(request.resource.data) &&
           request.resource.data.materialId == resource.data.materialId &&
           request.resource.data.paid == resource.data.paid &&
-          request.resource.data.amount == resource.data.amount;
-        allow delete: if isFamilyMember();
+          request.resource.data.amount == resource.data.amount &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'id') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdAt') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdBy');
+        allow delete: if false; // 價格批次為歷史紀錄，禁止刪除
       }
 
       // 3. 配方資料 (recipes)
       match /recipes/{recipeId} {
-        allow read: if isFamilyMember();
-        allow create: if isFamilyMember() &&
-          request.resource.data.name is string &&
-          request.resource.data.name.size() > 0 &&
-          request.resource.data.name.size() <= 100 &&
-          request.resource.data.type in ['按摩油', '無水精油膏', '融製精油皂', '日常清潔液', '水垢清潔'] &&
-          request.resource.data.version is int &&
-          request.resource.data.version >= 0;
-        // 更新時不得竄改已存歷史快照 (snapshotJson)
-        allow update: if isFamilyMember() &&
-          (resource.data.snapshotJson == null || request.resource.data.snapshotJson == resource.data.snapshotJson);
-        allow delete: if isFamilyMember();
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidRecipe(request.resource.data);
+        // 更新時須通過完整欄位驗證，且不得竄改已存歷史快照 (snapshotJson)
+        allow update: if isAllowedFamily(familyId) &&
+          isValidRecipe(request.resource.data) &&
+          (!('snapshotJson' in resource.data) ||
+            resource.data.snapshotJson == null ||
+            ('snapshotJson' in request.resource.data &&
+              request.resource.data.snapshotJson == resource.data.snapshotJson)) &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'id') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdAt') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdBy');
+        allow delete: if isAllowedFamily(familyId);
       }
 
       // 4. 配方明細 (recipeDetails)
       match /recipeDetails/{detailId} {
-        allow read: if isFamilyMember();
-        allow create, update, delete: if isFamilyMember();
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidRecipeDetail(request.resource.data);
+        allow update: if isAllowedFamily(familyId) &&
+          isValidRecipeDetail(request.resource.data) &&
+          request.resource.data.recipeId == resource.data.recipeId &&
+          request.resource.data.materialId == resource.data.materialId;
+        allow delete: if isAllowedFamily(familyId);
       }
 
       // 5. 製作紀錄 (logs)
       match /logs/{logId} {
-        allow read: if isFamilyMember();
-        // 製作紀錄為永久歷史存證，只允許新增，建立後不可竄改快照
-        allow create: if isFamilyMember() &&
-          request.resource.data.recipeId is string &&
-          request.resource.data.units is int &&
-          request.resource.data.units >= 1;
-        allow update: if false; // 紀錄鎖定不允許修改
-        allow delete: if isFamilyMember();
+        allow read: if isAllowedFamily(familyId);
+        // 製作紀錄為永久歷史存證，只允許新增，建立後不可修改或刪除
+        allow create: if isAllowedFamily(familyId) && isValidLog(request.resource.data);
+        allow update, delete: if false;
       }
 
       // 6. 包材與成本預設 (packagingDefaults)
       match /packagingDefaults/{configId} {
-        allow read: if isFamilyMember();
-        allow create, update: if isFamilyMember() &&
-          request.resource.data.packaging is number &&
-          request.resource.data.packaging >= 0;
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidPackagingDefault(request.resource.data);
+        allow update: if isAllowedFamily(familyId) &&
+          isValidPackagingDefault(request.resource.data) &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'id') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdAt') &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'createdBy');
         allow delete: if false;
       }
 
       // 7. 安全規則 (safetyRules)
       match /safetyRules/{ruleId} {
-        allow read: if isFamilyMember();
-        allow create, update, delete: if isFamilyMember();
+        allow read: if isAllowedFamily(familyId);
+        allow create: if isAllowedFamily(familyId) && isValidSafetyRule(request.resource.data);
+        allow update: if isAllowedFamily(familyId) &&
+          isValidSafetyRule(request.resource.data) &&
+          isUnchangedIfPresent(request.resource.data, resource.data, 'id');
+        allow delete: if isAllowedFamily(familyId);
       }
 
-      // 8. 系統設定 (settings)
+      // 8. 系統設定 (settings，排除 syncHead 以免覆蓋版本指標規則)
       match /settings/{settingId} {
-        allow read: if isFamilyMember() && settingId!='syncHead';
-        allow write: if isFamilyMember() && settingId!='syncHead';
+        allow read: if isAllowedFamily(familyId) && settingId != 'syncHead';
+        allow create: if isAllowedFamily(familyId) &&
+          settingId != 'syncHead' &&
+          isValidSetting(request.resource.data);
+        allow update: if isAllowedFamily(familyId) &&
+          settingId != 'syncHead' &&
+          isValidSetting(request.resource.data) &&
+          request.resource.data.key == resource.data.key;
+        allow delete: if isAllowedFamily(familyId) && settingId != 'syncHead';
       }
     }
   }

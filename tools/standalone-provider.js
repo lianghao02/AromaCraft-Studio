@@ -26,7 +26,7 @@ __AROMA_CLOUD_PROTOCOL__
  }
  const sheets=new Map(Object.keys(values).map(n=>[n,new Sheet(n)]));
  const db={getSheetByName:n=>sheets.get(n),insertSheet(n){const s=new Sheet(n);sheets.set(n,s);return s;},setSpreadsheetTimeZone(){}};
- const props={SPREADSHEET_ID:'local-device',ADMIN_EMAIL:'tpc0941101090@gmail.com',ALLOWED_EMAILS:'tpc0941101090@gmail.com,amethyst72@gmail.com'};
+ const props={SPREADSHEET_ID:'local-device',ADMIN_EMAIL:'local@aromacraft.local',ALLOWED_EMAILS:'local@aromacraft.local'};
  const environment={PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]})},Session:{getActiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL}),getEffectiveUser:()=>({getEmail:()=>props.ADMIN_EMAIL})},SpreadsheetApp:{openById:()=>db,flush(){}},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},Utilities:{getUuid:()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2),formatDate:()=>new Date().toISOString()},HtmlService:{createHtmlOutputFromFile:n=>({getContent:()=>sources[n]})}};
  const call=(function({PropertiesService,Session,SpreadsheetApp,LockService,Utilities,HtmlService}){
 __AROMA_SERVER__
@@ -35,9 +35,9 @@ __AROMA_SERVER__
  const persist=()=>localStorage.setItem(KEY,JSON.stringify(Object.fromEntries([...sheets].map(([n,s])=>[n,s.values]))));
  const upgrade=call({action:'migrateUnits'});if(!upgrade.ok)throw Error(upgrade.error);
  const imported=call({action:'importCatalog'});if(!imported.ok)throw Error(imported.error);persist();
- window.AROMA_DEMO=true;window.AROMA_LOCAL=true;
+ window.AROMA_LOCAL=true;
 
- /* === Firebase 雲端整合配置與白名單 === */
+ /* === Firebase 雲端整合配置（權限由 Firestore 規則把關） === */
  const firebaseConfig = {
    apiKey: "AIzaSyCPc4wZAD22N2MLuDyJjgERKdwqvlUJsrE",
    authDomain: "aromacraft-studio.firebaseapp.com",
@@ -47,7 +47,6 @@ __AROMA_SERVER__
    appId: "1:1064983353321:web:e22c0fed594a8b60fd9d78",
    measurementId: "G-YVBW5X67WW"
  };
- const ALLOWED_EMAILS = ['tpc0941101090@gmail.com', 'amethyst72@gmail.com'];
  const FAMILY_DOC = 'home_sharing';
  let fbAuth = null, fbDb = null, currentFbUser = null, fbModules = null;
  const OUTBOX=KEY+'_outbox_v1';let outbox=JSON.parse(localStorage.getItem(OUTBOX)||'[]');if(!Array.isArray(outbox))throw Error('待同步資料格式異常，請先匯出備份');let flushing=null;
@@ -108,12 +107,6 @@ __AROMA_SERVER__
 
        if(user && user.email){
          const email = user.email.toLowerCase();
-         if(!ALLOWED_EMAILS.includes(email)){
-           await authMod.signOut(fbAuth);
-           alert('此 Google/Firebase 帳號（' + email + '）不在家庭成員白名單中，已自動登出。');
-           updateSyncStatus('offline', '非授權');
-           return;
-         }
          if(userBadge){
            userBadge.textContent = '🏠 ' + email.split('@')[0];
            userBadge.hidden = window.innerWidth < 600;
@@ -123,7 +116,15 @@ __AROMA_SERVER__
          if(authUserEmail) authUserEmail.textContent = email;
          updateSyncStatus('syncing', '同步中');
          cloud=AromaCloudProtocol.create({sdk:fsMod,db:fbDb,family:FAMILY_DOC,uid:user.uid,keys:Object.keys(seed)});
-         try{await pullFromFirestore();}catch(e){cloudError(e);}stopCloud=cloud.listen(remote=>{try{if(remote.revision!==cloudRevision||remote.snapshotId===null)applyRemote(remote);}catch(e){cloudError(e);}},cloudError);
+         try{await pullFromFirestore();}catch(e){
+           if(e.code==='permission-denied'){
+             await authMod.signOut(fbAuth);
+             updateSyncStatus('offline', '非授權');
+             return;
+           }
+           cloudError(e);
+         }
+         stopCloud=cloud.listen(remote=>{try{if(remote.revision!==cloudRevision||remote.snapshotId===null)applyRemote(remote);}catch(e){cloudError(e);}},cloudError);
        } else {
          if(userBadge) userBadge.hidden = true;
          if(authSignedOut) authSignedOut.hidden = false;
@@ -182,23 +183,32 @@ __AROMA_SERVER__
   })().catch(e=>{cloudError(e);throw e;}).finally(()=>{flushing=null;});return flushing;
  }
 
+ async function verifyCloudAccess(user){
+   if(!user||!fbModules)return;
+   const probe=AromaCloudProtocol.create({sdk:fbModules.fsMod,db:fbDb,family:FAMILY_DOC,uid:user.uid,keys:Object.keys(seed)});
+   try{await probe.read();}
+   catch(e){
+     if(e.code==='permission-denied'){
+       await fbModules.authMod.signOut(fbAuth);
+       throw Error('此帳號未授權使用家庭資料，請改選家庭帳號。');
+     }
+   }
+ }
  window.AromaSync = {
    loginGoogle: async () => {
      if(!fbAuth || !fbModules) throw Error('Google 登入尚未準備完成，請稍後重試並確認網路連線。');
      const provider = new fbModules.authMod.GoogleAuthProvider();
      provider.setCustomParameters({prompt:'select_account'});
      const result = await fbModules.authMod.signInWithPopup(fbAuth, provider);
-     if(!ALLOWED_EMAILS.includes((result.user?.email||'').toLowerCase())){
-       await fbModules.authMod.signOut(fbAuth);
-       throw Error('此 Google 帳號未授權使用家庭資料，請改選家庭帳號。');
-     }
+     await verifyCloudAccess(result.user);
      return result;
    },
    login: async (email, password) => {
      if(!fbAuth || !fbModules) throw Error('Firebase 雲端模組尚未完成初始化，請檢查網路連線。');
      const clean = email.trim().toLowerCase();
-     if(!ALLOWED_EMAILS.includes(clean)) throw Error('此帳號不在家庭白名單（tpc0941101090@gmail.com / amethyst72@gmail.com）中。');
-     return await fbModules.authMod.signInWithEmailAndPassword(fbAuth, clean, password);
+     const result = await fbModules.authMod.signInWithEmailAndPassword(fbAuth, clean, password);
+     await verifyCloudAccess(result.user);
+     return result;
    },
    logout: async () => {
      if(!fbAuth || !fbModules) return;

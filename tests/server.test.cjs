@@ -122,3 +122,19 @@ test('分享會新增作品支援版本保存，未填配比不能誤存',()=>{
   assert.equal(h.call('saveRecipe',{...r,requestId:r.requestId+'-empty',items:[]}).ok,false);
  }
 });
+
+test('bootstrap 單次讀取各工作表，不隨配方版本數呈平方倍重讀',()=>{
+  const h=start();
+  for(let k=1;k<=5;k++){
+    const saved=ok(h,'saveRecipe',{...recipe(),requestId:'perf-r-'+k,name:'配方'+k});
+    ok(h,'saveRecipe',{...saved,requestId:'perf-r-'+k+'-v2',name:'配方'+k+'v2'});
+  }
+  const reads=Object.create(null);
+  for(const [name,s] of h.sheets){
+    const orig=s.getRange.bind(s);
+    s.getRange=(...args)=>{if(args[0]>=2)reads[name]=(reads[name]||0)+1;return orig(...args);};
+  }
+  const b=ok(h,'bootstrap');
+  assert.equal(b.recipes.length,10);
+  for(const name of Object.keys(reads))assert.ok(reads[name]<=1,name+' 資料列被重複讀取 '+reads[name]+' 次');
+});

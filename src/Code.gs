@@ -138,9 +138,9 @@ function include_(name) {
   return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
-function options_(key){const rows=rows_('系統設定').filter(r=>r.key===key);return rows.length?JSON.parse(rows.at(-1).value):null;}
-function packages_(){const out={};rows_('系統設定').filter(r=>r.key.startsWith('包材:')).forEach(r=>{out[r.key.slice(3)]=JSON.parse(r.value);});const costs=rows_('成本設定'),legacy=costs.length?JSON.parse(costs.at(-1).valueJson).packaging:0;if(legacy>0)out['legacy-default']={id:'legacy-default',name:'舊版預設包材',price:legacy};return Object.values(out);}
-function recipeOptions_(id){return options_('配方設定:'+id)||{};}
+function options_(key,settings=rows_('系統設定')){const rows=settings.filter(r=>r.key===key);return rows.length?JSON.parse(rows.at(-1).value):null;}
+function packages_(settings=rows_('系統設定'),costs=rows_('成本設定')){const out={};settings.filter(r=>r.key.startsWith('包材:')).forEach(r=>{out[r.key.slice(3)]=JSON.parse(r.value);});const legacy=costs.length?JSON.parse(costs.at(-1).valueJson).packaging:0;if(legacy>0)out['legacy-default']={id:'legacy-default',name:'舊版預設包材',price:legacy};return Object.values(out);}
+function recipeOptions_(id,settings){return options_('配方設定:'+id,settings)||{};}
 function deleteRecipe_(d){
   const id=core_().text(d.id,'配方識別碼',100);
   for(const name of ['配方明細','配方資料']){const list=rows_(name);for(let n=list.length-1;n>=0;n--)if((name==='配方資料'?list[n].id:list[n].recipeId)===id)table_(name).deleteRow(list[n]._row);}
@@ -152,28 +152,32 @@ function savePackage_(d){const c=core_(),id=c.text(d.id||d.requestId,'包材識�
 function recipes_() {
   return rows_('配方資料').map(r => ({ ...r, version: Number(r.version), units: Number(r.units), cost: JSON.parse(r.costJson), snapshot: JSON.parse(r.snapshotJson) }));
 }
+function mapDetailItem_(i){return i.unit?({materialId:i.materialId,priceId:i.priceId,quantity:Number(i.quantity),unit:i.unit,...(i.dropsPerMl?{dropsPerMl:Number(i.dropsPerMl)}:{})}):({materialId:i.materialId,priceId:i.priceId,grams:Number(i.grams)});}
+function buildRecipe_(r,items,modern){
+  return { ...modern,id: r.id, version: r.version, name: r.name, type: r.type, units: r.units, notes: r.notes, baseId: r.baseId, cost:r.cost,quantityUnit:r.quantityUnit||'g',targetQuantity:r.targetQuantity===''||r.targetQuantity===undefined?null:Number(r.targetQuantity),items,concentration:r.concentrationJson?JSON.parse(r.concentrationJson):null,snapshot:r.snapshot };
+}
 function loadRecipe_(id, version) {
   const all = recipes_().filter(r => r.id === id);
   const r = version ? all.find(r => r.version === Number(version)) : all.sort((a, b) => b.version - a.version)[0];
   if (!r) throw Error('NOT_FOUND：配方版本不存在。');
-  const items = rows_('配方明細').filter(i => i.recipeId === id && Number(i.version) === r.version).map(i => i.unit?({materialId:i.materialId,priceId:i.priceId,quantity:Number(i.quantity),unit:i.unit,...(i.dropsPerMl?{dropsPerMl:Number(i.dropsPerMl)}:{})}):({materialId:i.materialId,priceId:i.priceId,grams:Number(i.grams)}));
-  const modern=recipeOptions_(id);
-  return { ...modern,id: r.id, version: r.version, name: r.name, type: r.type, units: r.units, notes: r.notes, baseId: r.baseId, cost:r.cost,quantityUnit:r.quantityUnit||'g',targetQuantity:r.targetQuantity===''||r.targetQuantity===undefined?null:Number(r.targetQuantity),items,concentration:r.concentrationJson?JSON.parse(r.concentrationJson):null,snapshot:r.snapshot };
+  const items = rows_('配方明細').filter(i => i.recipeId === id && Number(i.version) === r.version).map(mapDetailItem_);
+  return buildRecipe_(r,items,recipeOptions_(id));
 }
-
-function currentRecipe_(id,version){
-  const r=loadRecipe_(id,version),c=core_(),prices=rows_('原料價格');
+function hydrateCurrentRecipe_(r,c,prices){
   if(!r.planning){r.items=r.items.map(i=>i.unit==='%'?{...i,quantity:c.itemAmount(i,r,prices),unit:r.quantityUnit}:i);r.planning={mode:'free',sizing:'batch',total:30,percent:1,basis:c.productBasis(r.type),baseId:'',packagingId:r.cost.packaging>0?'legacy-default':''};r.quantityUnit='mixed';r.targetQuantity=null;r.baseId='';r.concentration={...r.concentration,auto:true,useDefaultDrops:true};}
   r.policyVersion=2;return r;
 }
+function currentRecipe_(id,version){
+  return hydrateCurrentRecipe_(loadRecipe_(id,version),core_(),rows_('原料價格'));
+}
 
 // Bottle counts are independent of prices, recipe quantities and production snapshots.
-function inventoryRows_(){return rows_('系統設定').filter(r=>r.key.startsWith('庫存:')).map(r=>{const v=JSON.parse(r.value);if(!Number.isSafeInteger(v.count)||v.count<0||v.count>9999||!Number.isSafeInteger(v.revision)||v.revision<1||r.key!=='庫存:'+v.materialId)throw Error('庫存資料格式不正確，請先還原備份');return v;});}
-function inventory_(){const out=Object.create(null);inventoryRows_().forEach(v=>{out[v.materialId]=v;});return out;}
+function inventoryRows_(settings=rows_('系統設定')){return settings.filter(r=>r.key.startsWith('庫存:')).map(r=>{const v=JSON.parse(r.value);if(!Number.isSafeInteger(v.count)||v.count<0||v.count>9999||!Number.isSafeInteger(v.revision)||v.revision<1||r.key!=='庫存:'+v.materialId)throw Error('庫存資料格式不正確，請先還原備份');return v;});}
+function inventory_(settings){const out=Object.create(null);inventoryRows_(settings).forEach(v=>{out[v.materialId]=v;});return out;}
 function saveInventory_(d,email){
   const requestId=requestId_(d.requestId),items=d.items;
   if(!Array.isArray(items)||!items.length||items.length>100)throw Error('庫存清單須包含 1 至 100 項');
-  const materials=rows_('原料資料'),history=inventoryRows_(),current=inventory_(),seen=new Set(),updates=[];
+  const materials=rows_('原料資料'),settings=rows_('系統設定'),history=inventoryRows_(settings),current=inventory_(settings),seen=new Set(),updates=[];
   for(const item of items){
     const materialId=core_().text(item.materialId,'原料識別碼',100),m=materials.find(m=>m.id===materialId);
     if(!m||m.category!=='精油')throw Error('庫存只接受已存在的精油原料');
@@ -192,15 +196,29 @@ function saveInventory_(d,email){
   return updates;
 }
 function bootstrap_() {
-  const cost = rows_('成本設定');
-  const archived=archivedRecipes_();
-  return { inventory:inventory_(),packages:packages_(),unitSchema:columns_('配方明細').includes('dropsPerMl'),materials: rows_('原料資料'), prices: rows_('原料價格'), rules: rows_('安全規則'),
-    recipes: recipes_().map(r => {let current=r.snapshot;try{current=core_().calculate({...currentRecipe_(r.id,r.version),packages:packages_()},rows_('原料資料'),rows_('原料價格'),rows_('安全規則'));}catch(e){current={...r.snapshot,perUnit:null,costComplete:false};}return ({ id: r.id, version: r.version, name: r.name, type: r.type, archived:archived[r.id]===true,createdAt: r.createdAt, safety: r.snapshot.safety,
-      perUnit:current.perUnit,knownPerUnit:current.knownPerUnit,costComplete:current.costComplete,notes:r.notes,oils:(current.items||[]).filter(i=>i.category==='精油').map(i=>({materialId:i.materialId,name:i.name})),concentration:current.concentration||null });}),
+  const settings = rows_('系統設定'), cost = rows_('成本設定'), materials = rows_('原料資料'), prices = rows_('原料價格'), rules = rows_('安全規則');
+  const packages = packages_(settings, cost), archived = archivedRecipes_(settings), c = core_();
+  const recipeOpts = Object.create(null); settings.filter(r => r.key.startsWith('配方設定:')).forEach(r => { recipeOpts[r.key.slice(5)] = JSON.parse(r.value); });
+  const detailsByKey = new Map();
+  for (const d of rows_('配方明細')) {
+    const key = d.recipeId + '\0' + Number(d.version);
+    if (!detailsByKey.has(key)) detailsByKey.set(key, []);
+    detailsByKey.get(key).push(mapDetailItem_(d));
+  }
+  return { inventory: inventory_(settings), packages, unitSchema: columns_('配方明細').includes('dropsPerMl'), materials, prices, rules,
+    recipes: recipes_().map(r => {
+      let current = r.snapshot;
+      try {
+        const loaded = buildRecipe_(r, detailsByKey.get(r.id + '\0' + r.version) || [], recipeOpts[r.id] || {});
+        current = c.calculate({ ...hydrateCurrentRecipe_(loaded, c, prices), packages }, materials, prices, rules);
+      } catch (e) { current = { ...r.snapshot, perUnit: null, costComplete: false }; }
+      return ({ id: r.id, version: r.version, name: r.name, type: r.type, archived: archived[r.id] === true, createdAt: r.createdAt, safety: r.snapshot.safety,
+        perUnit: current.perUnit, knownPerUnit: current.knownPerUnit, costComplete: current.costComplete, notes: r.notes, oils: (current.items || []).filter(i => i.category === '精油').map(i => ({ materialId: i.materialId, name: i.name })), concentration: current.concentration || null });
+    }),
     logs: rows_('製作紀錄').map(l => ({ ...l, snapshot: JSON.parse(l.snapshotJson) })),
     cost: cost.length ? JSON.parse(cost[cost.length - 1].valueJson) : defaults_(), costRevision: cost.length ? cost[cost.length - 1].id : '', serverTime: stamp_() };
 }
-function archivedRecipes_(){const out={};rows_('系統設定').filter(r=>r.key.startsWith('封存配方:')).forEach(r=>{out[r.key.slice(5)]=r.value==='true';});return out;}
+function archivedRecipes_(settings=rows_('系統設定')){const out={};settings.filter(r=>r.key.startsWith('封存配方:')).forEach(r=>{out[r.key.slice(5)]=r.value==='true';});return out;}
 function archiveRecipe_(d){const id=core_().text(d.id,'配方識別碼',100),latest=recipes_().filter(r=>r.id===id).sort((a,b)=>b.version-a.version)[0];if(!latest)throw Error('配方不存在');if(latest.version!==Number(d.version))throw Error('CONFLICT：配方已有新版，請重新讀取後再移除');if(typeof d.archived!=='boolean')throw Error('移除狀態不正確');append_('系統設定',[{key:'封存配方:'+id,value:String(d.archived)}]);return {id,archived:d.archived};}
 function saveRecipe_(d, email) {
   const c = core_(), requestId = requestId_(d.requestId);

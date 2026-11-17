@@ -160,7 +160,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   desktop.matches=false;desktop.change();assert.equal(node('materialPicker').open,false);
   desktop.matches=true;desktop.change();assert.equal(node('materialPicker').open,false);
 
-  node('quickNewMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/採購批次/);assert.match(node('editorBody').innerHTML,/密度來源/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
+  node('newMaterial').onclick();assert.doesNotMatch(node('editorBody').innerHTML,/採購批次/);assert.match(node('editorBody').innerHTML,/密度來源/);assert.match(node('editorBody').innerHTML,/每包／每瓶|滴數換算/);
   node('matName').value='表單合成商品';node('matCategory').value='其他';node('amount').value=15;node('priceUnit').value='mL';node('paid').value=100;
   node('editorForm').onsubmit({preventDefault(){}});await tick();await tick();await tick();await tick();
   assert.equal(h.call('bootstrap').value.materials.filter(m=>m.name==='表單合成商品').length,1);
@@ -197,6 +197,9 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   assert.match(node('editorBody').innerHTML,/修改採購單位與價格/);assert.equal(node('editUnit').value,'g');node('editQuantity').value='12';node('editorForm').onsubmit({preventDefault(){}});
   assert.match(node('items').innerHTML,/12 g/);
   node('returnToRecipe').onclick();node('editorForm').onsubmit({preventDefault(){}});node('editorForm').onsubmit({preventDefault(){}});
+  node('editPurchaseUnit').onclick();node('matName').value='基底油（試算）';node('matCategory').value='基底油';node('amount').value=100;node('priceUnit').value='g';node('paid').value=250;node('productDrops').value='';
+  node('editorForm').onsubmit({preventDefault(){}});for(let n=0;n<6;n++)await tick();
+  assert.equal(typeof node('editPurchaseUnit').onclick,'function','priceOverride 提示不得洗掉 editPurchaseUnit 事件');
   node('editPurchaseUnit').onclick();node('matName').value='基底油（試算）';node('matCategory').value='基底油';node('amount').value=100;node('priceUnit').value='mL';node('paid').value=300;node('productDrops').value='';
   node('editorForm').onsubmit({preventDefault(){}});for(let n=0;n<6;n++)await tick();
   assert.equal(node('editor').open,true);assert.equal(node('editUnit').value,'mL');assert.equal(node('editQuantity').value,'');assert.match(node('items').innerHTML,/12 g/);
@@ -248,6 +251,7 @@ for(const viewportWidth of [320,375,390,430,768,1024,1366,1920])test(`${viewport
   await node('recordProduction').onclick();assert.equal(node('planningMode').value,'free');assert.equal(node('sizingMode').value,'batch');assert.equal(node('draftState').textContent,'實際製作中');
   node('quantity-'+oilIds[0]).value='7';node('quantity-unit-'+oilIds[0]).value='滴';quantity(oilIds[0],'7');node('confirmQuantities').onclick();await node('recordProduction').onclick();
   const finished=h.call('bootstrap').value.logs.at(-1);assert.equal(finished.snapshot.items.find(i=>i.materialId===oilIds[0]).quantity,7);assert.equal(h.call('loadRecipe',{id:latest.id}).value.items.find(i=>i.materialId===oilIds[0]).quantity,6);
+  assert.doesNotMatch(node('formulaBar').innerHTML,/width:0\.00%/);
 
   }
 });
@@ -261,7 +265,7 @@ test('原料收合與用量入口不受桌機舊樣式封鎖，網站圖示內�
    if(selector.includes('#viewRecipe')&&selector.includes('.picker-top-bar'))assert.doesNotMatch(body,/display\s*:\s*none/,'填用量入口不能隱藏：'+selector);
  }
  const html=fs.readFileSync(path.join(__dirname,'../src/Index.html'),'utf8');
- for(const id of ['blank','plannerAdvanced','plannerSummary','toggleWork'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'真實頁面必須有 #'+id);
+ for(const id of ['blank','plannerAdvanced','plannerSummary'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'真實頁面必須有 #'+id);
  assert.match(html,/id="importCatalog"[^>]*>載入內建官網價格</);assert.doesNotMatch(html,/載入官網精油至原料庫/,"按鈕不可暗示即時連線官網");assert.match(html,/不會連線官網/);
  assert.match(html,/<div class="recipe-settings">[\s\S]*id="recipeTypeSelect"[\s\S]*id="sizingMode"/,"類型與用量基準需在步驟 3 設定區");assert.doesNotMatch(html.match(/<details id="plannerAdvanced"[\s\S]*?<\/details>/)[0],/id="sizingMode"/,"用量基準不再藏在進階");assert.match(html,/id="saveHint"/);assert.doesNotMatch(html,/目前精油比例|精油比例僅供參考/,"統一稱為精油濃度");
  assert.match(styles,/@media\(max-width:767px\)\{[\s\S]*?#materialPicker \.material-card,[^{]*\{[^}]*min-height:0/,"手機原料卡需維持精簡高度");assert.match(styles,/\.mat-drop\{display:block/);

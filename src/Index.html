@@ -34,39 +34,6 @@
       <button type="button" id="stepBtn3" class="stepper-btn" data-step="3"><b>3</b><span>確認</span></button>
     </nav>
     <div class="step-head"><h2 id="stepTitle">你要做什麼？</h2><p id="stepHint" class="muted">選一個類別，會直接進入下一步；換類別時，已選的原料與用量會保留。</p></div>
-    <!-- 頂部工作視圖雙模式切換（A+B 融合） -->
-
-
-    <!-- 新手配方 3 步指南（預設收納，可由說明手冊開啟） -->
-    <div id="guideCard" class="guide-card" role="region" aria-label="新手使用指南" hidden>
-      <div class="guide-head">
-        <div class="guide-title"><span class="guide-icon" aria-hidden="true">🌿</span><strong>新手配方 3 步指南</strong></div>
-        <button id="dismissGuide" type="button" class="guide-close" aria-label="收合新手指南">✕</button>
-      </div>
-      <ol class="guide-steps">
-        <li class="guide-step" data-step="1" tabindex="0" role="button" aria-label="第 1 步：選製作類別">
-          <span class="step-num">1</span>
-          <div class="step-content"><strong>選製作類別</strong><p>選精油膏、清潔劑、精油皂、按摩油或其他，再自行調配。</p></div>
-        </li>
-        <li class="guide-step" data-step="2" tabindex="0" role="button" aria-label="第 2 步：調原料與比例">
-          <span class="step-num">2</span>
-          <div class="step-content"><strong>調原料與比例</strong><p>點原料加入，直接在已選列填用量；可復原移除。</p></div>
-        </li>
-        <li class="guide-step" data-step="3" tabindex="0" role="button" aria-label="第 3 步：看成本並儲存">
-          <span class="step-num">3</span>
-          <div class="step-content"><strong>定成本並儲存</strong><p>原料單價與包材事前設定。確認主頁大約成本後按「儲存配方」，待確認配比請先交由太太核對。</p></div>
-        </li>
-      </ol>
-      <div class="guide-footer">
-        <small class="muted">點選任一步驟可直接跳至對應區塊</small>
-        <button id="hideGuideForever" type="button" class="subtle-link">不再顯示</button>
-      </div>
-    </div>
-
-    <div class="quick-nav">
-      <button id="toggleWork" type="button" class="subtle-btn">＋ 新增自製配方</button>
-
-    </div>
 
     <details id="workPanel" class="fold" open><summary><h2 id="workLabel">1 選製作類別</h2><small>更換 / 收合</small></summary><div class="fold-body">
       <div class="grid works"><button class="work" data-type="精油膏" type="button"><strong>精油膏</strong><small>自製配方</small></button><button class="work" data-type="清潔劑" type="button"><strong>清潔劑</strong><small>自製配方</small></button><button class="work" data-type="精油皂" type="button"><strong>精油皂</strong><small>自製配方</small></button><button class="work" data-type="按摩油" type="button"><strong>按摩油</strong><small>自製配方</small></button><button class="work" data-type="其他" type="button"><strong>其他</strong><small>自製配方</small></button></div>
@@ -107,14 +74,6 @@
           <div class="confirm-cost"><section id="costPanel" class="fold" aria-label="成本摘要"><h3>成本</h3><div class="fold-body"><div class="panel-save-card"><div><small>總成本／每份成本</small><strong id="panelCost" class="panel-cost-val">—</strong><span id="panelWeight" class="panel-weight-val"></span></div></div></div></section></div>
           <div class="confirm-conc"><div class="concentration-panel"><h3 id="concentrationTitle">精油濃度</h3><strong id="concentrationValue">待填用量</strong><p id="concentrationMessage" role="status"></p><div id="pickerConcentrationIssues" class="toolbar"></div><small>精油濃度僅供參考，使用前請確認成分與用途是否適合。</small><details class="advanced"><summary>濃度設定與換算說明（選填）</summary><p id="concentrationDetailsMessage"></p><label>參考上限（%）<input id="concentrationLimit" type="number" min="0" max="100" step="any" inputmode="decimal"></label><label>上限基準<select id="limitBasis"><option value="mL">容量估算百分比</option><option value="g">重量百分比</option></select></label><p>只比較相同基準；g 與 mL 透過原料密度換算；精油滴數預設20滴／mL，缺資料會指出原料。未超過上限不代表適用性。歷史成品容量及換算資料保留。</p></details></div></div>
           <div id="formulaBar" class="formula-bar" aria-label="配方成份分佈" title="配方成份比例分佈"></div>
-          <!-- 隨行輕量成本膠囊（指標隨行） -->
-      <div id="costPill" class="cost-pill">
-        <div class="pill-info">
-          <small class="muted">本次材料與包材估算</small>
-          <strong id="pillUnitCost">—</strong>
-        </div>
-        <button id="btnGotoCost" type="button" class="pill-btn">查看大約成本 ➔</button>
-      </div>
           <div class="confirm-actions"><div class="panel-save-actions"><span id="panelSafety" class="badge" hidden>待驗證</span><button id="saveAsNew" type="button">另存新配方</button><button id="panelQuickSave" type="button" class="primary">儲存配方</button></div><p id="saveHint" class="muted" role="status"></p><button id="blank" type="button" class="subtle-btn next-product">＋ 製作另一個產品</button><small class="next-product-hint">回到類別選擇，已儲存的配方與製作紀錄會保留。</small></div>
         </aside>
         <div class="confirm-main">
@@ -301,7 +260,6 @@
     </section>
   </div>
   <div class="actions">
-    <button id="restoreGuide" type="button" class="subtle-btn">恢復頂部 3 步新手指南</button>
     <button id="confirmHelp" type="button" class="primary">我知道了</button>
   </div>
 </dialog>

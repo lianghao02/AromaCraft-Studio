@@ -1,5 +1,45 @@
 # HANDOFF
 
+## 2026-11-17：健檢修補（前端持久化、雲端自動補齊、Firestore 規則與清理）
+
+- **Repository**：lianghao02/AromaCraft-Studio
+- **Branch**：main
+- **Commit SHA**：未提交（以 `0c6622d` 為基準修改）
+- **Skill Version**：v1.0.0
+- **Task Type**：FIX / HANDOFF
+- **Local Path Hint**：18_AromaCraft-Studio
+
+### 目前狀態
+已完成本機修補、重建、123 項單元與整合測試、Firestore 模擬器規則實測，並已將 `firestore.rules` 部署至 Firebase `aromacraft-studio`；本輪修改準備提交並推送至 `origin/main`。
+
+### 本輪已完成
+- **P2 功能缺陷與測試副作用**：
+  - `tools/standalone-provider.js` 移除誤設的 `window.AROMA_DEMO=true`，恢復正式靜態版（`index.html`）使用 `localStorage` 保存草稿（`npm run preview` 維持 `sessionStorage` 隔離）。
+  - `src/Client.html` 收到 `aroma-cloud-update` 後重設 `catalogAutoTried`（含 `catalogAutoRunning` 防重入），使 Firebase 登入拉回較舊雲端資料時能自動補齊新版內建官網價格。
+  - `src/Client.html` 修正 `#formulaBar` 在 `mixed` 計量下因 `percent === null` 產生 `0.00%` 假色塊；修正 `editItem` 中 `#editPurchaseUnit.onclick` 被 `innerHTML +=` 洗掉；修正 `#blank` 重置未清除 `draftKey`、更新 `#quickSave` 禁用提示並補齊 `AromaCatalog` 存在防護。
+  - `src/Code.gs` 優化 `bootstrap_()` 與 `saveInventory_()`，消除 $O(N^2)$ 試算表重複讀取。
+  - `tools/build-standalone.cjs` 新增 `build({ write = true })`，讓 `tests/standalone.test.cjs` 與 `tests/cloud.test.cjs` 執行 `npm test` 時不再改寫追蹤中的 `index.html`。
+- **P1 隱私隔離與 Firestore 規則補強**：
+  - 移除 `tools/standalone-provider.js`、`tests/cloud.test.cjs`、`tests/firestore-rules.rest.cjs` 與建置產物 `index.html` 中所有寫死的私人 Gmail；網頁端改由 Firestore `permission-denied` 自動登出並回報通用未授權訊息。
+  - 委派 `firestore-rules-author` 補強 `firestore.rules`（保留白名單便於部署）：加入 `email_verified == true` 檢查、全子集合統一限定 `familyId == 'home_sharing'`、禁止刪除 `prices` 與 `logs` 歷史存證、更新 `recipes` 類別白名單與 `Core.html` 一致，並補齊各集合欄位型別、長度與邊界檢查。
+- **P3 清理與文件同步**：
+  - 移除 `src/Index.html`、`src/Client.html`、`src/Styles.html` 中 v1.7.0 遺留隱藏介面（`#guideCard`、`#toggleWork`、`#costPill`、`#restoreGuide`、`switchWorkMode` 等），並更新 `tests/dom-contract.test.cjs` 與 `tests/client.test.cjs`。
+  - 同步 `README.md` 授權說明至 MIT `LICENSE` 並補齊 `HANDOFF.md`。
+
+### 尚未完成
+- **P1（需使用者實機／部署）**：驗證真實家庭雙帳號同步、Google Apps Script 線上更新（若有使用）與 iPhone Safari 實機操作。
+- **P3（暫緩）**：`data/young-living-tw.json` 少數商品名稱重複容量字尾（例如 `5ml 5ml`）於下次 `refresh-catalog` 時視官網回傳整理。
+
+### 驗證結果
+- `npm run build`：通過（產生 `index.html`，445,472 字元）。
+- `npm test`：123 / 123 通過（含新增雲端自動匯入、`bootstrap` 單次讀取、`AROMA_LOCAL` 旗標、事件防洗與 `#formulaBar` 回歸測試）。
+- `npx -y firebase-tools@15.33.0 emulators:exec --only firestore --project demo-aromacraft "node tests/firestore-rules.rest.cjs"`：通過（未授權／未驗證拒絕、`home_sharing` 空間隔離、現行類別、歷史紀錄防刪與雙向快照版本檢查）。
+- `npx -y firebase-tools@15.33.0 deploy --only firestore:rules --project aromacraft-studio`：通過（`released rules firestore.rules to cloud.firestore`）。
+- `npm run check`、`node -c tests/firestore-rules.rest.cjs`、`git diff --check`：皆通過。
+- 未驗證：真實家庭雙裝置同步、Apps Script 線上部署、iPhone Safari 實機。
+
+---
+
 ## 2026-10-23：v1.8.0 精油庫存瓶數
 
 - Repository Full Name：lianghao02/AromaCraft-Studio
