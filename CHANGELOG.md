@@ -1,5 +1,9 @@
 # 📝 更新日誌
 
+## 🧪 未發布（2026-11-22）
+
+- **視覺規範對齊**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`manifest.webmanifest` 主題色 `#2A6850`／背景 `#FAF5E8`、`src/Index.html`、`src/Styles.html` 與靜態 `index.html`）。
+
 ## v1.8.3 (2026-11-19) — 靜態草稿持久化、雲端目錄補齊與 Firestore 規則強化
 
 - 靜態發布版恢復 `localStorage` 持久化保存草稿（僅預覽模式維持 `sessionStorage` 隔離）。

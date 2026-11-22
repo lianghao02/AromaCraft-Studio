@@ -1,16 +1,30 @@
 # HANDOFF
 
+## 2026-11-22：v1.8.3 發布與視覺規範對齊同步
+
+- **Repository**：lianghao02/AromaCraft-Studio
+- **Branch**：main
+- **Commit SHA**：`a4fbec5`（`v1.8.3` 已於 `2026-11-19` `a93e775` 發布，並於 `2026-11-22` 提交暖紙手帳 Design Tokens 對齊）
+- **Skill Version**：v1.0.0
+- **Task Type**：RELEASE / DESIGN
+- **Local Path Hint**：18_AromaCraft-Studio
+
+### 目前狀態
+已於 `main` 完成 `v1.8.3` 發布（`123/123` 測試通過、Firestore 模擬器與正式規則部署通過）及 `2026-11-22` 暖紙手帳 Design Tokens／PWA 主題色對齊；仍保留真實家庭雙帳號同步、Google Apps Script 線上更新與 iPhone Safari 實機驗收項目。
+
+---
+
 ## 2026-11-17：健檢修補（前端持久化、雲端自動補齊、Firestore 規則與清理）
 
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：未提交（以 `0c6622d` 為基準修改）
+- **Commit SHA**：歷史紀錄（已於 `a2f0953`／`a93e775` 提交）
 - **Skill Version**：v1.0.0
 - **Task Type**：FIX / HANDOFF
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ### 目前狀態
-已完成本機修補、重建、123 項單元與整合測試、Firestore 模擬器規則實測，並已將 `firestore.rules` 部署至 Firebase `aromacraft-studio`；本輪修改準備提交並推送至 `origin/main`。
+已完成本機修補、重建、123 項單元與整合測試、Firestore 模擬器規則實測，並已將 `firestore.rules` 部署至 Firebase `aromacraft-studio`。
 
 ### 本輪已完成
 - **P2 功能缺陷與測試副作用**：
