@@ -1,8 +1,8 @@
 # 📝 更新日誌
 
-## 🧪 未發布（2026-11-22）
+## v1.8.4 (2026-11-25) — 暖紙手帳視覺對齊與 PWA 主題色更新
 
-- **視覺規範對齊**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`manifest.webmanifest` 主題色 `#2A6850`／背景 `#FAF5E8`、`src/Index.html`、`src/Styles.html` 與靜態 `index.html`）。
+- **視覺規範對齊與快取更新**：對齊暖紙手帳觸感系 Design Tokens 與 PWA 主題色（`manifest.webmanifest` 主題色 `#2A6850`／背景 `#FAF5E8`、`src/Index.html`、`src/Styles.html` 與靜態 `index.html`），並同步更新 Service Worker 快取版本（`aromacraft-v1.8.4`）。
 
 ## v1.8.3 (2026-11-19) — 靜態草稿持久化、雲端目錄補齊與 Firestore 規則強化
 

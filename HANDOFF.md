@@ -1,16 +1,16 @@
 # HANDOFF
 
-## 2026-11-22：v1.8.3 發布與視覺規範對齊同步
+## 2026-11-25：v1.8.4 發布與暖紙手帳視覺規範對齊
 
 - **Repository**：lianghao02/AromaCraft-Studio
 - **Branch**：main
-- **Commit SHA**：`a4fbec5`（`v1.8.3` 已於 `2026-11-19` `a93e775` 發布，並於 `2026-11-22` 提交暖紙手帳 Design Tokens 對齊）
+- **Commit SHA**：`64d9ebb` 之後之 `v1.8.4` 發布提交（前次 `v1.8.3` `a93e775`）
 - **Skill Version**：v1.0.0
 - **Task Type**：RELEASE / DESIGN
 - **Local Path Hint**：18_AromaCraft-Studio
 
 ### 目前狀態
-已於 `main` 完成 `v1.8.3` 發布（`123/123` 測試通過、Firestore 模擬器與正式規則部署通過）及 `2026-11-22` 暖紙手帳 Design Tokens／PWA 主題色對齊；仍保留真實家庭雙帳號同步、Google Apps Script 線上更新與 iPhone Safari 實機驗收項目。
+已於 `main` 完成 `v1.8.4` 發布（`123/123` 測試與靜態檢查通過、暖紙手帳 Design Tokens／PWA 主題色對齊並重建 `index.html`）；仍保留真實家庭雙帳號同步、Google Apps Script 線上更新與 iPhone Safari 實機驗收項目。
 
 ---
 
